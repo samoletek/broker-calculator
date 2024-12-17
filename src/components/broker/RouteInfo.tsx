@@ -9,17 +9,6 @@ import { format } from 'date-fns';
 type GoogleMap = google.maps.Map;
 type DirectionsRenderer = google.maps.DirectionsRenderer;
 
-interface TollRoad {
-  name: string;
-  area: {
-    lat: number;
-    lng: number;
-  };
-  averageCost: number;
-  region: string;
-  stepIndex?: number;
-}
-
 // Функция расчета стоимости платных дорог
 const calculateTollCost = (distance: number, mainRoute: google.maps.DirectionsRoute) => {
   // Базовые параметры для расчета
@@ -145,7 +134,6 @@ export default function RouteInfo({
   trafficConditions,
   mapData,
   selectedDate,
-  onTrafficUpdate,
   onTollUpdate
 }: RouteInfoProps) {
   const mapRef = useRef<HTMLDivElement>(null);

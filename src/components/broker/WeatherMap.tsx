@@ -156,22 +156,20 @@ export default function WeatherMap({ routePoints, onWeatherUpdate, selectedDate 
     if (!routePoints.pickup.lat || !routePoints.delivery.lat) {
       return;
     }
-
+  
     const currentFetchKey = `${routePoints.pickup.lat},${routePoints.pickup.lng}-${routePoints.delivery.lat},${routePoints.delivery.lng}-${selectedDate?.toISOString()}`;
-
-    // Если данные уже в кэше, используем их
+  
     if (weatherCache.current[currentFetchKey]) {
       setWeatherData(weatherCache.current[currentFetchKey]);
       const worstMultiplier = Math.max(...weatherCache.current[currentFetchKey].map(r => r.multiplier));
       onWeatherUpdate(worstMultiplier);
       return;
     }
-
-    // Если данных нет в кэше, делаем запрос
+  
     if (!requestInProgress.current) {
       fetchWeatherData();
     }
-  }, [routePoints.pickup.lat, routePoints.pickup.lng, routePoints.delivery.lat, routePoints.delivery.lng, selectedDate]);
+  }, [routePoints.pickup.lat, routePoints.pickup.lng, routePoints.delivery.lat, routePoints.delivery.lng, selectedDate, fetchWeatherData, onWeatherUpdate]);
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">

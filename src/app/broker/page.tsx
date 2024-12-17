@@ -16,23 +16,6 @@ import {
   getSeasonalMultiplier
 } from '@/constants/pricing';
 
-interface GoogleMapsResponse {
-  routes: Array<{
-    legs: Array<{
-      distance: {
-        value: number;
-        text: string;
-      };
-      duration: {
-        value: number;
-        text: string;
-      };
-      start_location: google.maps.LatLng;
-      end_location: google.maps.LatLng;
-    }>;
-  }>;
-}
-
 interface PriceComponents {
   selectedDate: Date | undefined;
   basePrice: number;
@@ -209,8 +192,6 @@ export default function BrokerCalculator() {
         (premiumEnhancements ? 0.3 : 0) +
         (specialLoad ? 0.3 : 0) +
         (inoperable ? 0.3 : 0);
-
-      const finalPrice = basePrice * mainMultiplier * additionalServicesMultiplier;
 
       setPriceComponents({
         selectedDate,
