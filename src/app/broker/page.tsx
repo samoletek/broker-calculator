@@ -185,7 +185,7 @@ export default function BrokerCalculator() {
       const seasonalMultiplier = getSeasonalMultiplier(selectedDate);
 
       // Множитель погоды и траффика будет обновлен через WeatherMap и RouteInfo компоненты
-      const mainMultiplier = vehicleMultiplier * seasonalMultiplier;
+      //const mainMultiplier = vehicleMultiplier * seasonalMultiplier;
 
       // Расчет множителя дополнительных услуг
       const additionalServicesMultiplier = 1.0 + 
