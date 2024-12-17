@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { DollarSign, TrendingUp, TrendingDown, Activity, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { TrendingUp, TrendingDown, Activity, AlertCircle } from 'lucide-react';
 import type { MarketInfoProps } from './types';
 
 interface MarketData {
