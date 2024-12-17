@@ -21,7 +21,22 @@ function calculateRoutePoints(start: {lat: number; lng: number}, end: {lat: numb
   return points;
 }
 
-function processWeatherData(data: any, point: any): WeatherPoint {
+interface WeatherAPIResponse {
+  current: {
+    condition: {
+      text: string;
+    };
+    temp_f: number;
+  };
+}
+
+interface RoutePoint {
+  lat: number;
+  lng: number;
+  location: string;
+}
+
+function processWeatherData(data: WeatherAPIResponse, point: RoutePoint): WeatherPoint {
   const condition = data.current.condition.text.toLowerCase();
   let multiplier = 1.0;
 
@@ -83,7 +98,7 @@ export default function WeatherMap({ routePoints, onWeatherUpdate, selectedDate 
 
       const weatherPromises = points.map(async point => {
         try {
-          const response = await axios.get(
+          const response = await axios.get<WeatherAPIResponse>(
             'https://api.weatherapi.com/v1/forecast.json',
             {
               params: {
@@ -97,7 +112,12 @@ export default function WeatherMap({ routePoints, onWeatherUpdate, selectedDate 
           return processWeatherData(response.data, point);
         } catch (error) {
           console.error('Error fetching weather for point:', point, error);
-          return processWeatherData({ current: { condition: { text: 'Clear' }, temp_f: 0 } }, point);
+          return processWeatherData({
+            current: { 
+              condition: { text: 'Clear' }, 
+              temp_f: 0 
+            }
+          }, point);
         }
       });
 
@@ -108,7 +128,6 @@ export default function WeatherMap({ routePoints, onWeatherUpdate, selectedDate 
         const worstMultiplier = Math.max(...results.map(r => r.multiplier));
         onWeatherUpdate(worstMultiplier);
         
-        // Сохраняем в кэш после успешного получения данных
         const currentFetchKey = `${routePoints.pickup.lat},${routePoints.pickup.lng}-${routePoints.delivery.lat},${routePoints.delivery.lng}-${selectedDate?.toISOString()}`;
         weatherCache.current[currentFetchKey] = results;
       }

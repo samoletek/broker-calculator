@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Truck, Loader2 } from 'lucide-react';
-import { addDays, format } from 'date-fns';
+import { addDays } from 'date-fns';
 import { DatePickerComponent } from '@/components/broker/DatePickerComponent';
 import { PriceBreakdown } from '@/components/broker/PriceBreakdown';
 import RouteInfo from '@/components/broker/RouteInfo';
@@ -15,6 +15,23 @@ import {
   getBaseRate,
   getSeasonalMultiplier
 } from '@/constants/pricing';
+
+interface GoogleMapsResponse {
+  routes: Array<{
+    legs: Array<{
+      distance: {
+        value: number;
+        text: string;
+      };
+      duration: {
+        value: number;
+        text: string;
+      };
+      start_location: google.maps.LatLng;
+      end_location: google.maps.LatLng;
+    }>;
+  }>;
+}
 
 interface PriceComponents {
   selectedDate: Date | undefined;
@@ -83,7 +100,7 @@ export default function BrokerCalculator() {
   // Рефы для Google Maps
   const pickupInputRef = useRef<HTMLInputElement>(null);
   const deliveryInputRef = useRef<HTMLInputElement>(null);
-  const googleRef = useRef<any>(null);
+  const googleRef = useRef<typeof google | null>(null);
 
   // Эффект для автовключения Премиум функции
   useEffect(() => {
@@ -164,11 +181,11 @@ export default function BrokerCalculator() {
         origin: pickup,
         destination: delivery,
         travelMode: google.maps.TravelMode.DRIVING
-      });
-
-      setMapData(response);
-      const distanceInMiles = response.routes[0].legs[0].distance.value / 1609.34;
-      const duration = response.routes[0].legs[0].duration.text;
+      }) as google.maps.DirectionsResult;
+      
+      setMapData(response as google.maps.DirectionsResult);
+      const distanceInMiles = (response.routes[0].legs[0].distance?.value || 0) / 1609.34;
+      const duration = response.routes[0].legs[0].duration?.text || '';
 
       setDistance(Math.round(distanceInMiles));
       setRouteInfo(prev => ({
