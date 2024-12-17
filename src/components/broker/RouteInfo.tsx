@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { Map, Navigation, AlertCircle, Clock, Car, DollarSign } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { Map, Navigation, AlertCircle, Clock, Car } from 'lucide-react';
 import { Loader } from '@googlemaps/js-api-loader';
 import type { RouteInfoProps, TollInfo } from './types';
 import { format } from 'date-fns';
@@ -154,7 +154,7 @@ export default function RouteInfo({
   const [tollInfo, setTollInfo] = useState<TollInfo | null>(null);
   const tollInfoRequestedRef = useRef(false);
 
-  const getTollInfo = async (directionsResult: google.maps.DirectionsResult) => {
+  const getTollInfo = useCallback(async (directionsResult: google.maps.DirectionsResult) => {
     try {
       // Рассчитываем общую стоимость платных дорог
       const totalTollCost = calculateTollCost(distance, directionsResult.routes[0]);
@@ -179,7 +179,7 @@ export default function RouteInfo({
         onTollUpdate(0);
       }
     }
-  };
+  }, [distance, onTollUpdate]);
 
   useEffect(() => {
     let isMounted = true;
@@ -253,7 +253,7 @@ export default function RouteInfo({
       directionsRendererRef.current = null;
       tollInfoRequestedRef.current = false;
     };
-  }, [mapData, distance]);
+  }, [mapData, distance, getTollInfo]);
 
   const getTrafficStatusColor = (status: string) => {
     switch (status) {

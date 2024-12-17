@@ -1,6 +1,6 @@
 "use client";
 
-import { DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
 
 interface PriceBreakdownProps {
   distance: number;
@@ -40,8 +40,6 @@ export const PriceBreakdown = ({
   additionalServices,
   tollCosts,
   finalPrice,
-  routeInfo,
-  selectedDate
 }: PriceBreakdownProps) => {
   const formatPrice = (price: number) => `$${price.toFixed(2)}`;
 
