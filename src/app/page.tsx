@@ -4,10 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Truck, Loader2 } from 'lucide-react';
 import { addDays } from 'date-fns';
-import { DatePickerComponent } from '@/components/broker/DatePickerComponent';
-import { PriceBreakdown } from '@/components/broker/PriceBreakdown';
-import RouteInfo from '@/components/broker/RouteInfo';
-import WeatherMap from '@/components/broker/WeatherMap';
+import { DatePickerComponent } from '@/app/components/DatePickerComponent';
+import { PriceBreakdown } from '@/app/components/PriceBreakdown';
+import RouteInfo from '@/app/components/RouteInfo';
+import WeatherMap from '@/app/components/WeatherMap';
 import {
   TRANSPORT_TYPES,
   VEHICLE_VALUE_TYPES,

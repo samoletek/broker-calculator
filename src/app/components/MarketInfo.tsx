@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { TrendingUp, TrendingDown, Activity, AlertCircle } from 'lucide-react';
-import type { MarketInfoProps } from './types';
+import type { MarketInfoProps } from '@/app/components/types';
 
 interface MarketData {
   averagePrice: number;
