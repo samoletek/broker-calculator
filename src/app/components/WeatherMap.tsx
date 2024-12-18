@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Cloud, Sun, CloudRain, CloudSnow, Wind } from 'lucide-react';
 import { format } from 'date-fns';
 import axios from 'axios';
-import type { WeatherMapProps, WeatherPoint } from './types';
+import type { WeatherMapProps, WeatherPoint, WeatherResponse } from './types';
 
 function calculateRoutePoints(start: {lat: number; lng: number}, end: {lat: number; lng: number}) {
   const points = [];
@@ -21,18 +21,25 @@ function calculateRoutePoints(start: {lat: number; lng: number}, end: {lat: numb
   return points;
 }
 
-function processWeatherData(data: any, point: { lat: number; lng: number; location: string }): WeatherPoint {
+function processWeatherData(data: WeatherResponse, point: { lat: number; lng: number; location: string }): WeatherPoint {
   const condition = data.current.condition.text.toLowerCase();
   let multiplier = 1.0;
 
-  if (condition.includes('rain') || condition.includes('drizzle')) {
-    multiplier = 1.05;
-  } else if (condition.includes('snow')) {
-    multiplier = 1.2;
-  } else if (condition.includes('storm') || condition.includes('thunder')) {
-    multiplier = 1.15;
-  } else if (condition.includes('blizzard') || condition.includes('hurricane')) {
-    multiplier = 1.2;
+  const conditionMultipliers: Record<string, number> = {
+    'rain': 1.05,
+    'drizzle': 1.05,
+    'snow': 1.2,
+    'storm': 1.15,
+    'thunder': 1.15,
+    'blizzard': 1.2,
+    'hurricane': 1.2
+  };
+
+  for (const [key, value] of Object.entries(conditionMultipliers)) {
+    if (condition.includes(key)) {
+      multiplier = value;
+      break;
+    }
   }
 
   return {
@@ -57,7 +64,11 @@ function getWeatherIcon(condition: string) {
   return <Cloud className="w-5 h-5 text-gray-500" />;
 }
 
-export default function WeatherMap({ routePoints, onWeatherUpdate, selectedDate }: WeatherMapProps) {
+export default function WeatherMap({ 
+  routePoints, 
+  onWeatherUpdate, 
+  selectedDate 
+}: WeatherMapProps) {
   const [weatherData, setWeatherData] = useState<WeatherPoint[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,17 +76,14 @@ export default function WeatherMap({ routePoints, onWeatherUpdate, selectedDate 
   const requestInProgress = useRef<boolean>(false);
   const lastWeatherRef = useRef<{ multiplier: number } | null>(null);
 
-  // Создаем ключ кэша
   const getCacheKey = useCallback(() => {
     return `${routePoints.pickup.lat},${routePoints.pickup.lng}-${routePoints.delivery.lat},${routePoints.delivery.lng}-${selectedDate?.toISOString()}`;
   }, [routePoints.pickup, routePoints.delivery, selectedDate]);
 
-  // Функция обновления состояния погоды
   const updateWeatherState = useCallback((weatherPoints: WeatherPoint[]) => {
     setWeatherData(weatherPoints);
     const worstMultiplier = Math.max(...weatherPoints.map(r => r.multiplier));
     
-    // Проверяем изменился ли множитель
     if (!lastWeatherRef.current || lastWeatherRef.current.multiplier !== worstMultiplier) {
       lastWeatherRef.current = { multiplier: worstMultiplier };
       onWeatherUpdate(worstMultiplier);
@@ -100,7 +108,7 @@ export default function WeatherMap({ routePoints, onWeatherUpdate, selectedDate 
 
       const weatherPromises = points.map(async point => {
         try {
-          const response = await axios.get(
+          const response = await axios.get<WeatherResponse>(
             'https://api.weatherapi.com/v1/forecast.json',
             {
               params: {
@@ -135,7 +143,6 @@ export default function WeatherMap({ routePoints, onWeatherUpdate, selectedDate 
     }
   }, [routePoints, selectedDate, getCacheKey, updateWeatherState]);
 
-  // Эффект для получения данных о погоде
   useEffect(() => {
     const cacheKey = getCacheKey();
     if (weatherCache.current[cacheKey]) {
@@ -143,7 +150,7 @@ export default function WeatherMap({ routePoints, onWeatherUpdate, selectedDate 
     } else {
       fetchWeatherData();
     }
-  }, [getCacheKey, fetchWeatherData]);
+  }, [getCacheKey, fetchWeatherData, updateWeatherState]);
 
   const memoizedWeatherData = useMemo(() => weatherData, [weatherData]);
 

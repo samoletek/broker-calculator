@@ -92,3 +92,17 @@ export interface TollInfo {
     temperature: number;
     multiplier: number;
   }
+
+  export interface TollSegment {
+    location: string;
+    cost: number;
+  }
+
+  export interface WeatherResponse {
+    current: {
+      condition: {
+        text: string;
+      };
+      temp_f: number;
+    };
+  }

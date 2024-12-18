@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Map, Navigation, AlertCircle, Clock, Car } from 'lucide-react';
 import { Loader } from '@googlemaps/js-api-loader';
-import type { RouteInfoProps, TollInfo } from './types';
 import { format } from 'date-fns';
-
-type GoogleMap = google.maps.Map;
-type DirectionsRenderer = google.maps.DirectionsRenderer;
+import type { 
+  RouteInfoProps, 
+  TollInfo,
+  TollSegment
+} from './types';
 
 const calculateTollCost = (distance: number, mainRoute: google.maps.DirectionsRoute) => {
   const baseRate = 0.12;
@@ -49,83 +50,81 @@ const calculateTollCost = (distance: number, mainRoute: google.maps.DirectionsRo
   return Math.round(Math.min(maxCost, Math.max(minCost, estimatedCost)) * 100) / 100;
 };
 
-const getRouteSegments = (route: google.maps.DirectionsResult, totalCost: number) => {
-  const segments: Array<{ location: string, cost: number }> = [];
+const getRouteSegments = (route: google.maps.DirectionsResult, totalCost: number): TollSegment[] => {
+  const segments: TollSegment[] = [];
   const routeText = route.routes[0].legs[0].steps
     .map(step => step.instructions.toLowerCase())
     .join(' ');
   let remainingCost = totalCost;
 
-  // Northeast Region (NY, NJ)
-  if (routeText.includes('new jersey') || 
-      routeText.includes('new york') || 
-      routeText.includes('i-95') ||
-      routeText.includes('nj') ||
-      routeText.includes('ny')) {
-    const northeastCost = Math.round(remainingCost * 0.35 * 100) / 100;
-    segments.push({
-      location: "Northeast Region Tolls",
-      cost: northeastCost
-    });
-    remainingCost -= northeastCost;
-  }
+  const regionSegments = [
+    {
+      condition: () => 
+        routeText.includes('new jersey') || 
+        routeText.includes('new york') || 
+        routeText.includes('i-95') ||
+        routeText.includes('nj') ||
+        routeText.includes('ny'),
+      name: "Northeast Region Tolls",
+      description: "(I-95, NJ/NY Turnpikes)",
+      multiplier: 0.35
+    },
+    {
+      condition: () => 
+        routeText.includes('i-80') || 
+        routeText.includes('i-90') || 
+        routeText.includes('pennsylvania') ||
+        routeText.includes('illinois') ||
+        routeText.includes('indiana') ||
+        routeText.includes('ohio'),
+      name: "Midwest Region Tolls",
+      description: "(I-80/90, Ohio/Indiana/Illinois Tolls)",
+      multiplier: 0.4
+    },
+    {
+      condition: () => 
+        routeText.includes('california') || 
+        routeText.includes('san francisco') ||
+        routeText.includes('los angeles') ||
+        routeText.includes('ca'),
+      name: "West Coast Tolls",
+      description: "(CA Bridges and Highways)",
+      multiplier: 0.8
+    },
+    {
+      condition: () => 
+        routeText.includes('florida') || 
+        routeText.includes('miami') ||
+        routeText.includes('fl') ||
+        routeText.includes('orlando') ||
+        routeText.includes('tampa'),
+      name: "Florida Region Tolls",
+      description: "(FL Turnpike and Express Lanes)",
+      multiplier: 0.7
+    },
+    {
+      condition: () => 
+        routeText.includes('texas') || 
+        routeText.includes('tx') ||
+        routeText.includes('houston') ||
+        routeText.includes('dallas'),
+      name: "Texas Region Tolls",
+      description: "(TX Tollways and Express Lanes)",
+      multiplier: 0.6
+    }
+  ];
 
-  // Midwest Region (IL, IN, OH)
-  if (routeText.includes('i-80') || 
-      routeText.includes('i-90') || 
-      routeText.includes('pennsylvania') ||
-      routeText.includes('illinois') ||
-      routeText.includes('indiana') ||
-      routeText.includes('ohio')) {
-    const midwestCost = Math.round(remainingCost * 0.4 * 100) / 100;
-    segments.push({
-      location: "Midwest Region Tolls",
-      cost: midwestCost
-    });
-    remainingCost -= midwestCost;
-  }
+  regionSegments.forEach(region => {
+    if (region.condition()) {
+      const regionCost = Math.round(remainingCost * region.multiplier * 100) / 100;
+      segments.push({
+        location: region.name,
+        cost: regionCost
+      });
+      remainingCost -= regionCost;
+    }
+  });
 
-  // West Coast (CA)
-  if (routeText.includes('california') || 
-      routeText.includes('san francisco') ||
-      routeText.includes('los angeles') ||
-      routeText.includes('ca')) {
-    const westCost = Math.round(remainingCost * 0.8 * 100) / 100;
-    segments.push({
-      location: "West Coast Tolls",
-      cost: westCost
-    });
-    remainingCost -= westCost;
-  }
-
-  // Florida Region
-  if (routeText.includes('florida') || 
-      routeText.includes('miami') ||
-      routeText.includes('fl') ||
-      routeText.includes('orlando') ||
-      routeText.includes('tampa')) {
-    const floridaCost = Math.round(remainingCost * 0.7 * 100) / 100;
-    segments.push({
-      location: "Florida Region Tolls",
-      cost: floridaCost
-    });
-    remainingCost -= floridaCost;
-  }
-
-  // Texas Region
-  if (routeText.includes('texas') || 
-      routeText.includes('tx') ||
-      routeText.includes('houston') ||
-      routeText.includes('dallas')) {
-    const texasCost = Math.round(remainingCost * 0.6 * 100) / 100;
-    segments.push({
-      location: "Texas Region Tolls",
-      cost: texasCost
-    });
-    remainingCost -= texasCost;
-  }
-
-  // Other Regions (если остались неучтённые платные дороги)
   if (remainingCost > 5) {
     segments.push({
       location: "Other Regional Toll Roads",
@@ -141,23 +140,21 @@ export default function RouteInfo({
   delivery, 
   distance,
   estimatedTime,
-  isPopularRoute,
-  isRemoteArea,
+  isPopularRoute = false,
+  isRemoteArea = false,
   trafficConditions,
   mapData,
   selectedDate,
   onTollUpdate
 }: RouteInfoProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<GoogleMap | null>(null);
-  const directionsRendererRef = useRef<DirectionsRenderer | null>(null);
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
   const [tollInfo, setTollInfo] = useState<TollInfo | null>(null);
   const mapInitializedRef = useRef(false);
-  const lastTollRef = useRef<{ cost: number, segments: any[] } | null>(null);
+  const lastTollRef = useRef<{ cost: number, segments: TollSegment[] } | null>(null);
 
-  // Функция обновления платных дорог
-  const updateTollInfo = useCallback((totalCost: number, segments: any[]) => {
-    // Проверяем, изменились ли значения
+  const updateTollInfo = useCallback((totalCost: number, segments: TollSegment[]) => {
     if (!lastTollRef.current || 
         lastTollRef.current.cost !== totalCost || 
         JSON.stringify(lastTollRef.current.segments) !== JSON.stringify(segments)) {
@@ -165,7 +162,6 @@ export default function RouteInfo({
       lastTollRef.current = { cost: totalCost, segments };
       setTollInfo({ segments, totalCost });
       
-      // Добавляем проверку на существование onTollUpdate
       if (onTollUpdate) {
         onTollUpdate(totalCost, segments);
       }
