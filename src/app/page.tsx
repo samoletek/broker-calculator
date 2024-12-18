@@ -8,7 +8,6 @@ import { DatePickerComponent } from '@/components/broker/DatePickerComponent';
 import { PriceBreakdown } from '@/components/broker/PriceBreakdown';
 import RouteInfo from '@/components/broker/RouteInfo';
 import WeatherMap from '@/components/broker/WeatherMap';
-import MarketInfo from '@/components/broker/MarketInfo';
 import {
   TRANSPORT_TYPES,
   VEHICLE_VALUE_TYPES,
@@ -183,9 +182,6 @@ export default function BrokerCalculator() {
       // Получение множителей
       const vehicleMultiplier = VEHICLE_VALUE_TYPES[vehicleValue].multiplier;
       const seasonalMultiplier = getSeasonalMultiplier(selectedDate);
-
-      // Множитель погоды и траффика будет обновлен через WeatherMap и RouteInfo компоненты
-      //const mainMultiplier = vehicleMultiplier * seasonalMultiplier;
 
       // Расчет множителя дополнительных услуг
       const additionalServicesMultiplier = 1.0 + 
@@ -365,40 +361,40 @@ export default function BrokerCalculator() {
           </div>
         </div>
 
-            {/* Results Grid */}
-            {distance && priceComponents && mapData && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Results Grid */}
+        {distance && priceComponents && mapData && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Route Info & Price Breakdown */}
             <div className="lg:col-span-2 space-y-6">
-            <RouteInfo 
-              pickup={pickup}
-              delivery={delivery}
-              distance={distance}
-              estimatedTime={routeInfo.estimatedTime}
-              isPopularRoute={routeInfo.isPopularRoute}
-              isRemoteArea={routeInfo.isRemoteArea}
-              trafficConditions={routeInfo.trafficConditions}
-              mapData={mapData}
-              selectedDate={selectedDate}
-              onTollUpdate={(tollCost: number, segments?: Array<{ location: string, cost: number }>) => {
-                setPriceComponents((prev: PriceComponents | null) => {
-                  if (!prev) return null;
-                  
-                  return {
-                    ...prev,
-                    tollCosts: {
-                      segments: segments || [],
-                      total: tollCost
-                    },
-                    finalPrice: prev.basePrice * 
-                              prev.mainMultipliers.totalMain * 
-                              (1 + prev.additionalServices.totalAdditional) + 
-                              tollCost
-                  };
-                });
-              }}
-            />
-              
+              <RouteInfo 
+                pickup={pickup}
+                delivery={delivery}
+                distance={distance}
+                estimatedTime={routeInfo.estimatedTime}
+                isPopularRoute={routeInfo.isPopularRoute}
+                isRemoteArea={routeInfo.isRemoteArea}
+                trafficConditions={routeInfo.trafficConditions}
+                mapData={mapData}
+                selectedDate={selectedDate}
+                onTollUpdate={(tollCost: number, segments?: Array<{ location: string, cost: number }>) => {
+                  setPriceComponents((prev: PriceComponents | null) => {
+                    if (!prev) return null;
+                    
+                    return {
+                      ...prev,
+                      tollCosts: {
+                        segments: segments || [],
+                        total: tollCost
+                      },
+                      finalPrice: prev.basePrice * 
+                                prev.mainMultipliers.totalMain * 
+                                (1 + prev.additionalServices.totalAdditional) + 
+                                tollCost
+                    };
+                  });
+                }}
+              />
+                
               <PriceBreakdown
                 distance={distance}
                 basePrice={priceComponents.basePrice}
@@ -413,7 +409,7 @@ export default function BrokerCalculator() {
               />
             </div>
 
-            {/* Right Column - Weather & Market Info */}
+            {/* Right Column - Weather Map Only */}
             <div className="space-y-6">
               {mapData && (
                 <WeatherMap
@@ -430,7 +426,6 @@ export default function BrokerCalculator() {
                   }}
                   selectedDate={selectedDate}
                   onWeatherUpdate={(multiplier) => {
-                    console.log('Weather update received:', multiplier);
                     setPriceComponents((prev: PriceComponents | null) => {
                       if (!prev) return null;
                       
@@ -438,9 +433,9 @@ export default function BrokerCalculator() {
                         ...prev.mainMultipliers,
                         weather: multiplier,
                         totalMain: prev.mainMultipliers.vehicle * 
-                                 multiplier * 
-                                 prev.mainMultipliers.traffic * 
-                                 prev.mainMultipliers.seasonal
+                                multiplier * 
+                                prev.mainMultipliers.traffic * 
+                                prev.mainMultipliers.seasonal
                       };
                       
                       const newFinalPrice = prev.basePrice * 
@@ -450,38 +445,12 @@ export default function BrokerCalculator() {
                       return {
                         ...prev,
                         mainMultipliers: newMainMultipliers,
-                        finalPrice: newFinalPrice
+                        finalPrice: newFinalPrice + (prev.tollCosts?.total || 0)
                       };
                     });
                   }}
                 />
               )}
-              
-              <MarketInfo
-                route={{
-                  from: pickup,
-                  to: delivery,
-                  distance: distance
-                }}
-                selectedDate={selectedDate}
-                vehicleType={vehicleValue}
-                onMarketUpdate={(marketFactor) => {
-                  console.log('Market update received:', marketFactor);
-                  setPriceComponents((prev: PriceComponents | null) => {
-                    if (!prev) return null;
-
-                    const newFinalPrice = prev.basePrice * 
-                                        prev.mainMultipliers.totalMain * 
-                                        (1 + prev.additionalServices.totalAdditional) * 
-                                        marketFactor;
-
-                    return {
-                      ...prev,
-                      finalPrice: newFinalPrice
-                    };
-                  });
-                }}
-              />
             </div>
           </div>
         )}

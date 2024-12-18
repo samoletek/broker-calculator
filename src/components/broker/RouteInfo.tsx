@@ -9,14 +9,11 @@ import { format } from 'date-fns';
 type GoogleMap = google.maps.Map;
 type DirectionsRenderer = google.maps.DirectionsRenderer;
 
-// Функция расчета стоимости платных дорог
 const calculateTollCost = (distance: number, mainRoute: google.maps.DirectionsRoute) => {
-  // Базовые параметры для расчета
-  const baseRate = 0.12; // $0.12 за милю в среднем
-  const minCost = Math.max(20, distance * 0.05); // Минимум $20 или $0.05 за милю
-  const maxCost = distance * 0.15; // Максимум $0.15 за милю
+  const baseRate = 0.12;
+  const minCost = Math.max(20, distance * 0.05);
+  const maxCost = distance * 0.15;
 
-  // Проверяем штаты на маршруте для корректировки цены
   const states = new Set<string>();
   mainRoute.legs[0].steps.forEach(step => {
     const instructions = step.instructions.toLowerCase();
@@ -29,29 +26,26 @@ const calculateTollCost = (distance: number, mainRoute: google.maps.DirectionsRo
     }
   });
 
-  // Корректировка базовой ставки в зависимости от штатов
   let adjustedRate = baseRate;
   if (states.has('ny') || states.has('nj') || states.has('pa')) {
-    adjustedRate *= 1.3; // +30% для северо-востока
+    adjustedRate *= 1.3;
   }
   if (states.has('ca')) {
-    adjustedRate *= 1.2; // +20% для Калифорнии
+    adjustedRate *= 1.2;
   }
   if (states.has('fl')) {
-    adjustedRate *= 1.1; // +10% для Флориды
+    adjustedRate *= 1.1;
   }
 
   let estimatedCost = distance * adjustedRate;
 
-  // Корректировка для длинных маршрутов
   if (distance > 1000) {
-    estimatedCost *= 0.9; // 10% скидка для длинных маршрутов
+    estimatedCost *= 0.9;
   }
   if (distance > 2000) {
-    estimatedCost *= 0.85; // Дополнительная скидка для очень длинных маршрутов
+    estimatedCost *= 0.85;
   }
 
-  // Убедимся, что стоимость в разумных пределах
   return Math.round(Math.min(maxCost, Math.max(minCost, estimatedCost)) * 100) / 100;
 };
 
@@ -62,7 +56,7 @@ const getRouteSegments = (route: google.maps.DirectionsResult, totalCost: number
     .join(' ');
   let remainingCost = totalCost;
 
-  // Проверяем наличие регионов в маршруте
+  // Northeast Region (NY, NJ)
   if (routeText.includes('new jersey') || 
       routeText.includes('new york') || 
       routeText.includes('i-95') ||
@@ -76,6 +70,7 @@ const getRouteSegments = (route: google.maps.DirectionsResult, totalCost: number
     remainingCost -= northeastCost;
   }
 
+  // Midwest Region (IL, IN, OH)
   if (routeText.includes('i-80') || 
       routeText.includes('i-90') || 
       routeText.includes('pennsylvania') ||
@@ -90,6 +85,7 @@ const getRouteSegments = (route: google.maps.DirectionsResult, totalCost: number
     remainingCost -= midwestCost;
   }
 
+  // West Coast (CA)
   if (routeText.includes('california') || 
       routeText.includes('san francisco') ||
       routeText.includes('los angeles') ||
@@ -102,18 +98,34 @@ const getRouteSegments = (route: google.maps.DirectionsResult, totalCost: number
     remainingCost -= westCost;
   }
 
+  // Florida Region
   if (routeText.includes('florida') || 
       routeText.includes('miami') ||
-      routeText.includes('fl')) {
-    const southCost = Math.round(remainingCost * 0.7 * 100) / 100;
+      routeText.includes('fl') ||
+      routeText.includes('orlando') ||
+      routeText.includes('tampa')) {
+    const floridaCost = Math.round(remainingCost * 0.7 * 100) / 100;
     segments.push({
       location: "Florida Region Tolls",
-      cost: southCost
+      cost: floridaCost
     });
-    remainingCost -= southCost;
+    remainingCost -= floridaCost;
   }
 
-  // Если остались неучтённые платные дороги и сумма значительная
+  // Texas Region
+  if (routeText.includes('texas') || 
+      routeText.includes('tx') ||
+      routeText.includes('houston') ||
+      routeText.includes('dallas')) {
+    const texasCost = Math.round(remainingCost * 0.6 * 100) / 100;
+    segments.push({
+      location: "Texas Region Tolls",
+      cost: texasCost
+    });
+    remainingCost -= texasCost;
+  }
+
+  // Other Regions (если остались неучтённые платные дороги)
   if (remainingCost > 5) {
     segments.push({
       location: "Other Regional Toll Roads",
@@ -140,43 +152,50 @@ export default function RouteInfo({
   const mapInstanceRef = useRef<GoogleMap | null>(null);
   const directionsRendererRef = useRef<DirectionsRenderer | null>(null);
   const [tollInfo, setTollInfo] = useState<TollInfo | null>(null);
-  const tollInfoRequestedRef = useRef(false);
+  const mapInitializedRef = useRef(false);
+  const lastTollRef = useRef<{ cost: number, segments: any[] } | null>(null);
 
-  const getTollInfo = useCallback(async (directionsResult: google.maps.DirectionsResult) => {
-    try {
-      // Рассчитываем общую стоимость платных дорог
-      const totalTollCost = calculateTollCost(distance, directionsResult.routes[0]);
+  // Функция обновления платных дорог
+  const updateTollInfo = useCallback((totalCost: number, segments: any[]) => {
+    // Проверяем, изменились ли значения
+    if (!lastTollRef.current || 
+        lastTollRef.current.cost !== totalCost || 
+        JSON.stringify(lastTollRef.current.segments) !== JSON.stringify(segments)) {
       
-      // Получаем разбивку по сегментам
-      const segments = getRouteSegments(directionsResult, totalTollCost);
-
-      // Сохраняем информацию и уведомляем родительский компонент
-      setTollInfo({ 
-        segments, 
-        totalCost: totalTollCost 
-      });
+      lastTollRef.current = { cost: totalCost, segments };
+      setTollInfo({ segments, totalCost });
       
+      // Добавляем проверку на существование onTollUpdate
       if (onTollUpdate) {
-        onTollUpdate(totalTollCost, segments);
-      }
-
-    } catch (error) {
-      console.error('Error getting toll information:', error);
-      setTollInfo({ segments: [], totalCost: 0 });
-      if (onTollUpdate) {
-        onTollUpdate(0);
+        onTollUpdate(totalCost, segments);
       }
     }
-  }, [distance, onTollUpdate]);
+  }, [onTollUpdate]);
 
+  // Эффект для расчета платных дорог
   useEffect(() => {
-    let isMounted = true;
-    
-    const initMap = async () => {
-      if (!mapRef.current || !mapData) {
-        return;
-      }
+    if (!mapData || !distance) return;
 
+    const calculateTolls = async () => {
+      try {
+        const totalTollCost = calculateTollCost(distance, mapData.routes[0]);
+        const segments = getRouteSegments(mapData, totalTollCost);
+        updateTollInfo(totalTollCost, segments);
+      } catch (error) {
+        console.error('Error calculating tolls:', error);
+        updateTollInfo(0, []);
+      }
+    };
+
+    calculateTolls();
+  }, [mapData, distance, updateTollInfo]);
+
+  // Эффект для инициализации карты
+  useEffect(() => {
+    const mapElement = mapRef.current;
+    if (!mapElement || mapInitializedRef.current || !mapData) return;
+
+    const initMap = async () => {
       try {
         if (!window.google) {
           const loader = new Loader({
@@ -187,9 +206,7 @@ export default function RouteInfo({
           await loader.load();
         }
 
-        if (!isMounted) return;
-
-        const map = new google.maps.Map(mapRef.current, {
+        const map = new google.maps.Map(mapElement, {
           zoom: 4,
           center: { lat: 39.8283, lng: -98.5795 },
           styles: [
@@ -201,30 +218,20 @@ export default function RouteInfo({
           ]
         });
 
-        if (map) {
-          const directionsRenderer = new google.maps.DirectionsRenderer({
-            map,
-            suppressMarkers: false,
-            polylineOptions: {
-              strokeColor: '#4F46E5',
-              strokeWeight: 5
-            }
-          });
-
-          if (isMounted) {
-            mapInstanceRef.current = map;
-            directionsRendererRef.current = directionsRenderer;
-
-            if (mapData) {
-              directionsRenderer.setDirections(mapData);
-              
-              if (!tollInfoRequestedRef.current) {
-                tollInfoRequestedRef.current = true;
-                await getTollInfo(mapData);
-              }
-            }
+        const directionsRenderer = new google.maps.DirectionsRenderer({
+          map,
+          suppressMarkers: false,
+          polylineOptions: {
+            strokeColor: '#4F46E5',
+            strokeWeight: 5
           }
-        }
+        });
+
+        mapInstanceRef.current = map;
+        directionsRendererRef.current = directionsRenderer;
+        mapInitializedRef.current = true;
+
+        directionsRenderer.setDirections(mapData);
       } catch (error) {
         console.error('Error initializing map:', error);
       }
@@ -233,15 +240,20 @@ export default function RouteInfo({
     initMap();
 
     return () => {
-      isMounted = false;
       if (directionsRendererRef.current) {
         directionsRendererRef.current.setMap(null);
       }
       mapInstanceRef.current = null;
       directionsRendererRef.current = null;
-      tollInfoRequestedRef.current = false;
+      mapInitializedRef.current = false;
     };
-  }, [mapData, distance, getTollInfo]);
+  }, [mapData]);
+
+  // Эффект для обновления маршрута
+  useEffect(() => {
+    if (!mapData || !directionsRendererRef.current) return;
+    directionsRendererRef.current.setDirections(mapData);
+  }, [mapData]);
 
   const getTrafficStatusColor = (status: string) => {
     switch (status) {
@@ -322,7 +334,8 @@ export default function RouteInfo({
                         {segment.location === "Northeast Region Tolls" && "(I-95, NJ/NY Turnpikes)"}
                         {segment.location === "Midwest Region Tolls" && "(I-80/90, Ohio/Indiana/Illinois Tolls)"}
                         {segment.location === "West Coast Tolls" && "(CA Bridges and Highways)"}
-                        {segment.location === "Florida Region Tolls" && "(FL Turnpike and Tolls)"}
+                        {segment.location === "Florida Region Tolls" && "(FL Turnpike and Express Lanes)"}
+                        {segment.location === "Texas Region Tolls" && "(TX Tollways and Express Lanes)"}
                         {segment.location === "Other Regional Toll Roads" && "(Various Local Tolls)"}
                       </span>
                     </div>

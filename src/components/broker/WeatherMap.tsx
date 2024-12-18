@@ -21,22 +21,7 @@ function calculateRoutePoints(start: {lat: number; lng: number}, end: {lat: numb
   return points;
 }
 
-interface WeatherAPIResponse {
-  current: {
-    condition: {
-      text: string;
-    };
-    temp_f: number;
-  };
-}
-
-interface RoutePoint {
-  lat: number;
-  lng: number;
-  location: string;
-}
-
-function processWeatherData(data: WeatherAPIResponse, point: RoutePoint): WeatherPoint {
+function processWeatherData(data: any, point: { lat: number; lng: number; location: string }): WeatherPoint {
   const condition = data.current.condition.text.toLowerCase();
   let multiplier = 1.0;
 
@@ -59,18 +44,17 @@ function processWeatherData(data: WeatherAPIResponse, point: RoutePoint): Weathe
 }
 
 function getWeatherIcon(condition: string) {
-  switch(condition.toLowerCase()) {
-    case 'clear':
-    case 'sunny':
-      return <Sun className="w-5 h-5 text-yellow-500" />;
-    case 'rain':
-    case 'drizzle':
-      return <CloudRain className="w-5 h-5 text-blue-500" />;
-    case 'snow':
-      return <CloudSnow className="w-5 h-5 text-blue-300" />;
-    default:
-      return <Cloud className="w-5 h-5 text-gray-500" />;
+  const conditionLower = condition.toLowerCase();
+  if (conditionLower.includes('clear') || conditionLower.includes('sunny')) {
+    return <Sun className="w-5 h-5 text-yellow-500" />;
   }
+  if (conditionLower.includes('rain') || conditionLower.includes('drizzle')) {
+    return <CloudRain className="w-5 h-5 text-blue-500" />;
+  }
+  if (conditionLower.includes('snow')) {
+    return <CloudSnow className="w-5 h-5 text-blue-300" />;
+  }
+  return <Cloud className="w-5 h-5 text-gray-500" />;
 }
 
 export default function WeatherMap({ routePoints, onWeatherUpdate, selectedDate }: WeatherMapProps) {
@@ -79,12 +63,34 @@ export default function WeatherMap({ routePoints, onWeatherUpdate, selectedDate 
   const [error, setError] = useState<string | null>(null);
   const weatherCache = useRef<{[key: string]: WeatherPoint[]}>({});
   const requestInProgress = useRef<boolean>(false);
-  const mounted = useRef<boolean>(true);
+  const lastWeatherRef = useRef<{ multiplier: number } | null>(null);
 
-  const memoizedWeatherData = useMemo(() => weatherData, [weatherData]);
+  // Создаем ключ кэша
+  const getCacheKey = useCallback(() => {
+    return `${routePoints.pickup.lat},${routePoints.pickup.lng}-${routePoints.delivery.lat},${routePoints.delivery.lng}-${selectedDate?.toISOString()}`;
+  }, [routePoints.pickup, routePoints.delivery, selectedDate]);
+
+  // Функция обновления состояния погоды
+  const updateWeatherState = useCallback((weatherPoints: WeatherPoint[]) => {
+    setWeatherData(weatherPoints);
+    const worstMultiplier = Math.max(...weatherPoints.map(r => r.multiplier));
+    
+    // Проверяем изменился ли множитель
+    if (!lastWeatherRef.current || lastWeatherRef.current.multiplier !== worstMultiplier) {
+      lastWeatherRef.current = { multiplier: worstMultiplier };
+      onWeatherUpdate(worstMultiplier);
+    }
+  }, [onWeatherUpdate]);
 
   const fetchWeatherData = useCallback(async () => {
+    const cacheKey = getCacheKey();
+    if (requestInProgress.current) return;
+    
     try {
+      requestInProgress.current = true;
+      setIsLoading(true);
+      setError(null);
+
       const intermediatePoints = calculateRoutePoints(routePoints.pickup, routePoints.delivery);
       const points = [
         { ...routePoints.pickup, location: 'Pickup' },
@@ -92,13 +98,9 @@ export default function WeatherMap({ routePoints, onWeatherUpdate, selectedDate 
         { ...routePoints.delivery, location: 'Delivery' }
       ];
 
-      requestInProgress.current = true;
-      setIsLoading(true);
-      setError(null);
-
       const weatherPromises = points.map(async point => {
         try {
-          const response = await axios.get<WeatherAPIResponse>(
+          const response = await axios.get(
             'https://api.weatherapi.com/v1/forecast.json',
             {
               params: {
@@ -122,54 +124,28 @@ export default function WeatherMap({ routePoints, onWeatherUpdate, selectedDate 
       });
 
       const results = await Promise.all(weatherPromises);
-      
-      if (mounted.current) {
-        setWeatherData(results);
-        const worstMultiplier = Math.max(...results.map(r => r.multiplier));
-        onWeatherUpdate(worstMultiplier);
-        
-        const currentFetchKey = `${routePoints.pickup.lat},${routePoints.pickup.lng}-${routePoints.delivery.lat},${routePoints.delivery.lng}-${selectedDate?.toISOString()}`;
-        weatherCache.current[currentFetchKey] = results;
-      }
+      weatherCache.current[cacheKey] = results;
+      updateWeatherState(results);
     } catch (error) {
       console.error('Error fetching weather data:', error);
-      if (mounted.current) {
-        setError('Failed to fetch weather data. Please try again later.');
-      }
+      setError('Failed to fetch weather data. Please try again later.');
     } finally {
-      if (mounted.current) {
-        setIsLoading(false);
-        requestInProgress.current = false;
-      }
+      setIsLoading(false);
+      requestInProgress.current = false;
     }
-  }, [routePoints, selectedDate, onWeatherUpdate]);
+  }, [routePoints, selectedDate, getCacheKey, updateWeatherState]);
 
+  // Эффект для получения данных о погоде
   useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-      weatherCache.current = {};
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!routePoints.pickup.lat || !routePoints.delivery.lat) {
-      return;
-    }
-  
-    const currentFetchKey = `${routePoints.pickup.lat},${routePoints.pickup.lng}-${routePoints.delivery.lat},${routePoints.delivery.lng}-${selectedDate?.toISOString()}`;
-  
-    if (weatherCache.current[currentFetchKey]) {
-      setWeatherData(weatherCache.current[currentFetchKey]);
-      const worstMultiplier = Math.max(...weatherCache.current[currentFetchKey].map(r => r.multiplier));
-      onWeatherUpdate(worstMultiplier);
-      return;
-    }
-  
-    if (!requestInProgress.current) {
+    const cacheKey = getCacheKey();
+    if (weatherCache.current[cacheKey]) {
+      updateWeatherState(weatherCache.current[cacheKey]);
+    } else {
       fetchWeatherData();
     }
-  }, [routePoints.pickup.lat, routePoints.pickup.lng, routePoints.delivery.lat, routePoints.delivery.lng, selectedDate, fetchWeatherData, onWeatherUpdate]);
+  }, [getCacheKey, fetchWeatherData]);
+
+  const memoizedWeatherData = useMemo(() => weatherData, [weatherData]);
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
