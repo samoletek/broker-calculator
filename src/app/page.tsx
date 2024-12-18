@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Truck, Loader2 } from 'lucide-react';
 import { addDays } from 'date-fns';
+import { calculateEstimatedTransitTime } from '@/utils/transportUtils';
 import { DatePickerComponent } from '@/app/components/DatePickerComponent';
 import { PriceBreakdown } from '@/app/components/PriceBreakdown';
 import RouteInfo from '@/app/components/RouteInfo';
@@ -172,7 +173,7 @@ export default function BrokerCalculator() {
       setDistance(Math.round(distanceInMiles));
       setRouteInfo(prev => ({
         ...prev,
-        estimatedTime: duration
+        estimatedTime: calculateEstimatedTransitTime(distanceInMiles)
       }));
 
       // Расчет базовой цены

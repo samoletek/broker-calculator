@@ -216,25 +216,17 @@ export const POPULAR_ROUTES: PopularRoute[] = [
 export const getBaseRate = (distance: number, transportType: keyof typeof TRANSPORT_TYPES) => {
   const type = TRANSPORT_TYPES[transportType];
   
-  // За милю для разных дистанций
-  let ratePerMile = type.baseRatePerMile.max;
+  const ratePerMile = transportType === 'openTransport' 
+    ? type.baseRatePerMile.max * 1.2  // Для Open Transport увеличим на 20%
+    : type.baseRatePerMile.max;        // Для Enclosed оставим как есть
  
-  // Корректируем ставку за милю в зависимости от расстояния
-  if (distance > 500) {
-    const distanceFactor = Math.min((distance - 500) / 1500, 1); // Максимальное снижение при 2000 милях
-    const rateDiff = type.baseRatePerMile.max - type.baseRatePerMile.min;
-    ratePerMile = type.baseRatePerMile.max - (rateDiff * distanceFactor);
-  }
- 
-  // Базовая цена - расстояние * ставка за милю
   const basePrice = distance * ratePerMile;
  
-  // Диапазон +/- 10% от базовой цены
   return {
     min: Math.round(basePrice * 0.9),
     max: Math.round(basePrice * 1.1)
   };
- };
+};
 
 // Функция для определения сезонного множителя
 export const getSeasonalMultiplier = (date: Date): number => {
@@ -288,6 +280,6 @@ export const getRouteFactor = (pickup: string, delivery: string): number => {
 
 // Функция проверки максимального расстояния
 export const isDistanceValid = (distance: number): boolean => {
-  const MAX_DISTANCE = 3000; // максимальное расстояние в милях
+  const MAX_DISTANCE = 3500; // максимальное расстояние в милях
   return distance <= MAX_DISTANCE;
 };
