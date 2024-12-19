@@ -24,10 +24,7 @@ interface MarketData {
 }
 
 function getMockMarketData(distance: number, vehicleType: string, selectedDate: Date | undefined): MarketData {
-  const basePricePerMile = 
-    distance < 500 ? 1.2 :
-    distance < 1000 ? 1.1 :
-    1.0;
+  const basePricePerMile = 1.0; // тут был дисконт по миляжу
 
   const basePrice = distance * basePricePerMile;
   

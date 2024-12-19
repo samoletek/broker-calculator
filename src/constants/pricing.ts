@@ -9,9 +9,6 @@ interface RateRange {
 interface TransportTypeData {
   name: string;
   baseRatePerMile: RateRange;
-  shortDistance: RateRange;
-  mediumDistance: RateRange;
-  longDistance: RateRange;
 }
 
 interface SeasonData {
@@ -37,26 +34,20 @@ interface AdditionalService {
   tooltip?: string[];
 }
 
+interface VehicleTypeData {
+  name: string;
+  description: string;
+  sizeMultiplier: number;
+}
+
 // Transport Types Configuration
 export const TRANSPORT_TYPES: Record<string, TransportTypeData> = {
   openTransport: {
     name: 'Open Transport',
     baseRatePerMile: {
-      min: 0.40,
-      max: 0.85
+      min: 0.62,
+      max: 0.93
     },
-    shortDistance: {  // ~500 miles
-      min: 300,
-      max: 600
-    },
-    mediumDistance: { // <1000 miles
-      min: 601,
-      max: 900
-    },
-    longDistance: {   // ~1500 miles
-      min: 901,
-      max: 1500
-    }
   },
   enclosedTransport: {
     name: 'Enclosed Transport',
@@ -64,20 +55,103 @@ export const TRANSPORT_TYPES: Record<string, TransportTypeData> = {
       min: 0.88,
       max: 1.33
     },
-    shortDistance: {  // ~500 miles
-      min: 900,
-      max: 1400
-    },
-    mediumDistance: { // ~1001 miles
-      min: 1401,
-      max: 1700
-    },
-    longDistance: {   // ~1700 miles
-      min: 1701,
-      max: 2200
-    }
   }
 };
+
+// Добавить в pricing.ts после VEHICLE_VALUE_TYPES:
+
+export const VEHICLE_TYPES = {
+  SEDAN: {
+    name: 'Sedan',
+    description: 'Standard 4-door passenger car',
+    sizeMultiplier: 1.0
+  },
+  COUPE: {
+    name: 'Coupe',
+    description: '2-door passenger car',
+    sizeMultiplier: 0.95
+  },
+  HATCHBACK: {
+    name: 'Hatchback',
+    description: 'Compact car with rear door',
+    sizeMultiplier: 0.95
+  },
+  CONVERTIBLE: {
+    name: 'Convertible',
+    description: 'Car with retractable roof',
+    sizeMultiplier: 1.1
+  },
+  WAGON: {
+    name: 'Station Wagon',
+    description: 'Extended roof passenger car',
+    sizeMultiplier: 1.15
+  },
+  SPORTS_CAR: {
+    name: 'Sports Car',
+    description: 'High-performance vehicle',
+    sizeMultiplier: 1.2
+  },
+  LUXURY: {
+    name: 'Luxury Vehicle',
+    description: 'Premium class vehicle',
+    sizeMultiplier: 1.3
+  },
+  COMPACT_SUV: {
+    name: 'Compact SUV',
+    description: 'Small sport utility vehicle',
+    sizeMultiplier: 1.15
+  },
+  MIDSIZE_SUV: {
+    name: 'Mid-size SUV',
+    description: 'Medium sport utility vehicle',
+    sizeMultiplier: 1.25
+  },
+  FULLSIZE_SUV: {
+    name: 'Full-size SUV',
+    description: 'Large sport utility vehicle',
+    sizeMultiplier: 1.35
+  },
+  MINIVAN: {
+    name: 'Minivan',
+    description: 'Passenger van',
+    sizeMultiplier: 1.3
+  },
+  CARGO_VAN: {
+    name: 'Cargo Van',
+    description: 'Commercial van',
+    sizeMultiplier: 1.35
+  },
+  EV: {
+    name: 'Electric Vehicle (EV)',
+    description: 'Battery-powered vehicle',
+    sizeMultiplier: 1.1
+  },
+  HYBRID: {
+    name: 'Hybrid Vehicle',
+    description: 'Combined power source vehicle',
+    sizeMultiplier: 1.1
+  },
+  MOTORCYCLE: {
+    name: 'Motorcycle',
+    description: 'Two-wheeled vehicle',
+    sizeMultiplier: 0.7
+  },
+  ATV_UTV: {
+    name: 'ATV/UTV (Quadbike etc)',
+    description: 'All-terrain vehicle',
+    sizeMultiplier: 0.8
+  },
+  CLASSIC: {
+    name: 'Classic/Antique Vehicle',
+    description: 'Vintage or collector vehicle',
+    sizeMultiplier: 1.4
+  },
+  OVERSIZED: {
+    name: 'Oversized Vehicle (Hummer H1 etc)',
+    description: 'Extra large vehicle',
+    sizeMultiplier: 1.5
+  }
+} as const;
 
 export const VEHICLE_VALUE_TYPES: Record<string, VehicleValueType> = {
   under100k: {
@@ -217,8 +291,8 @@ export const getBaseRate = (distance: number, transportType: keyof typeof TRANSP
   const type = TRANSPORT_TYPES[transportType];
   
   const ratePerMile = transportType === 'openTransport' 
-    ? type.baseRatePerMile.max * 1.2  // Для Open Transport увеличим на 20%
-    : type.baseRatePerMile.max;        // Для Enclosed оставим как есть
+    ? type.baseRatePerMile.max * 1.2  // Для Open Transport увеличен на 20%
+    : type.baseRatePerMile.max;        // Для Enclosed как есть
  
   const basePrice = distance * ratePerMile;
  

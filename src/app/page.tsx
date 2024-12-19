@@ -12,6 +12,7 @@ import WeatherMap from '@/app/components/WeatherMap';
 import {
   TRANSPORT_TYPES,
   VEHICLE_VALUE_TYPES,
+  VEHICLE_TYPES,
   getBaseRate,
   getSeasonalMultiplier
 } from '@/constants/pricing';
@@ -21,6 +22,7 @@ interface PriceComponents {
   basePrice: number;
   mainMultipliers: {
     vehicle: number;
+    vehicleSize: number; // новый множитель
     weather: number;
     traffic: number;
     seasonal: number;
@@ -64,6 +66,7 @@ export default function BrokerCalculator() {
   const [premiumEnhancements, setPremiumEnhancements] = useState(false);
   const [specialLoad, setSpecialLoad] = useState(false);
   const [inoperable, setInoperable] = useState(false);
+  const [vehicleType, setVehicleType] = useState<keyof typeof VEHICLE_TYPES | ''>('');
 
   // Состояния для маршрута
   const [mapData, setMapData] = useState<google.maps.DirectionsResult | null>(null);
@@ -142,6 +145,9 @@ export default function BrokerCalculator() {
     if (!transportType) {
       errors.push('transport type');
     }
+    if (!vehicleType) {
+      errors.push('vehicle type');
+    }
     if (!vehicleValue) {
       errors.push('vehicle value');
     }
@@ -168,7 +174,6 @@ export default function BrokerCalculator() {
       
       setMapData(response as google.maps.DirectionsResult);
       const distanceInMiles = (response.routes[0].legs[0].distance?.value || 0) / 1609.34;
-      const duration = response.routes[0].legs[0].duration?.text || '';
 
       setDistance(Math.round(distanceInMiles));
       setRouteInfo(prev => ({
@@ -180,25 +185,27 @@ export default function BrokerCalculator() {
       const baseRates = getBaseRate(distanceInMiles, transportType);
       const basePrice = (baseRates.min + baseRates.max) / 2;
 
-      // Получение множителей
-      const vehicleMultiplier = VEHICLE_VALUE_TYPES[vehicleValue].multiplier;
-      const seasonalMultiplier = getSeasonalMultiplier(selectedDate);
-
       // Расчет множителя дополнительных услуг
       const additionalServicesMultiplier = 1.0 + 
-        (premiumEnhancements ? 0.3 : 0) +
-        (specialLoad ? 0.3 : 0) +
-        (inoperable ? 0.3 : 0);
+      (premiumEnhancements ? 0.3 : 0) +
+      (specialLoad ? 0.3 : 0) +
+      (inoperable ? 0.3 : 0);
+
+      // Получение множителей
+      const vehicleMultiplier = VEHICLE_VALUE_TYPES[vehicleValue].multiplier;
+      const vehicleSizeMultiplier = vehicleType ? VEHICLE_TYPES[vehicleType].sizeMultiplier : 1.0;
+      const seasonalMultiplier = getSeasonalMultiplier(selectedDate);
 
       setPriceComponents({
         selectedDate,
         basePrice,
         mainMultipliers: {
           vehicle: vehicleMultiplier,
+          vehicleSize: vehicleSizeMultiplier,
           weather: 1.0,  // Будет обновлено из WeatherMap
           traffic: 1.0,  // Будет обновлено из RouteInfo
           seasonal: seasonalMultiplier,
-          totalMain: vehicleMultiplier * seasonalMultiplier  // Начальное значение
+          totalMain: vehicleMultiplier * vehicleSizeMultiplier * seasonalMultiplier
         },
         additionalServices: {
           premium: premiumEnhancements ? 0.3 : 0,
@@ -206,7 +213,7 @@ export default function BrokerCalculator() {
           inoperable: inoperable ? 0.3 : 0,
           totalAdditional: additionalServicesMultiplier - 1.0
         },
-        finalPrice: basePrice * vehicleMultiplier * seasonalMultiplier * additionalServicesMultiplier
+        finalPrice: basePrice * vehicleMultiplier * vehicleSizeMultiplier * seasonalMultiplier * additionalServicesMultiplier
       });
 
     } catch (err) {
@@ -230,7 +237,7 @@ export default function BrokerCalculator() {
           {/* Main Form */}
           <div className="space-y-6">
             {/* Top Grid - Date, Transport Type, Vehicle Value */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-900">Shipping Date</label>
                 <DatePickerComponent 
@@ -256,6 +263,22 @@ export default function BrokerCalculator() {
                   <option value="" disabled>Select transport type...</option>
                   {Object.entries(TRANSPORT_TYPES).map(([type, data]) => (
                     <option key={type} value={type}>{data.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-900">Vehicle Type</label>
+                <select
+                  value={vehicleType}
+                  onChange={(e) => setVehicleType(e.target.value as keyof typeof VEHICLE_TYPES)}
+                  className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 ${!vehicleType && error ? 'border-red-300 ring-red-300' : ''}`}
+                >
+                  <option value="" disabled>Select vehicle type...</option>
+                  {Object.entries(VEHICLE_TYPES).map(([type, data]) => (
+                    <option key={type} value={type} title={data.description}>
+                      {data.name}
+                    </option>
                   ))}
                 </select>
               </div>
