@@ -22,7 +22,6 @@ interface PriceComponents {
   basePrice: number;
   mainMultipliers: {
     vehicle: number;
-    vehicleSize: number; // новый множитель
     weather: number;
     traffic: number;
     seasonal: number;
@@ -34,6 +33,8 @@ interface PriceComponents {
     inoperable: number;
     totalAdditional: number;
   };
+  basePriceBreakdown: BasePriceBreakdown;
+
   tollCosts?: {
     segments: Array<{
       location: string;
@@ -42,6 +43,12 @@ interface PriceComponents {
     total: number;
   };
   finalPrice: number;
+}
+
+interface BasePriceBreakdown {
+  ratePerMile: number;    // базовая ставка за милю
+  distance: number;       // расстояние
+  total: number;         // итоговая базовая цена
 }
 
 const mapLoader = new Loader({
@@ -182,8 +189,12 @@ export default function BrokerCalculator() {
       }));
 
       // Расчет базовой цены
-      const baseRates = getBaseRate(distanceInMiles, transportType);
-      const basePrice = (baseRates.min + baseRates.max) / 2;
+      const basePrice = getBaseRate(distanceInMiles, transportType);
+      const basePriceBreakdown: BasePriceBreakdown = {
+        ratePerMile: TRANSPORT_TYPES[transportType].baseRatePerMile.max,
+        distance: distanceInMiles,
+        total: basePrice
+      };
 
       // Расчет множителя дополнительных услуг
       const additionalServicesMultiplier = 1.0 + 
@@ -193,19 +204,18 @@ export default function BrokerCalculator() {
 
       // Получение множителей
       const vehicleMultiplier = VEHICLE_VALUE_TYPES[vehicleValue].multiplier;
-      const vehicleSizeMultiplier = vehicleType ? VEHICLE_TYPES[vehicleType].sizeMultiplier : 1.0;
       const seasonalMultiplier = getSeasonalMultiplier(selectedDate);
 
       setPriceComponents({
         selectedDate,
         basePrice,
+        basePriceBreakdown,
         mainMultipliers: {
           vehicle: vehicleMultiplier,
-          vehicleSize: vehicleSizeMultiplier,
           weather: 1.0,  // Будет обновлено из WeatherMap
           traffic: 1.0,  // Будет обновлено из RouteInfo
           seasonal: seasonalMultiplier,
-          totalMain: vehicleMultiplier * vehicleSizeMultiplier * seasonalMultiplier
+          totalMain: vehicleMultiplier * seasonalMultiplier
         },
         additionalServices: {
           premium: premiumEnhancements ? 0.3 : 0,
@@ -213,7 +223,7 @@ export default function BrokerCalculator() {
           inoperable: inoperable ? 0.3 : 0,
           totalAdditional: additionalServicesMultiplier - 1.0
         },
-        finalPrice: basePrice * vehicleMultiplier * vehicleSizeMultiplier * seasonalMultiplier * additionalServicesMultiplier
+        finalPrice: basePrice * vehicleMultiplier * seasonalMultiplier * additionalServicesMultiplier
       });
 
     } catch (err) {
@@ -419,18 +429,20 @@ export default function BrokerCalculator() {
                 }}
               />
                 
-              <PriceBreakdown
-                distance={distance}
-                basePrice={priceComponents.basePrice}
-                mainMultipliers={priceComponents.mainMultipliers}
-                additionalServices={priceComponents.additionalServices}
-                finalPrice={priceComponents.finalPrice}
-                routeInfo={{
-                  isPopularRoute: routeInfo.isPopularRoute,
-                  isRemoteArea: routeInfo.isRemoteArea
-                }}
-                selectedDate={selectedDate}
-              />
+                <PriceBreakdown
+                  distance={distance}
+                  basePrice={priceComponents.basePrice}
+                  basePriceBreakdown={priceComponents.basePriceBreakdown}  // добавляем это
+                  mainMultipliers={priceComponents.mainMultipliers}
+                  additionalServices={priceComponents.additionalServices}
+                  tollCosts={priceComponents.tollCosts}
+                  finalPrice={priceComponents.finalPrice}
+                  routeInfo={{
+                    isPopularRoute: routeInfo.isPopularRoute,
+                    isRemoteArea: routeInfo.isRemoteArea
+                  }}
+                  selectedDate={selectedDate}
+                />
             </div>
 
             {/* Right Column - Weather Map Only */}
