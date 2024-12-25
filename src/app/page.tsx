@@ -4,9 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Truck, Loader2 } from 'lucide-react';
 import { checkAutoShows, getAutoShowMultiplier } from '@/utils/autoShowsUtils';
-import { calculateEstimatedTransitTime } from '@/utils/transportUtils';
+import { calculateEstimatedTransitTime, getRoutePoints } from '@/utils/transportUtils';
 import { DatePickerComponent } from '@/app/components/DatePickerComponent';
 import { PriceBreakdown } from '@/app/components/PriceBreakdown';
+import { getFuelPriceMultiplier } from '@/utils/fuelUtils';
 import RouteInfo from '@/app/components/RouteInfo';
 import WeatherMap from '@/app/components/WeatherMap';
 import { isUSAddress } from '@/utils/addressUtils';
@@ -29,6 +30,7 @@ interface PriceComponents {
     traffic: number;
     seasonal: number;
     autoShow: number;
+    fuel: number; // добавляем это
     totalMain: number;
   };
   additionalServices: {
@@ -178,25 +180,22 @@ export default function BrokerCalculator() {
       setError('Please enter valid US addresses for pickup and delivery');
       return;
     }
-
+  
     setLoading(true);
     setError(null);
   
     try {
-    if (!googleRef.current) {
-      googleRef.current = await mapLoader.load();
-    }
-
-    const service = new googleRef.current.maps.DirectionsService();
-    const response = await service.route({
-      origin: pickup,
-      destination: delivery,
-      travelMode: google.maps.TravelMode.DRIVING
-    }) as google.maps.DirectionsResult;
+      const service = new google.maps.DirectionsService();
       
+      const response = await service.route({
+        origin: pickup,
+        destination: delivery,
+        travelMode: google.maps.TravelMode.DRIVING
+      }) as google.maps.DirectionsResult;
+  
       setMapData(response);
       const distanceInMiles = (response.routes[0].legs[0].distance?.value || 0) / 1609.34;
-  
+      
       setDistance(Math.round(distanceInMiles));
       setRouteInfo(prev => ({
         ...prev,
@@ -204,32 +203,29 @@ export default function BrokerCalculator() {
       }));
   
       // Проверяем наличие автовыставок
-      const pickupAutoShows = await checkAutoShows(
-        {
-          lat: response.routes[0].legs[0].start_location.lat(),
-          lng: response.routes[0].legs[0].start_location.lng()
-        },
-        selectedDate,
-        googleRef.current
-      );
+      const pickupAutoShows = await checkAutoShows({
+        lat: response.routes[0].legs[0].start_location.lat(),
+        lng: response.routes[0].legs[0].start_location.lng()
+      }, selectedDate, window.google);
   
-      const deliveryAutoShows = await checkAutoShows(
-        {
-          lat: response.routes[0].legs[0].end_location.lat(),
-          lng: response.routes[0].legs[0].end_location.lng()
-        },
-        selectedDate,
-        googleRef.current
-      );
+      const deliveryAutoShows = await checkAutoShows({
+        lat: response.routes[0].legs[0].end_location.lat(),
+        lng: response.routes[0].legs[0].end_location.lng()
+      }, selectedDate, window.google);
   
       const autoShowMultiplier = Math.max(
         getAutoShowMultiplier(pickupAutoShows, selectedDate),
         getAutoShowMultiplier(deliveryAutoShows, selectedDate)
       );
   
+      // Проверяем цены на топливо
+      const routePoints = getRoutePoints(response);
+      const fuelPriceMultiplier = await getFuelPriceMultiplier(routePoints, window.google);
+  
       // Расчет базовой цены
       const basePrice = getBaseRate(distanceInMiles, transportType);
-      const basePriceBreakdown: BasePriceBreakdown = {
+      
+      const basePriceBreakdown = {
         ratePerMile: TRANSPORT_TYPES[transportType].baseRatePerMile.max,
         distance: distanceInMiles,
         total: basePrice
@@ -251,11 +247,15 @@ export default function BrokerCalculator() {
         basePriceBreakdown,
         mainMultipliers: {
           vehicle: vehicleMultiplier,
-          weather: 1.0,  // Будет обновлено из WeatherMap
-          traffic: 1.0,  // Будет обновлено из RouteInfo
+          weather: 1.0,
+          traffic: 1.0,
           seasonal: seasonalMultiplier,
           autoShow: autoShowMultiplier,
-          totalMain: vehicleMultiplier * seasonalMultiplier * autoShowMultiplier
+          fuel: fuelPriceMultiplier,
+          totalMain: vehicleMultiplier * 
+                    seasonalMultiplier * 
+                    autoShowMultiplier * 
+                    fuelPriceMultiplier
         },
         additionalServices: {
           premium: premiumEnhancements ? 0.3 : 0,
@@ -263,7 +263,12 @@ export default function BrokerCalculator() {
           inoperable: inoperable ? 0.3 : 0,
           totalAdditional: additionalServicesMultiplier - 1.0
         },
-        finalPrice: basePrice * vehicleMultiplier * seasonalMultiplier * autoShowMultiplier * additionalServicesMultiplier
+        finalPrice: basePrice * 
+                   vehicleMultiplier * 
+                   seasonalMultiplier * 
+                   autoShowMultiplier * 
+                   fuelPriceMultiplier * 
+                   additionalServicesMultiplier
       });
   
     } catch (err) {
@@ -531,7 +536,8 @@ export default function BrokerCalculator() {
                                 multiplier * 
                                 prev.mainMultipliers.traffic * 
                                 prev.mainMultipliers.seasonal *
-                                prev.mainMultipliers.autoShow
+                                prev.mainMultipliers.autoShow *
+                                prev.mainMultipliers.fuel
                       };
                       
                       const newFinalPrice = prev.basePrice * 

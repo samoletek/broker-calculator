@@ -44,6 +44,7 @@ export interface PriceBreakdownProps {
     weather: number;
     traffic: number;
     seasonal: number;
+    fuel: number;
     totalMain: number;
   };
   additionalServices: {
@@ -65,6 +66,11 @@ export interface PriceBreakdownProps {
     isRemoteArea: boolean;
   };
   selectedDate?: Date;
+}
+
+export interface FuelPriceData {
+  maxPrice: number | null;
+  multiplier: number;
 }
 
 export interface WeatherMapProps {

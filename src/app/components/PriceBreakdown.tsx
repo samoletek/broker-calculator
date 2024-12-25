@@ -12,6 +12,7 @@ interface PriceBreakdownProps {
     traffic: number;
     seasonal: number;
     autoShow: number;
+    fuel: number;
     totalMain: number;
   };
   additionalServices: {
@@ -51,11 +52,25 @@ export const PriceBreakdown = ({
   finalPrice,
 }: PriceBreakdownProps) => {
   const formatPrice = (price: number) => `$${price.toFixed(2)}`;
-  const formatPriceWithPercent = (amount: number, total: number) => 
-    `${formatPrice(amount)} (${((amount/total) * 100).toFixed(1)}%)`;
+  
   const formatMultiplierImpact = (multiplier: number, baseAmount: number) => {
+    const percentage = (multiplier - 1) * 100;
     const impact = baseAmount * (multiplier - 1);
-    return `${formatPrice(impact)} (${((multiplier - 1) * 100).toFixed(1)}%)`;
+    return `${formatPrice(impact)} (${percentage.toFixed(1)}%)`;
+  };
+
+  const calculateTotalFactorsImpact = (basePrice: number, multipliers: typeof mainMultipliers) => {
+    // Считаем общий процент влияния всех факторов
+    const totalPercentage = 
+      (multipliers.vehicle - 1) + 
+      (multipliers.weather - 1) + 
+      (multipliers.traffic - 1) + 
+      (multipliers.seasonal - 1) + 
+      (multipliers.fuel - 1) + 
+      (multipliers.autoShow - 1);
+
+    // Применяем общий процент к базовой цене
+    return basePrice * totalPercentage;
   };
 
   return (
@@ -117,6 +132,12 @@ export const PriceBreakdown = ({
               </span>
             </div>
             <div className="flex justify-between text-gray-800">
+              <span>Diesel Price Impact</span>
+              <span className="font-medium text-blue-600">
+                {formatMultiplierImpact(mainMultipliers.fuel, basePrice)}
+              </span>
+            </div>
+            <div className="flex justify-between text-gray-800">
               <span>Auto Show Impact</span>
               <span className="font-medium text-blue-600">
                 {formatMultiplierImpact(mainMultipliers.autoShow, basePrice)}
@@ -125,7 +146,7 @@ export const PriceBreakdown = ({
             <div className="flex justify-between text-gray-800 border-t pt-2">
               <span>Total Factors Impact</span>
               <span className="font-bold text-blue-700">
-                {formatPrice(basePrice * (mainMultipliers.totalMain - 1))}
+                {formatPrice(calculateTotalFactorsImpact(basePrice, mainMultipliers))}
               </span>
             </div>
           </div>
