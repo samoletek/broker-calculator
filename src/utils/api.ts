@@ -11,11 +11,6 @@ interface WeatherTestResult extends ApiTestResult<WeatherTestResponse> {
   temperature?: number;
 }
 
-interface TrafficTestResult extends ApiTestResult<TrafficResponse> {
-  currentSpeed?: number;
-  freeFlowSpeed?: number;
-}
-
 interface GoogleMapsTestResult extends ApiTestResult<GoogleGeocodingResponse> {
   location?: {
     lat: number;
@@ -37,27 +32,6 @@ export const testWeatherApi = async (lat: number, lng: number): Promise<WeatherT
     };
   } catch (error) {
     console.error('Weather API Error:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
-  }
-};
-
-export const testTrafficApi = async (lat: number, lng: number): Promise<TrafficTestResult> => {
-  try {
-    const response = await axios.get<TrafficResponse>(
-      `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?key=${process.env.NEXT_PUBLIC_TOMTOM_API_KEY}&point=${lat},${lng}`
-    );
-    console.log('Traffic API Response:', response.data);
-    return {
-      success: true,
-      data: response.data,
-      currentSpeed: response.data.flowSegmentData.currentSpeed,
-      freeFlowSpeed: response.data.flowSegmentData.freeFlowSpeed
-    };
-  } catch (error) {
-    console.error('Traffic API Error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

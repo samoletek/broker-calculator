@@ -39,6 +39,26 @@ interface AdditionalService {
   tooltip?: string[];
 }
 
+// Убираем дублирующий интерфейс AutoShowData и переименовываем AutoShowInfo в AutoShowData
+export interface AutoShowData {
+  pickup: AutoShowEvent[];
+  delivery: AutoShowEvent[];
+  multiplier: number;
+}
+
+interface AutoShowEvent {
+  name: string;
+  location: {
+    lat: number;
+    lng: number;
+  };
+  dates: {
+    start: Date;
+    end: Date;
+  };
+  distance: number;
+}
+
 // Transport Types Configuration
 export const TRANSPORT_TYPES: Record<string, TransportTypeData> = {
   openTransport: {

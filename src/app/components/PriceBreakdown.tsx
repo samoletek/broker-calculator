@@ -11,6 +11,7 @@ interface PriceBreakdownProps {
     weather: number;
     traffic: number;
     seasonal: number;
+    autoShow: number;
     totalMain: number;
   };
   additionalServices: {
@@ -113,6 +114,12 @@ export const PriceBreakdown = ({
               <span>Seasonal Impact</span>
               <span className="font-medium text-blue-600">
                 {formatMultiplierImpact(mainMultipliers.seasonal, basePrice)}
+              </span>
+            </div>
+            <div className="flex justify-between text-gray-800">
+              <span>Auto Show Impact</span>
+              <span className="font-medium text-blue-600">
+                {formatMultiplierImpact(mainMultipliers.autoShow, basePrice)}
               </span>
             </div>
             <div className="flex justify-between text-gray-800 border-t pt-2">

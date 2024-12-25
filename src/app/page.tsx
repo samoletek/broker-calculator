@@ -3,12 +3,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Truck, Loader2 } from 'lucide-react';
-import { addDays } from 'date-fns';
+import { checkAutoShows, getAutoShowMultiplier } from '@/utils/autoShowsUtils';
 import { calculateEstimatedTransitTime } from '@/utils/transportUtils';
 import { DatePickerComponent } from '@/app/components/DatePickerComponent';
 import { PriceBreakdown } from '@/app/components/PriceBreakdown';
 import RouteInfo from '@/app/components/RouteInfo';
 import WeatherMap from '@/app/components/WeatherMap';
+import { isUSAddress } from '@/utils/addressUtils';
 import {
   TRANSPORT_TYPES,
   VEHICLE_VALUE_TYPES,
@@ -25,6 +26,7 @@ interface PriceComponents {
     weather: number;
     traffic: number;
     seasonal: number;
+    autoShow: number;
     totalMain: number;
   };
   additionalServices: {
@@ -113,10 +115,12 @@ export default function BrokerCalculator() {
         if (pickupInputRef.current && deliveryInputRef.current) {
           const pickupAutocomplete = new google.maps.places.Autocomplete(pickupInputRef.current, {
             types: ['address'],
+            componentRestrictions: { country: 'us' },
           });
           
           const deliveryAutocomplete = new google.maps.places.Autocomplete(deliveryInputRef.current, {
             types: ['address'],
+            componentRestrictions: { country: 'us' },
           });
 
           pickupAutocomplete.addListener('place_changed', () => {
@@ -143,7 +147,7 @@ export default function BrokerCalculator() {
       setError('Please select a shipping date');
       return;
     }
-
+  
     // Проверка остальных полей
     const errors = [];
     if (!pickup || !delivery) {
@@ -164,30 +168,63 @@ export default function BrokerCalculator() {
       return;
     }
   
+    // Проверка корректности адресов
+    const isPickupValid = await isUSAddress(pickup, window.google);
+    const isDeliveryValid = await isUSAddress(delivery, window.google);
+  
+    if (!isPickupValid || !isDeliveryValid) {
+      setError('Please enter valid US addresses for pickup and delivery');
+      return;
+    }
+
     setLoading(true);
     setError(null);
-
+  
     try {
-      if (!googleRef.current) {
-        googleRef.current = await mapLoader.load();
-      }
+    if (!googleRef.current) {
+      googleRef.current = await mapLoader.load();
+    }
 
-      const service = new googleRef.current.maps.DirectionsService();
-      const response = await service.route({
-        origin: pickup,
-        destination: delivery,
-        travelMode: google.maps.TravelMode.DRIVING
-      }) as google.maps.DirectionsResult;
+    const service = new googleRef.current.maps.DirectionsService();
+    const response = await service.route({
+      origin: pickup,
+      destination: delivery,
+      travelMode: google.maps.TravelMode.DRIVING
+    }) as google.maps.DirectionsResult;
       
-      setMapData(response as google.maps.DirectionsResult);
+      setMapData(response);
       const distanceInMiles = (response.routes[0].legs[0].distance?.value || 0) / 1609.34;
-
+  
       setDistance(Math.round(distanceInMiles));
       setRouteInfo(prev => ({
         ...prev,
         estimatedTime: calculateEstimatedTransitTime(distanceInMiles)
       }));
-
+  
+      // Проверяем наличие автовыставок
+      const pickupAutoShows = await checkAutoShows(
+        {
+          lat: response.routes[0].legs[0].start_location.lat(),
+          lng: response.routes[0].legs[0].start_location.lng()
+        },
+        selectedDate,
+        googleRef.current
+      );
+  
+      const deliveryAutoShows = await checkAutoShows(
+        {
+          lat: response.routes[0].legs[0].end_location.lat(),
+          lng: response.routes[0].legs[0].end_location.lng()
+        },
+        selectedDate,
+        googleRef.current
+      );
+  
+      const autoShowMultiplier = Math.max(
+        getAutoShowMultiplier(pickupAutoShows, selectedDate),
+        getAutoShowMultiplier(deliveryAutoShows, selectedDate)
+      );
+  
       // Расчет базовой цены
       const basePrice = getBaseRate(distanceInMiles, transportType);
       const basePriceBreakdown: BasePriceBreakdown = {
@@ -195,17 +232,17 @@ export default function BrokerCalculator() {
         distance: distanceInMiles,
         total: basePrice
       };
-
+  
       // Расчет множителя дополнительных услуг
       const additionalServicesMultiplier = 1.0 + 
-      (premiumEnhancements ? 0.3 : 0) +
-      (specialLoad ? 0.3 : 0) +
-      (inoperable ? 0.3 : 0);
-
+        (premiumEnhancements ? 0.3 : 0) +
+        (specialLoad ? 0.3 : 0) +
+        (inoperable ? 0.3 : 0);
+  
       // Получение множителей
       const vehicleMultiplier = VEHICLE_VALUE_TYPES[vehicleValue].multiplier;
       const seasonalMultiplier = getSeasonalMultiplier(selectedDate);
-
+  
       setPriceComponents({
         selectedDate,
         basePrice,
@@ -215,7 +252,8 @@ export default function BrokerCalculator() {
           weather: 1.0,  // Будет обновлено из WeatherMap
           traffic: 1.0,  // Будет обновлено из RouteInfo
           seasonal: seasonalMultiplier,
-          totalMain: vehicleMultiplier * seasonalMultiplier
+          autoShow: autoShowMultiplier,
+          totalMain: vehicleMultiplier * seasonalMultiplier * autoShowMultiplier
         },
         additionalServices: {
           premium: premiumEnhancements ? 0.3 : 0,
@@ -223,9 +261,9 @@ export default function BrokerCalculator() {
           inoperable: inoperable ? 0.3 : 0,
           totalAdditional: additionalServicesMultiplier - 1.0
         },
-        finalPrice: basePrice * vehicleMultiplier * seasonalMultiplier * additionalServicesMultiplier
+        finalPrice: basePrice * vehicleMultiplier * seasonalMultiplier * autoShowMultiplier * additionalServicesMultiplier
       });
-
+  
     } catch (err) {
       console.error('Calculation error:', err);
       setError('Error calculating route. Please check the addresses and try again.');
@@ -254,10 +292,6 @@ export default function BrokerCalculator() {
                   date={selectedDate} 
                   onDateChange={(date) => {
                     setSelectedDate(date);
-                    if (date && date > addDays(new Date(), 30)) {
-                      setError("We can only provide accurate estimates for dates within the next 30 days");
-                      return;
-                    }
                     setError(null);
                   }}
                 />
@@ -471,13 +505,14 @@ export default function BrokerCalculator() {
                         totalMain: prev.mainMultipliers.vehicle * 
                                 multiplier * 
                                 prev.mainMultipliers.traffic * 
-                                prev.mainMultipliers.seasonal
+                                prev.mainMultipliers.seasonal *
+                                prev.mainMultipliers.autoShow
                       };
                       
                       const newFinalPrice = prev.basePrice * 
                                 newMainMultipliers.totalMain * 
                                 (1 + prev.additionalServices.totalAdditional);
-
+                  
                       return {
                         ...prev,
                         mainMultipliers: newMainMultipliers,
