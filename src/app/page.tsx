@@ -14,6 +14,8 @@ import {
   TRANSPORT_TYPES,
   VEHICLE_VALUE_TYPES,
   VEHICLE_TYPES,
+  ADDITIONAL_SERVICES,
+  type AdditionalService,
   getBaseRate,
   getSeasonalMultiplier
 } from '@/constants/pricing';
@@ -370,39 +372,62 @@ export default function BrokerCalculator() {
 
             {/* Additional Services */}
             <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <input
-                  type="checkbox"
-                  id="premiumEnhancements"
-                  checked={premiumEnhancements}
-                  disabled={vehicleValue === 'under500k' || vehicleValue === 'over500k'}
-                  onChange={(e) => setPremiumEnhancements(e.target.checked)}
-                  className={`rounded text-blue-600 focus:ring-blue-500 ${
-                    (vehicleValue === 'under500k' || vehicleValue === 'over500k') ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                />
-                <label className="text-gray-900" htmlFor="premiumEnhancements">Premium Enhancements</label>
-              </div>
-              <div className="flex items-center space-x-4">
-                <input
-                  type="checkbox"
-                  id="specialLoad"
-                  checked={specialLoad}
-                  onChange={(e) => setSpecialLoad(e.target.checked)}
-                  className="rounded text-grey-900 focus:ring-blue-500"
-                />
-                <label className="text-gray-900" htmlFor="specialLoad">Special Load</label>
-              </div>
-              <div className="flex items-center space-x-4">
-                <input
-                  type="checkbox"
-                  id="inoperable"
-                  checked={inoperable}
-                  onChange={(e) => setInoperable(e.target.checked)}
-                  className="rounded text-gray-900 focus:ring-blue-500"
-                />
-                <label className="text-gray-900" htmlFor="inoperable">Inoperable Vehicle</label>
-              </div>
+              {Object.entries(ADDITIONAL_SERVICES).map(([key, service]: [string, AdditionalService]) => (
+                <div key={key} className="flex items-center space-x-4">
+                  <input
+                    type="checkbox"
+                    id={key}
+                    checked={key === 'premiumEnhancements' ? premiumEnhancements : 
+                            key === 'specialLoad' ? specialLoad : 
+                            key === 'inoperable' ? inoperable : false}
+                    disabled={key === 'premiumEnhancements' && (vehicleValue === 'under500k' || vehicleValue === 'over500k')}
+                    onChange={(e) => {
+                      if (key === 'premiumEnhancements') setPremiumEnhancements(e.target.checked);
+                      else if (key === 'specialLoad') setSpecialLoad(e.target.checked);
+                      else if (key === 'inoperable') setInoperable(e.target.checked);
+                    }}
+                    className={`rounded text-blue-600 focus:ring-blue-500 ${
+                      key === 'premiumEnhancements' && (vehicleValue === 'under500k' || vehicleValue === 'over500k') 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : ''
+                    }`}
+                  />
+                  <label className="text-gray-900 relative group" htmlFor={key}>
+                    {service.name}
+                    <span className="ml-2 inline-block cursor-help">
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        strokeWidth={1.5} 
+                        stroke="currentColor" 
+                        className="w-4 h-4 text-gray-500"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" 
+                        />
+                      </svg>
+                      <div className="invisible group-hover:visible absolute z-50 w-80 p-3.5 bg-gray-900 text-white rounded-lg shadow-lg -mt-2 ml-6">
+                        <div className="text-sm font-semibold mb-2">
+                          {key === 'premiumEnhancements' ? 'Premium Service Benefits:' : 
+                          key === 'specialLoad' ? 'Special Load Services:' : 
+                          'Inoperable Vehicle Services:'}
+                        </div>
+                        <ul className="space-y-1 text-xs">
+                          {service.tooltip?.map((tip, index) => (
+                            <li key={index} className="flex">
+                              <span className="mr-1.5">•</span>
+                              <span>{tip}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </span>
+                  </label>
+                </div>
+              ))}
             </div>
 
             {/* Calculate Button */}

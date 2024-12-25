@@ -33,7 +33,7 @@ interface VehicleTypeData {
   description: string;
 }
 
-interface AdditionalService {
+export interface AdditionalService {
   name: string;
   multiplier: number;
   tooltip?: string[];
@@ -192,11 +192,25 @@ export const ADDITIONAL_SERVICES: Record<string, AdditionalService> = {
   },
   specialLoad: {
     name: 'Special Load (Roundtrip, port/military base)',
-    multiplier: 1.3
+    multiplier: 1.3,
+    tooltip: [
+      'Multi-point deliveries or roundtrip transportation',
+      'Access to restricted areas (ports, military bases)',
+      'Special permits and documentation requirements',
+      'Enhanced security clearance and protocols',
+      'Flexible scheduling for complex route planning'
+    ]
   },
   inoperable: {
     name: 'Inoperable/Zero Mileage',
-    multiplier: 1.3
+    multiplier: 1.3,
+    tooltip: [
+      'Transportation of non-running vehicles',
+      'Specialized loading equipment for inoperable vehicles',
+      'Zero mileage preservation for collector cars',
+      'Extra care handling for mechanical issues',
+      'Custom securing methods for non-standard loading'
+    ]
   }
 };
 
