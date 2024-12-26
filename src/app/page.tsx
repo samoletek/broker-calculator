@@ -116,12 +116,12 @@ export default function BrokerCalculator() {
         
         if (pickupInputRef.current && deliveryInputRef.current) {
           const pickupAutocomplete = new google.maps.places.Autocomplete(pickupInputRef.current, {
-            types: ['address'],
+            types: ['(cities)', 'address'],
             componentRestrictions: { country: 'us' },
           });
           
           const deliveryAutocomplete = new google.maps.places.Autocomplete(deliveryInputRef.current, {
-            types: ['address'],
+            types: ['(cities)', 'address'],
             componentRestrictions: { country: 'us' },
           });
 
