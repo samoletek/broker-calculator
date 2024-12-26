@@ -11,12 +11,6 @@ interface TransportTypeData {
   baseRatePerMile: RateRange;
 }
 
-interface SeasonData {
-  multiplier: number;
-  months?: number[];
-  dates?: { month: number; day: number }[];
-}
-
 interface PopularRoute {
   from: string;
   to: string;
@@ -72,7 +66,7 @@ export const TRANSPORT_TYPES: Record<string, TransportTypeData> = {
     name: 'Enclosed Transport',
     baseRatePerMile: {
       min: 0.88,
-      max: 1.33
+      max: 1.19
     }
   }
 };
@@ -85,15 +79,15 @@ export const VEHICLE_VALUE_TYPES: Record<string, VehicleValueType> = {
   },
   under300k: {
     name: '$100k - $300k',
-    multiplier: 1.15
+    multiplier: 1.05
   },
   under500k: {
     name: '$300k - $500k',
-    multiplier: 1.25
+    multiplier: 1.1
   },
   over500k: {
     name: 'Over $500k',
-    multiplier: 1.4
+    multiplier: 1.15
   }
 };
 
@@ -181,7 +175,7 @@ export const VEHICLE_TYPES: Record<string, VehicleTypeData> = {
 export const ADDITIONAL_SERVICES: Record<string, AdditionalService> = {
   premiumEnhancements: {
     name: 'Premium Enhancements',
-    multiplier: 1.3,
+    multiplier: 1.15,
     tooltip: [
       'Language Proficiency: Skilled professionals fluent in the required language.',
       'Professional Attire: Staff dressed to represent your business with excellence.',
@@ -192,7 +186,7 @@ export const ADDITIONAL_SERVICES: Record<string, AdditionalService> = {
   },
   specialLoad: {
     name: 'Special Load (Roundtrip, port/military base)',
-    multiplier: 1.3,
+    multiplier: 1.1,
     tooltip: [
       'Multi-point deliveries or roundtrip transportation',
       'Access to restricted areas (ports, military bases)',
@@ -203,7 +197,7 @@ export const ADDITIONAL_SERVICES: Record<string, AdditionalService> = {
   },
   inoperable: {
     name: 'Inoperable/Zero Mileage',
-    multiplier: 1.3,
+    multiplier: 1.1,
     tooltip: [
       'Transportation of non-running vehicles',
       'Specialized loading equipment for inoperable vehicles',
@@ -214,49 +208,14 @@ export const ADDITIONAL_SERVICES: Record<string, AdditionalService> = {
   }
 };
 
-// Seasonal Configuration
-export const SEASONAL_MULTIPLIERS: Record<string, SeasonData> = {
-  summer: {
-    multiplier: 1.3,
-    months: [5, 6, 7]
-  },
-  january: {
-    multiplier: 1.2,
-    months: [0]
-  },
-  holidays: {
-    multiplier: 1.15,
-    dates: [
-      { month: 11, day: 25 },
-      { month: 11, day: 24 },
-      { month: 11, day: 23 },
-      { month: 12, day: 24 },
-      { month: 12, day: 25 },
-      { month: 12, day: 26 }
-    ]
-  },
-  spring: {
-    multiplier: 0.9,
-    months: [2, 3, 4]
-  },
-  fall: {
-    multiplier: 0.85,
-    months: [8, 9, 10]
-  },
-  normal: {
-    multiplier: 1.0,
-    months: [1, 11]
-  }
-};
-
 // Weather Configuration
 export const WEATHER_MULTIPLIERS: Record<string, number> = {
   clear: 1.0,
   cloudy: 1.0,
-  rain: 1.05,
-  snow: 1.20,
-  storm: 1.15,
-  extreme: 1.2
+  rain: 1.0,
+  snow: 1.1,
+  storm: 1.1,
+  extreme: 1.1
 };
 
 // Route Configuration
@@ -270,9 +229,15 @@ export const ROUTE_FACTORS: Record<string, number> = {
 export const POPULAR_ROUTES: PopularRoute[] = [
   { from: "New York", to: "Los Angeles", factor: 0.9 },
   { from: "Miami", to: "Chicago", factor: 0.9 },
+  { from: "New York", to: "Miami", factor: 0.9 },
+  { from: "Miami", to: "New York", factor: 0.9 },
   { from: "Boston", to: "Washington", factor: 0.9 },
   { from: "San Francisco", to: "Las Vegas", factor: 0.9 },
-  { from: "Seattle", to: "Portland", factor: 0.9 }
+  { from: "Seattle", to: "Portland", factor: 0.9 },
+  { from: "Washington", to: "Los Angeles", factor: 0.9 },
+  { from: "Los Angeles", to: "Washington", factor: 0.9 },
+  { from: "Los Angeles", to: "New York", factor: 0.9 },
+  { from: "Los Angeles", to: "Chicago", factor: 0.9 },
 ];
 
 // Utility Functions
@@ -283,24 +248,7 @@ export const getBaseRate = (distance: number, transportType: keyof typeof TRANSP
 };
 
 export const getSeasonalMultiplier = (date: Date): number => {
-  const month = date.getMonth();
-  const day = date.getDate();
-
-  const isHoliday = SEASONAL_MULTIPLIERS.holidays.dates?.some(
-    holiday => holiday.month === month && holiday.day === day
-  );
-  
-  if (isHoliday) {
-    return SEASONAL_MULTIPLIERS.holidays.multiplier;
-  }
-
-  for (const [season, data] of Object.entries(SEASONAL_MULTIPLIERS)) {
-    if (season !== 'holidays' && data.months?.includes(month)) {
-      return data.multiplier;
-    }
-  }
-
-  return SEASONAL_MULTIPLIERS.normal.multiplier;
+  return 1.0;
 };
 
 export const getRouteFactor = (pickup: string, delivery: string): number => {
@@ -316,7 +264,7 @@ export const getRouteFactor = (pickup: string, delivery: string): number => {
     return ROUTE_FACTORS.popular;
   }
 
-  const remoteAreas = ['alaska', 'hawaii', 'montana', 'wyoming', 'idaho', 'north dakota', 'south dakota'];
+  const remoteAreas = ['hawaii', 'montana', 'wyoming', 'idaho', 'north dakota', 'south dakota'];
   const isRemote = remoteAreas.some(
     area => pickup.toLowerCase().includes(area) || delivery.toLowerCase().includes(area)
   );

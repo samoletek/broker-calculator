@@ -43,8 +43,8 @@ export interface PriceBreakdownProps {
     vehicle: number;
     weather: number;
     traffic: number;
-    seasonal: number;
     fuel: number;
+    autoShow: number;
     totalMain: number;
   };
   additionalServices: {

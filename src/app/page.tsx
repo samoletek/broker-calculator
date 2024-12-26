@@ -17,8 +17,7 @@ import {
   VEHICLE_TYPES,
   ADDITIONAL_SERVICES,
   type AdditionalService,
-  getBaseRate,
-  getSeasonalMultiplier
+  getBaseRate
 } from '@/constants/pricing';
 
 interface PriceComponents {
@@ -28,9 +27,8 @@ interface PriceComponents {
     vehicle: number;
     weather: number;
     traffic: number;
-    seasonal: number;
     autoShow: number;
-    fuel: number; // добавляем это
+    fuel: number;
     totalMain: number;
   };
   additionalServices: {
@@ -239,7 +237,6 @@ export default function BrokerCalculator() {
   
       // Получение множителей
       const vehicleMultiplier = VEHICLE_VALUE_TYPES[vehicleValue].multiplier;
-      const seasonalMultiplier = getSeasonalMultiplier(selectedDate);
   
       setPriceComponents({
         selectedDate,
@@ -249,11 +246,10 @@ export default function BrokerCalculator() {
           vehicle: vehicleMultiplier,
           weather: 1.0,
           traffic: 1.0,
-          seasonal: seasonalMultiplier,
           autoShow: autoShowMultiplier,
           fuel: fuelPriceMultiplier,
           totalMain: vehicleMultiplier * 
-                    seasonalMultiplier * 
+                    1.0 * 
                     autoShowMultiplier * 
                     fuelPriceMultiplier
         },
@@ -265,7 +261,7 @@ export default function BrokerCalculator() {
         },
         finalPrice: basePrice * 
                    vehicleMultiplier * 
-                   seasonalMultiplier * 
+                   1.0 * 
                    autoShowMultiplier * 
                    fuelPriceMultiplier * 
                    additionalServicesMultiplier
@@ -534,8 +530,7 @@ export default function BrokerCalculator() {
                         weather: multiplier,
                         totalMain: prev.mainMultipliers.vehicle * 
                                 multiplier * 
-                                prev.mainMultipliers.traffic * 
-                                prev.mainMultipliers.seasonal *
+                                prev.mainMultipliers.traffic *
                                 prev.mainMultipliers.autoShow *
                                 prev.mainMultipliers.fuel
                       };

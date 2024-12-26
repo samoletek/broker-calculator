@@ -27,7 +27,7 @@ export const checkAutoShows = async (
   
   const searchParams: google.maps.places.PlaceSearchRequest = {
     location: location,
-    radius: 80467, // 50 миль в метрах
+    radius: 32186, // 20 миль в метрах
     keyword: 'auto show car show automotive exhibition convention center stadium'
   };
 
@@ -111,7 +111,7 @@ export const checkAutoShows = async (
 
 export const getAutoShowMultiplier = (autoShows: AutoShowEvent[], date: Date): number => {
   if (autoShows.length > 0) {
-    return 1.2; // +20% к базовой цене
+    return 1.1; // +10% к базовой цене
   }
   return 1.0;
 };
