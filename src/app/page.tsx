@@ -10,6 +10,7 @@ import { PriceBreakdown } from '@/app/components/PriceBreakdown';
 import { getFuelPriceMultiplier } from '@/utils/fuelUtils';
 import RouteInfo from '@/app/components/RouteInfo';
 import WeatherMap from '@/app/components/WeatherMap';
+import { ThemeToggle } from '@/app/components/ThemeToggle'
 import { isUSAddress } from '@/utils/addressUtils';
 import {
   TRANSPORT_TYPES,
@@ -116,12 +117,12 @@ export default function BrokerCalculator() {
         
         if (pickupInputRef.current && deliveryInputRef.current) {
           const pickupAutocomplete = new google.maps.places.Autocomplete(pickupInputRef.current, {
-            types: ['(cities)', 'address'],
+            types: ['geocode'],
             componentRestrictions: { country: 'us' },
           });
           
           const deliveryAutocomplete = new google.maps.places.Autocomplete(deliveryInputRef.current, {
-            types: ['(cities)', 'address'],
+            types: ['geocode'],
             componentRestrictions: { country: 'us' },
           });
 
@@ -279,10 +280,13 @@ export default function BrokerCalculator() {
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center space-x-4 mb-6">
-            <Truck className="w-8 h-8 text-blue-500" />
-            <h1 className="text-2xl font-bold text-gray-900">Broker Dashboard</h1>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              <Truck className="w-8 h-8 text-blue-500" />
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Broker Dashboard</h1>
+            </div>
+            <ThemeToggle />
           </div>
 
           {/* Main Form */}

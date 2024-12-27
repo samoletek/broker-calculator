@@ -318,11 +318,11 @@ useEffect(() => {
  };
 
  return (
-   <div className="bg-white rounded-lg shadow-md overflow-hidden">
-     <div ref={mapRef} className="w-full h-[400px]" />
+  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+    <div ref={mapRef} className="w-full h-[400px]" />
 
-     <div className="p-6 space-y-4">
-       <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+    <div className="p-6 space-y-4">
+      <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
          <Map className="w-5 h-5 mr-2" />
          Route Details {selectedDate && 
            <span className="text-sm text-gray-500 ml-2">
@@ -333,12 +333,12 @@ useEffect(() => {
 
        <div className="grid grid-cols-2 gap-4">
          <div className="space-y-2">
-           <div className="text-sm text-gray-600">Pickup Location:</div>
-           <div className="font-medium text-gray-900">{pickup}</div>
-         </div>
-         <div className="space-y-2">
-           <div className="text-sm text-gray-600">Delivery Location:</div>
-           <div className="font-medium text-gray-900">{delivery}</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Pickup Location:</div>
+          <div className="font-medium text-gray-900 dark:text-white">{pickup}</div>
+        </div>
+        <div className="space-y-2">
+            <div className="text-sm text-gray-600 dark:text-gray-400">Delivery Location:</div>
+            <div className="font-medium text-gray-900 dark:text-white">{delivery}</div>
          </div>
        </div>
 
@@ -346,16 +346,16 @@ useEffect(() => {
          <div className="flex items-center space-x-2">
            <Navigation className="w-5 h-5 text-blue-500" />
            <div>
-             <div className="text-sm text-gray-600">Total Distance</div>
-             <div className="font-medium text-gray-900">{distance} miles</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Total Distance</div>
+            <div className="font-medium text-gray-900 dark:text-white">{distance} miles</div>
            </div>
          </div>
 
          <div className="flex items-center space-x-2">
            <Clock className="w-5 h-5 text-blue-500" />
            <div>
-             <div className="text-sm text-gray-600">Estimated Time</div>
-             <div className="font-medium text-gray-900">{estimatedTime || 'Calculating...'}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Estimated Time</div>
+            <div className="font-medium text-gray-900 dark:text-white">{estimatedTime || 'Calculating...'}</div>
            </div>
          </div>
        </div>
@@ -388,7 +388,7 @@ useEffect(() => {
         {tollInfo && tollInfo.totalCost > 0 && (
          <div className="pt-4 border-t">
            <div className="flex items-start flex-col">
-             <div className="text-sm text-gray-600 mb-2">Expected Toll Roads</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Expected Toll Roads</div>
              <div className="space-y-2 w-full">
                {tollInfo.segments.map((segment, index) => (
                  <div key={index} className="flex justify-between items-center text-sm">
@@ -407,7 +407,7 @@ useEffect(() => {
                  </div>
                ))}
                <div className="flex justify-between items-center pt-2 border-t text-sm font-medium">
-                 <span className="text-gray-900">Total Toll Cost Estimate</span>
+                 <span className="text-gray-900 dark:text-white">Total Toll Cost Estimate</span>
                  <span className="text-blue-600">~${tollInfo.totalCost.toFixed(2)}</span>
                </div>
                <div className="text-xs text-gray-500 mt-1 italic">

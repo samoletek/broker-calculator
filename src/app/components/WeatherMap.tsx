@@ -155,23 +155,23 @@ export default function WeatherMap({
   const memoizedWeatherData = useMemo(() => weatherData, [weatherData]);
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
         <Cloud className="w-6 h-6 mr-2 text-blue-500" />
         Weather Conditions
         {selectedDate && 
-          <span className="text-sm text-gray-500 ml-2">
+          <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
             ({format(selectedDate, 'yyyy-MM-dd')})
           </span>
         }
       </h2>
-
+  
       {error && (
-        <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-md">
+        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-md">
           {error}
         </div>
       )}
-
+  
       {isLoading ? (
         <div className="flex justify-center items-center h-40">
           <Wind className="w-8 h-8 animate-spin text-blue-500" />
@@ -181,36 +181,36 @@ export default function WeatherMap({
           {memoizedWeatherData.map((point, index) => (
             <div
               key={`${point.location}-${index}`}
-              className="flex items-center justify-between p-3 rounded-lg bg-gray-50"
+              className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700"
             >
               <div className="flex items-center space-x-3">
                 {getWeatherIcon(point.condition)}
                 <div>
-                  <div className="font-medium text-gray-900">{point.location}</div>
-                  <div className="text-sm text-gray-600">{point.condition}</div>
+                  <div className="font-medium text-gray-900 dark:text-white">{point.location}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">{point.condition}</div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-medium text-gray-900">{point.temperature}°F</div>
+                <div className="font-medium text-gray-900 dark:text-white">{point.temperature}°F</div>
                 <div className={`text-sm ${
-                  point.multiplier > 1 ? 'text-orange-600' : 'text-green-600'
+                  point.multiplier > 1 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'
                 }`}>
                   {point.multiplier > 1 ? `+${((point.multiplier - 1) * 100).toFixed(0)}%` : 'No Impact'}
                 </div>
               </div>
             </div>
           ))}
-
+  
           {memoizedWeatherData.length > 0 && (
-            <div className="mt-4 pt-4 border-t">
-              <div className="text-sm text-gray-600">
+            <div className="mt-4 pt-4 border-t dark:border-gray-600">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
                 Weather Impact Summary:
                 {Math.max(...memoizedWeatherData.map(w => w.multiplier)) > 1 ? (
-                  <span className="text-orange-600 ml-2">
+                  <span className="text-orange-600 dark:text-orange-400 ml-2">
                     Route affected by adverse weather conditions
                   </span>
                 ) : (
-                  <span className="text-green-600 ml-2">
+                  <span className="text-green-600 dark:text-green-400 ml-2">
                     Good weather conditions throughout the route
                   </span>
                 )}

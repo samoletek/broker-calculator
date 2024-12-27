@@ -72,27 +72,27 @@ export const PriceBreakdown = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 space-y-6">
       {/* Заголовок */}
       <div className="flex items-center justify-between border-b pb-4">
-        <h2 className="text-xl font-semibold text-gray-900">Price Breakdown</h2>
-        <span className="text-sm text-gray-500">{distance} miles</span>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Price Breakdown</h2>
+        <span className="text-sm text-gray-500 dark:text-gray-400">{distance} miles</span>
       </div>
 
       {/* Базовая цена */}
       <div className="space-y-4">
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="text-lg font-medium text-gray-900 mb-3">Base Calculation</h3>
+      <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Base Calculation</h3>
           <div className="space-y-2">
-            <div className="flex justify-between text-gray-800">
+            <div className="flex justify-between text-gray-800 dark:text-gray-200">
               <span>Rate per mile</span>
               <span className="font-medium">${basePriceBreakdown.ratePerMile.toFixed(2)}/mile</span>
             </div>
-            <div className="flex justify-between text-gray-800">
+            <div className="flex justify-between text-gray-800 dark:text-gray-200">
               <span>Distance</span>
               <span className="font-medium">{Math.round(basePriceBreakdown.distance)} miles</span>
             </div>
-            <div className="flex justify-between text-gray-800 border-t pt-2">
+            <div className="flex justify-between text-gray-800 dark:text-gray-200 border-t pt-2">
               <span>Base Price</span>
               <span className="font-bold">{formatPrice(basePrice)}</span>
             </div>
@@ -102,12 +102,12 @@ export const PriceBreakdown = ({
 
       {/* Множители */}
       <div className="space-y-4">
-        <div className="bg-blue-50 p-4 rounded-lg">
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
           <h3 className="text-lg font-medium text-gray-900 mb-3">Price Factors</h3>
           <div className="space-y-2">
-            <div className="flex justify-between text-gray-800">
+            <div className="flex justify-between text-gray-800 dark:text-gray-200">
               <span>Vehicle Value Impact</span>
-              <span className="font-medium text-blue-600">
+              <span className="font-medium text-blue-600 dark:text-blue-400">
                 {formatMultiplierImpact(mainMultipliers.vehicle, basePrice)}
               </span>
             </div>
@@ -148,13 +148,13 @@ export const PriceBreakdown = ({
       {/* Дополнительные услуги */}
       {additionalServices.totalAdditional > 0 && (
         <div className="space-y-4">
-          <div className="bg-green-50 p-4 rounded-lg">
+          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
             <h3 className="text-lg font-medium text-gray-900 mb-3">Additional Services</h3>
             <div className="space-y-2">
               {additionalServices.premium > 0 && (
-                <div className="flex justify-between text-gray-800">
-                  <span>Premium Service</span>
-                  <span className="font-medium text-green-600">
+                  <div className="flex justify-between text-gray-800 dark:text-gray-200">
+                    <span>Premium Service</span>
+                    <span className="font-medium text-green-600 dark:text-green-400">
                     {formatPrice(basePrice * additionalServices.premium)}
                     {' '}({(additionalServices.premium * 100).toFixed(1)}%)
                   </span>
@@ -192,13 +192,13 @@ export const PriceBreakdown = ({
       {/* Платные дороги */}
       {tollCosts && tollCosts.total > 0 && (
         <div className="space-y-4">
-          <div className="bg-purple-50 p-4 rounded-lg">
+          <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
             <h3 className="text-lg font-medium text-gray-900 mb-3">Toll Charges</h3>
             <div className="space-y-2">
               {tollCosts.segments.map((segment, index) => (
                 <div key={index} className="flex justify-between text-gray-800">
                   <span>{segment.location}</span>
-                  <span className="font-medium text-purple-600">
+                  <span className="font-medium text-purple-600 dark:text-purple-400">
                     {formatPrice(segment.cost)}
                   </span>
                 </div>
