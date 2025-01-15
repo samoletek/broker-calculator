@@ -34,7 +34,12 @@ export function DatePickerComponent({ date, onDateChange }: DatePickerProps) {
     <div className="space-y-2">
       <input
         type="date"
-        className="w-full p-2 border rounded text-gray-900"
+        className="w-full p-2 rounded
+          bg-gray-50 dark:bg-gray-700 
+          border border-gray-300 dark:border-gray-600 
+          text-gray-900 dark:text-gray-100
+          focus:ring-blue-500 dark:focus:ring-blue-400
+          focus:border-blue-500 dark:focus:border-blue-400"
         value={date ? format(date, 'yyyy-MM-dd') : ''}
         min={format(today, 'yyyy-MM-dd')}
         max={format(maxDate, 'yyyy-MM-dd')}

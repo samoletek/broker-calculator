@@ -277,7 +277,7 @@ export default function BrokerCalculator() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
@@ -294,7 +294,7 @@ export default function BrokerCalculator() {
             {/* Top Grid - Date, Transport Type, Vehicle Value */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-900">Shipping Date</label>
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Shipping Date</label>
                 <DatePickerComponent 
                   date={selectedDate} 
                   onDateChange={(date) => {
@@ -305,11 +305,17 @@ export default function BrokerCalculator() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-900">Transport Type</label>
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Transport Type</label>
                 <select
                   value={transportType}
                   onChange={(e) => setTransportType(e.target.value as keyof typeof TRANSPORT_TYPES)}
-                  className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 ${!transportType && error ? 'border-red-300 ring-red-300' : ''}`}
+                  className={`mt-1 block w-full rounded-md 
+                    bg-gray-50 dark:bg-gray-700
+                    border-gray-300 dark:border-gray-600
+                    text-gray-900 dark:text-gray-100
+                    focus:ring-blue-500 dark:focus:ring-blue-400
+                    focus:border-blue-500 dark:focus:border-blue-400
+                    ${!transportType && error ? 'border-red-300 dark:border-red-500 ring-red-300 dark:ring-red-500' : ''}`}
                 >
                   <option value="" disabled>Select transport type...</option>
                   {Object.entries(TRANSPORT_TYPES).map(([type, data]) => (
@@ -319,11 +325,17 @@ export default function BrokerCalculator() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900">Vehicle Type</label>
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Vehicle Type</label>
                 <select
                   value={vehicleType}
                   onChange={(e) => setVehicleType(e.target.value as keyof typeof VEHICLE_TYPES)}
-                  className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 ${!vehicleType && error ? 'border-red-300 ring-red-300' : ''}`}
+                  className={`mt-1 block w-full rounded-md
+                    bg-gray-50 dark:bg-gray-700
+                    border-gray-300 dark:border-gray-600
+                    text-gray-900 dark:text-gray-100
+                    focus:ring-blue-500 dark:focus:ring-blue-400
+                    focus:border-blue-500 dark:focus:border-blue-400
+                    ${!vehicleType && error ? 'border-red-300 dark:border-red-500 ring-red-300 dark:ring-red-500' : ''}`}
                 >
                   <option value="" disabled>Select vehicle type...</option>
                   {Object.entries(VEHICLE_TYPES).map(([type, data]) => (
@@ -335,11 +347,17 @@ export default function BrokerCalculator() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900">Vehicle Value</label>
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Vehicle Value</label>
                 <select
                   value={vehicleValue}
                   onChange={(e) => setVehicleValue(e.target.value as keyof typeof VEHICLE_VALUE_TYPES)}
-                  className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 ${!vehicleValue && error ? 'border-red-300 ring-red-300' : ''}`}
+                  className={`mt-1 block w-full rounded-md
+                    bg-gray-50 dark:bg-gray-700
+                    border-gray-300 dark:border-gray-600
+                    text-gray-900 dark:text-gray-100
+                    focus:ring-blue-500 dark:focus:ring-blue-400
+                    focus:border-blue-500 dark:focus:border-blue-400
+                    ${!vehicleValue && error ? 'border-red-300 dark:border-red-500 ring-red-300 dark:ring-red-500' : ''}`}
                 >
                   <option value="" disabled>Select vehicle value...</option>
                   {Object.entries(VEHICLE_VALUE_TYPES).map(([type, data]) => (
@@ -352,22 +370,36 @@ export default function BrokerCalculator() {
             {/* Locations */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-900">Pickup Location</label>
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Pickup Location</label>
                 <input
                   ref={pickupInputRef}
                   type="text"
-                  className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 ${!pickup && error ? 'border-red-300 ring-red-300' : ''}`}
+                  className={`mt-1 block w-full rounded-md
+                    bg-gray-50 dark:bg-gray-700
+                    border-gray-300 dark:border-gray-600
+                    text-gray-900 dark:text-gray-100
+                    placeholder-gray-500 dark:placeholder-gray-400
+                    focus:ring-blue-500 dark:focus:ring-blue-400
+                    focus:border-blue-500 dark:focus:border-blue-400
+                    ${!pickup && error ? 'border-red-300 dark:border-red-500 ring-red-300 dark:ring-red-500' : ''}`}
                   value={pickup}
                   onChange={(e) => setPickup(e.target.value)}
                   placeholder="Enter pickup address"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-900">Delivery Location</label>
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Delivery Location</label>
                 <input
                   ref={deliveryInputRef}
                   type="text"
-                  className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 ${!delivery && error ? 'border-red-300 ring-red-300' : ''}`}
+                  className={`mt-1 block w-full rounded-md
+                    bg-gray-50 dark:bg-gray-700
+                    border-gray-300 dark:border-gray-600
+                    text-gray-900 dark:text-gray-100
+                    placeholder-gray-500 dark:placeholder-gray-400
+                    focus:ring-blue-500 dark:focus:ring-blue-400
+                    focus:border-blue-500 dark:focus:border-blue-400
+                    ${!delivery && error ? 'border-red-300 dark:border-red-500 ring-red-300 dark:ring-red-500' : ''}`}
                   value={delivery}
                   onChange={(e) => setDelivery(e.target.value)}
                   placeholder="Enter delivery address"
@@ -391,13 +423,16 @@ export default function BrokerCalculator() {
                       else if (key === 'specialLoad') setSpecialLoad(e.target.checked);
                       else if (key === 'inoperable') setInoperable(e.target.checked);
                     }}
-                    className={`rounded text-blue-600 focus:ring-blue-500 ${
-                      key === 'premiumEnhancements' && (vehicleValue === 'under500k' || vehicleValue === 'over500k') 
+                    className={`rounded
+                      text-blue-600 dark:text-blue-400
+                      bg-gray-50 dark:bg-gray-700
+                      border-gray-300 dark:border-gray-600
+                      focus:ring-blue-500 dark:focus:ring-blue-400
+                      ${key === 'premiumEnhancements' && (vehicleValue === 'under500k' || vehicleValue === 'over500k') 
                         ? 'opacity-50 cursor-not-allowed' 
-                        : ''
-                    }`}
+                        : ''}`}
                   />
-                  <label className="text-gray-900 relative group" htmlFor={key}>
+                  <label className="text-gray-900 dark:text-gray-100 relative group" htmlFor={key}>
                     {service.name}
                     <span className="ml-2 inline-block cursor-help">
                       <svg 
@@ -406,7 +441,7 @@ export default function BrokerCalculator() {
                         viewBox="0 0 24 24" 
                         strokeWidth={1.5} 
                         stroke="currentColor" 
-                        className="w-4 h-4 text-gray-500"
+                        className="w-4 h-4 text-gray-500 dark:text-gray-400"
                       >
                         <path 
                           strokeLinecap="round" 
@@ -414,7 +449,8 @@ export default function BrokerCalculator() {
                           d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" 
                         />
                       </svg>
-                      <div className="invisible group-hover:visible absolute z-50 w-80 p-3.5 bg-gray-900 text-white rounded-lg shadow-lg -mt-2 ml-6">
+                      <div className="invisible group-hover:visible absolute z-50 w-80 p-3.5 
+                        bg-gray-900 dark:bg-black text-white rounded-lg shadow-lg -mt-2 ml-6">
                         <div className="text-sm font-semibold mb-2">
                           {key === 'premiumEnhancements' ? 'Premium Service Benefits:' : 
                           key === 'specialLoad' ? 'Special Load Services:' : 
@@ -439,7 +475,13 @@ export default function BrokerCalculator() {
             <button
               onClick={calculatePrice}
               disabled={loading}
-              className="mt-6 w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-blue-300 flex items-center justify-center"
+              className="mt-6 w-full bg-blue-500 hover:bg-blue-600
+                dark:bg-blue-600 dark:hover:bg-blue-700
+                text-white py-2 px-4 rounded-md
+                disabled:bg-blue-300 dark:disabled:bg-blue-800
+                disabled:cursor-not-allowed
+                transition-colors duration-200
+                flex items-center justify-center"
             >
               {loading ? (
                 <>
@@ -452,7 +494,7 @@ export default function BrokerCalculator() {
             </button>
 
             {error && (
-              <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-md">
+              <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-md">
                 {error}
               </div>
             )}
@@ -475,9 +517,8 @@ export default function BrokerCalculator() {
                 mapData={mapData}
                 selectedDate={selectedDate}
                 onTollUpdate={(tollCost: number, segments?: Array<{ location: string, cost: number }>) => {
-                  setPriceComponents((prev: PriceComponents | null) => {
+                  setPriceComponents((prev) => {
                     if (!prev) return null;
-                    
                     return {
                       ...prev,
                       tollCosts: {
@@ -509,7 +550,7 @@ export default function BrokerCalculator() {
                 />
             </div>
 
-            {/* Right Column - Weather Map Only */}
+            {/* Right Column - Weather Map */}
             <div className="space-y-6">
               {mapData && (
                 <WeatherMap
@@ -526,7 +567,7 @@ export default function BrokerCalculator() {
                   }}
                   selectedDate={selectedDate}
                   onWeatherUpdate={(multiplier) => {
-                    setPriceComponents((prev: PriceComponents | null) => {
+                    setPriceComponents((prev) => {
                       if (!prev) return null;
                       
                       const newMainMultipliers = {
