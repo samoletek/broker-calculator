@@ -103,7 +103,7 @@ export const PriceBreakdown = ({
       {/* Множители */}
       <div className="space-y-4">
         <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Price Factors</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Supplemental Price Factors</h3>
           <div className="space-y-2">
             <div className="flex justify-between text-gray-800 dark:text-gray-200">
               <span>Vehicle Value Impact</span>
@@ -130,7 +130,7 @@ export const PriceBreakdown = ({
               </span>
             </div>
             <div className="flex justify-between text-gray-800 dark:text-gray-200">
-              <span>Auto Show Impact</span>
+              <span>Congestion Impact</span>
               <span className="font-medium text-blue-600 dark:text-blue-400">
                 {formatMultiplierImpact(mainMultipliers.autoShow, basePrice)}
               </span>

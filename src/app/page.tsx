@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Truck, Loader2 } from 'lucide-react';
+import PriceSummary from '@/app/components/PriceSummary';
 import { checkAutoShows, getAutoShowMultiplier } from '@/utils/autoShowsUtils';
 import { calculateEstimatedTransitTime, getRoutePoints } from '@/utils/transportUtils';
 import { DatePickerComponent } from '@/app/components/DatePickerComponent';
@@ -288,7 +289,7 @@ export default function BrokerCalculator() {
             </div>
             <ThemeToggle />
           </div>
-
+  
           {/* Main Form */}
           <div className="space-y-6">
             {/* Top Grid - Date, Transport Type, Vehicle Value */}
@@ -323,7 +324,7 @@ export default function BrokerCalculator() {
                   ))}
                 </select>
               </div>
-
+  
               <div>
                 <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Vehicle Type</label>
                 <select
@@ -345,7 +346,7 @@ export default function BrokerCalculator() {
                   ))}
                 </select>
               </div>
-
+  
               <div>
                 <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Vehicle Value</label>
                 <select
@@ -366,7 +367,7 @@ export default function BrokerCalculator() {
                 </select>
               </div>
             </div>
-
+  
             {/* Locations */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -406,7 +407,7 @@ export default function BrokerCalculator() {
                 />
               </div>
             </div>
-
+  
             {/* Additional Services */}
             <div className="space-y-4">
               {Object.entries(ADDITIONAL_SERVICES).map(([key, service]: [string, AdditionalService]) => (
@@ -470,7 +471,7 @@ export default function BrokerCalculator() {
                 </div>
               ))}
             </div>
-
+  
             {/* Calculate Button */}
             <button
               onClick={calculatePrice}
@@ -492,7 +493,7 @@ export default function BrokerCalculator() {
                 'Calculate Route and Price'
               )}
             </button>
-
+  
             {error && (
               <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-md">
                 {error}
@@ -500,44 +501,55 @@ export default function BrokerCalculator() {
             )}
           </div>
         </div>
-
-        {/* Results Grid */}
+  
+        {/* Results Section */}
         {distance && priceComponents && mapData && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Route Info & Price Breakdown */}
-            <div className="lg:col-span-2 space-y-6">
-              <RouteInfo 
-                pickup={pickup}
-                delivery={delivery}
-                distance={distance}
-                estimatedTime={routeInfo.estimatedTime}
-                isPopularRoute={routeInfo.isPopularRoute}
-                isRemoteArea={routeInfo.isRemoteArea}
-                trafficConditions={routeInfo.trafficConditions}
-                mapData={mapData}
-                selectedDate={selectedDate}
-                onTollUpdate={(tollCost: number, segments?: Array<{ location: string, cost: number }>) => {
-                  setPriceComponents((prev) => {
-                    if (!prev) return null;
-                    return {
-                      ...prev,
-                      tollCosts: {
-                        segments: segments || [],
-                        total: tollCost
-                      },
-                      finalPrice: prev.basePrice * 
-                                prev.mainMultipliers.totalMain * 
-                                (1 + prev.additionalServices.totalAdditional) + 
-                                tollCost
-                    };
-                  });
-                }}
-              />
-                
+          <div className="space-y-6">
+            {/* New Price Summary Component */}
+            <PriceSummary 
+              finalPrice={priceComponents.finalPrice}
+              basePrice={priceComponents.basePrice}
+              selectedDate={selectedDate}
+              onSavePrice={() => {
+                console.log('Price calculation saved');
+              }}
+            />
+  
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column - Route Info & Price Breakdown */}
+              <div className="lg:col-span-2 space-y-6">
+                <RouteInfo 
+                  pickup={pickup}
+                  delivery={delivery}
+                  distance={distance}
+                  estimatedTime={routeInfo.estimatedTime}
+                  isPopularRoute={routeInfo.isPopularRoute}
+                  isRemoteArea={routeInfo.isRemoteArea}
+                  trafficConditions={routeInfo.trafficConditions}
+                  mapData={mapData}
+                  selectedDate={selectedDate}
+                  onTollUpdate={(tollCost: number, segments?: Array<{ location: string, cost: number }>) => {
+                    setPriceComponents((prev) => {
+                      if (!prev) return null;
+                      return {
+                        ...prev,
+                        tollCosts: {
+                          segments: segments || [],
+                          total: tollCost
+                        },
+                        finalPrice: prev.basePrice * 
+                                  prev.mainMultipliers.totalMain * 
+                                  (1 + prev.additionalServices.totalAdditional) + 
+                                  tollCost
+                      };
+                    });
+                  }}
+                />
+                  
                 <PriceBreakdown
                   distance={distance}
                   basePrice={priceComponents.basePrice}
-                  basePriceBreakdown={priceComponents.basePriceBreakdown}  // добавляем это
+                  basePriceBreakdown={priceComponents.basePriceBreakdown}
                   mainMultipliers={priceComponents.mainMultipliers}
                   additionalServices={priceComponents.additionalServices}
                   tollCosts={priceComponents.tollCosts}
@@ -548,55 +560,54 @@ export default function BrokerCalculator() {
                   }}
                   selectedDate={selectedDate}
                 />
-            </div>
+              </div>
 
             {/* Right Column - Weather Map */}
             <div className="space-y-6">
-              {mapData && (
-                <WeatherMap
-                  routePoints={{
-                    pickup: {
-                      lat: mapData.routes[0].legs[0].start_location.lat(),
-                      lng: mapData.routes[0].legs[0].start_location.lng()
-                    },
-                    delivery: {
-                      lat: mapData.routes[0].legs[0].end_location.lat(),
-                      lng: mapData.routes[0].legs[0].end_location.lng()
-                    },
-                    waypoints: []
-                  }}
-                  selectedDate={selectedDate}
-                  onWeatherUpdate={(multiplier) => {
-                    setPriceComponents((prev) => {
-                      if (!prev) return null;
-                      
-                      const newMainMultipliers = {
-                        ...prev.mainMultipliers,
-                        weather: multiplier,
-                        totalMain: prev.mainMultipliers.vehicle * 
-                                multiplier * 
-                                prev.mainMultipliers.traffic *
-                                prev.mainMultipliers.autoShow *
-                                prev.mainMultipliers.fuel
-                      };
-                      
-                      const newFinalPrice = prev.basePrice * 
-                                newMainMultipliers.totalMain * 
-                                (1 + prev.additionalServices.totalAdditional);
-                  
-                      return {
-                        ...prev,
-                        mainMultipliers: newMainMultipliers,
-                        finalPrice: newFinalPrice + (prev.tollCosts?.total || 0)
-                      };
-                    });
-                  }}
-                />
-              )}
+              <WeatherMap
+                routePoints={{
+                  pickup: {
+                    lat: mapData.routes[0].legs[0].start_location.lat(),
+                    lng: mapData.routes[0].legs[0].start_location.lng()
+                  },
+                  delivery: {
+                    lat: mapData.routes[0].legs[0].end_location.lat(),
+                    lng: mapData.routes[0].legs[0].end_location.lng()
+                  },
+                  waypoints: []
+                }}
+                selectedDate={selectedDate}
+                onWeatherUpdate={(multiplier) => {
+                  setPriceComponents((prev) => {
+                    if (!prev) return null;
+                    
+                    const newMainMultipliers = {
+                      ...prev.mainMultipliers,
+                      weather: multiplier,
+                      totalMain: prev.mainMultipliers.vehicle * 
+                              multiplier * 
+                              prev.mainMultipliers.traffic *
+                              prev.mainMultipliers.autoShow *
+                              prev.mainMultipliers.fuel
+                    };
+                    
+                    const newFinalPrice = prev.basePrice * 
+                              newMainMultipliers.totalMain * 
+                              (1 + prev.additionalServices.totalAdditional);
+                
+                    return {
+                      ...prev,
+                      mainMultipliers: newMainMultipliers,
+                      finalPrice: newFinalPrice + (prev.tollCosts?.total || 0)
+                    };
+                  });
+                }}
+              />
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
-  );
+  </div>
+);
 }
