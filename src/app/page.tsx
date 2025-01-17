@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Truck, Loader2 } from 'lucide-react';
 import PriceSummary from '@/app/components/PriceSummary';
+import { calculateTollCost, getRouteSegments } from '@/utils/tollUtils';
 import { checkAutoShows, getAutoShowMultiplier } from '@/utils/autoShowsUtils';
 import { calculateEstimatedTransitTime, getRoutePoints } from '@/utils/transportUtils';
 import { DatePickerComponent } from '@/app/components/DatePickerComponent';
@@ -96,6 +97,36 @@ export default function BrokerCalculator() {
   // Состояния для цены
   const [priceComponents, setPriceComponents] = useState<PriceComponents | null>(null);
 
+  const updatePriceComponents = (
+    prevComponents: PriceComponents | null,
+    updates: Partial<PriceComponents>
+  ) => {
+    if (!prevComponents) return null;
+  
+    const newComponents = {
+      ...prevComponents,
+      ...updates
+    };
+  
+    // Пересчитываем финальную цену с учетом всех факторов
+    const mainMultiplierTotal = 
+      newComponents.mainMultipliers.vehicle * 
+      newComponents.mainMultipliers.weather * 
+      newComponents.mainMultipliers.traffic *
+      newComponents.mainMultipliers.autoShow *
+      newComponents.mainMultipliers.fuel;
+  
+    newComponents.mainMultipliers.totalMain = mainMultiplierTotal;
+  
+    newComponents.finalPrice = 
+      newComponents.basePrice * 
+      mainMultiplierTotal * 
+      (1 + newComponents.additionalServices.totalAdditional) +
+      (newComponents.tollCosts?.total || 0);
+  
+    return newComponents;
+  };
+
   // Рефы для Google Maps
   const pickupInputRef = useRef<HTMLInputElement>(null);
   const deliveryInputRef = useRef<HTMLInputElement>(null);
@@ -151,7 +182,7 @@ export default function BrokerCalculator() {
       setError('Please select a shipping date');
       return;
     }
-  
+   
     // Проверка остальных полей
     const errors = [];
     if (!pickup || !delivery) {
@@ -166,24 +197,24 @@ export default function BrokerCalculator() {
     if (!vehicleValue) {
       errors.push('vehicle value');
     }
-  
+   
     if (errors.length > 0) {
       setError(`Please enter ${errors.join(', ')}`);
       return;
     }
-  
+   
     // Проверка корректности адресов
     const isPickupValid = await isUSAddress(pickup, window.google);
     const isDeliveryValid = await isUSAddress(delivery, window.google);
-  
+   
     if (!isPickupValid || !isDeliveryValid) {
       setError('Please enter valid US addresses for pickup and delivery');
       return;
     }
-  
+   
     setLoading(true);
     setError(null);
-  
+   
     try {
       const service = new google.maps.DirectionsService();
       
@@ -192,7 +223,7 @@ export default function BrokerCalculator() {
         destination: delivery,
         travelMode: google.maps.TravelMode.DRIVING
       }) as google.maps.DirectionsResult;
-  
+   
       setMapData(response);
       const distanceInMiles = (response.routes[0].legs[0].distance?.value || 0) / 1609.34;
       
@@ -201,27 +232,27 @@ export default function BrokerCalculator() {
         ...prev,
         estimatedTime: calculateEstimatedTransitTime(distanceInMiles)
       }));
-  
+   
       // Проверяем наличие автовыставок
       const pickupAutoShows = await checkAutoShows({
         lat: response.routes[0].legs[0].start_location.lat(),
         lng: response.routes[0].legs[0].start_location.lng()
       }, selectedDate, window.google);
-  
+   
       const deliveryAutoShows = await checkAutoShows({
         lat: response.routes[0].legs[0].end_location.lat(),
         lng: response.routes[0].legs[0].end_location.lng()
       }, selectedDate, window.google);
-  
+   
       const autoShowMultiplier = Math.max(
         getAutoShowMultiplier(pickupAutoShows, selectedDate),
         getAutoShowMultiplier(deliveryAutoShows, selectedDate)
       );
-  
+   
       // Проверяем цены на топливо
       const routePoints = getRoutePoints(response);
       const fuelPriceMultiplier = await getFuelPriceMultiplier(routePoints, window.google);
-  
+   
       // Расчет базовой цены
       const basePrice = getBaseRate(distanceInMiles, transportType);
       
@@ -230,16 +261,33 @@ export default function BrokerCalculator() {
         distance: distanceInMiles,
         total: basePrice
       };
-  
+   
       // Расчет множителя дополнительных услуг
       const additionalServicesMultiplier = 1.0 + 
         (premiumEnhancements ? 0.3 : 0) +
         (specialLoad ? 0.3 : 0) +
         (inoperable ? 0.3 : 0);
-  
+   
       // Получение множителей
       const vehicleMultiplier = VEHICLE_VALUE_TYPES[vehicleValue].multiplier;
-  
+   
+      // Расчет toll costs
+      const totalTollCost = calculateTollCost(distanceInMiles, response.routes[0]);
+      const tollSegments = getRouteSegments(response, totalTollCost);
+      const tollCosts = {
+        segments: tollSegments,
+        total: totalTollCost
+      };
+   
+      // Финальная цена с учетом всех факторов, включая толлы
+      const finalPrice = basePrice * 
+                        vehicleMultiplier * 
+                        1.0 * 
+                        autoShowMultiplier * 
+                        fuelPriceMultiplier * 
+                        additionalServicesMultiplier + 
+                        tollCosts.total;
+   
       setPriceComponents({
         selectedDate,
         basePrice,
@@ -261,21 +309,17 @@ export default function BrokerCalculator() {
           inoperable: inoperable ? 0.3 : 0,
           totalAdditional: additionalServicesMultiplier - 1.0
         },
-        finalPrice: basePrice * 
-                   vehicleMultiplier * 
-                   1.0 * 
-                   autoShowMultiplier * 
-                   fuelPriceMultiplier * 
-                   additionalServicesMultiplier
+        tollCosts,
+        finalPrice
       });
-  
+   
     } catch (err) {
       console.error('Calculation error:', err);
       setError('Error calculating route. Please check the addresses and try again.');
     } finally {
       setLoading(false);
     }
-  };
+   };
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
@@ -518,33 +562,27 @@ export default function BrokerCalculator() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left Column - Route Info & Price Breakdown */}
               <div className="lg:col-span-2 space-y-6">
-                <RouteInfo 
-                  pickup={pickup}
-                  delivery={delivery}
-                  distance={distance}
-                  estimatedTime={routeInfo.estimatedTime}
-                  isPopularRoute={routeInfo.isPopularRoute}
-                  isRemoteArea={routeInfo.isRemoteArea}
-                  trafficConditions={routeInfo.trafficConditions}
-                  mapData={mapData}
-                  selectedDate={selectedDate}
-                  onTollUpdate={(tollCost: number, segments?: Array<{ location: string, cost: number }>) => {
-                    setPriceComponents((prev) => {
-                      if (!prev) return null;
-                      return {
-                        ...prev,
-                        tollCosts: {
-                          segments: segments || [],
-                          total: tollCost
-                        },
-                        finalPrice: prev.basePrice * 
-                                  prev.mainMultipliers.totalMain * 
-                                  (1 + prev.additionalServices.totalAdditional) + 
-                                  tollCost
-                      };
-                    });
-                  }}
-                />
+              <RouteInfo 
+                pickup={pickup}
+                delivery={delivery}
+                distance={distance}
+                estimatedTime={routeInfo.estimatedTime}
+                isPopularRoute={routeInfo.isPopularRoute}
+                isRemoteArea={routeInfo.isRemoteArea}
+                trafficConditions={routeInfo.trafficConditions}
+                mapData={mapData}
+                selectedDate={selectedDate}
+                onTollUpdate={(tollCost: number, segments?: Array<{ location: string, cost: number }>) => {
+                  setPriceComponents((prev) => 
+                    updatePriceComponents(prev, {
+                      tollCosts: {
+                        segments: segments || [],
+                        total: tollCost
+                      }
+                    })
+                  );
+                }}
+              />
                   
                 <PriceBreakdown
                   distance={distance}
@@ -564,45 +602,30 @@ export default function BrokerCalculator() {
 
             {/* Right Column - Weather Map */}
             <div className="space-y-6">
-              <WeatherMap
-                routePoints={{
-                  pickup: {
-                    lat: mapData.routes[0].legs[0].start_location.lat(),
-                    lng: mapData.routes[0].legs[0].start_location.lng()
-                  },
-                  delivery: {
-                    lat: mapData.routes[0].legs[0].end_location.lat(),
-                    lng: mapData.routes[0].legs[0].end_location.lng()
-                  },
-                  waypoints: []
-                }}
-                selectedDate={selectedDate}
-                onWeatherUpdate={(multiplier) => {
-                  setPriceComponents((prev) => {
-                    if (!prev) return null;
-                    
-                    const newMainMultipliers = {
-                      ...prev.mainMultipliers,
-                      weather: multiplier,
-                      totalMain: prev.mainMultipliers.vehicle * 
-                              multiplier * 
-                              prev.mainMultipliers.traffic *
-                              prev.mainMultipliers.autoShow *
-                              prev.mainMultipliers.fuel
-                    };
-                    
-                    const newFinalPrice = prev.basePrice * 
-                              newMainMultipliers.totalMain * 
-                              (1 + prev.additionalServices.totalAdditional);
-                
-                    return {
-                      ...prev,
-                      mainMultipliers: newMainMultipliers,
-                      finalPrice: newFinalPrice + (prev.tollCosts?.total || 0)
-                    };
-                  });
-                }}
-              />
+            <WeatherMap
+              routePoints={{
+                pickup: {
+                  lat: mapData.routes[0].legs[0].start_location.lat(),
+                  lng: mapData.routes[0].legs[0].start_location.lng()
+                },
+                delivery: {
+                  lat: mapData.routes[0].legs[0].end_location.lat(),
+                  lng: mapData.routes[0].legs[0].end_location.lng()
+                },
+                waypoints: []
+              }}
+              selectedDate={selectedDate}
+              onWeatherUpdate={(multiplier) => {
+                setPriceComponents((prev) => 
+                  updatePriceComponents(prev, {
+                    mainMultipliers: {
+                      ...prev!.mainMultipliers,
+                      weather: multiplier
+                    }
+                  })
+                );
+              }}
+            />
             </div>
           </div>
         </div>
