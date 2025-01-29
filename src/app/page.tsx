@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import { type SingleValue } from 'react-select';
+import dynamic from 'next/dynamic';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Truck, Loader2 } from 'lucide-react';
 import PriceSummary from '@/app/components/PriceSummary';
@@ -22,6 +24,16 @@ import {
   type AdditionalService,
   getBaseRate
 } from '@/constants/pricing';
+
+interface SelectOption {
+  value: string;
+  label: string;
+  description?: string;
+}
+
+const Select = dynamic(() => import('react-select'), { 
+  ssr: false 
+});
 
 interface PriceComponents {
   selectedDate: Date | undefined;
@@ -53,9 +65,9 @@ interface PriceComponents {
 }
 
 interface BasePriceBreakdown {
-  ratePerMile: number;    // базовая ставка за милю
-  distance: number;       // расстояние
-  total: number;         // итоговая базовая цена
+  ratePerMile: number;
+  distance: number;
+  total: number;
 }
 
 const mapLoader = new Loader({
@@ -66,7 +78,6 @@ const mapLoader = new Loader({
 });
 
 export default function BrokerCalculator() {
-  // Основные состояния
   const [pickup, setPickup] = useState('');
   const [delivery, setDelivery] = useState('');
   const [distance, setDistance] = useState<number | null>(null);
@@ -74,7 +85,6 @@ export default function BrokerCalculator() {
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
-  // Состояния для расчета
   const [transportType, setTransportType] = useState<keyof typeof TRANSPORT_TYPES | ''>('');
   const [vehicleValue, setVehicleValue] = useState<keyof typeof VEHICLE_VALUE_TYPES | ''>('');
   const [premiumEnhancements, setPremiumEnhancements] = useState(false);
@@ -82,7 +92,6 @@ export default function BrokerCalculator() {
   const [inoperable, setInoperable] = useState(false);
   const [vehicleType, setVehicleType] = useState<keyof typeof VEHICLE_TYPES | ''>('');
 
-  // Состояния для маршрута
   const [mapData, setMapData] = useState<google.maps.DirectionsResult | null>(null);
   const [routeInfo, setRouteInfo] = useState({
     isPopularRoute: false,
@@ -94,7 +103,6 @@ export default function BrokerCalculator() {
     estimatedTime: ''
   });
   
-  // Состояния для цены
   const [priceComponents, setPriceComponents] = useState<PriceComponents | null>(null);
 
   const updatePriceComponents = (
@@ -108,7 +116,6 @@ export default function BrokerCalculator() {
       ...updates
     };
   
-    // Пересчитываем финальную цену с учетом всех факторов
     const mainMultiplierTotal = 
       newComponents.mainMultipliers.vehicle * 
       newComponents.mainMultipliers.weather * 
@@ -127,13 +134,32 @@ export default function BrokerCalculator() {
     return newComponents;
   };
 
-  // Рефы для Google Maps
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const mapRef = useRef<HTMLDivElement>(null);
   const pickupInputRef = useRef<HTMLInputElement>(null);
   const deliveryInputRef = useRef<HTMLInputElement>(null);
   const googleRef = useRef<typeof google | null>(null);
 
-  // Эффект для автовключения Премиум функции
+  const clearResults = () => {
+    setDistance(null);
+    setPriceComponents(null);
+    setMapData(null);
+    setRouteInfo({
+      isPopularRoute: false,
+      isRemoteArea: false,
+      trafficConditions: {
+        status: 'light',
+        delay: 0
+      },
+      estimatedTime: ''
+    });
+  };
+
   useEffect(() => {
     const isExpensiveVehicle = vehicleValue === 'under500k' || vehicleValue === 'over500k';
     if (isExpensiveVehicle) {
@@ -141,7 +167,6 @@ export default function BrokerCalculator() {
     }
   }, [vehicleValue]);
   
-  // Инициализация Google Maps
   useEffect(() => {
     const initAutocomplete = async () => {
       try {
@@ -162,11 +187,13 @@ export default function BrokerCalculator() {
           pickupAutocomplete.addListener('place_changed', () => {
             const place = pickupAutocomplete.getPlace();
             setPickup(place.formatted_address || '');
+            clearResults();
           });
 
           deliveryAutocomplete.addListener('place_changed', () => {
             const place = deliveryAutocomplete.getPlace();
             setDelivery(place.formatted_address || '');
+            clearResults();
           });
         }
       } catch (err) {
@@ -177,14 +204,12 @@ export default function BrokerCalculator() {
     initAutocomplete();
   }, []);
 
-  // Функция для расчета цены
   const calculatePrice = async () => {
     if (!selectedDate) {
       setError('Please select a shipping date');
       return;
     }
    
-    // Проверка остальных полей
     const errors = [];
     if (!pickup || !delivery) {
       errors.push('pickup and delivery locations');
@@ -204,7 +229,6 @@ export default function BrokerCalculator() {
       return;
     }
    
-    // Проверка корректности адресов
     const isPickupValid = await isUSAddress(pickup, window.google);
     const isDeliveryValid = await isUSAddress(delivery, window.google);
    
@@ -234,7 +258,6 @@ export default function BrokerCalculator() {
         estimatedTime: calculateEstimatedTransitTime(distanceInMiles)
       }));
    
-      // Проверяем наличие автовыставок
       const pickupAutoShows = await checkAutoShows({
         lat: response.routes[0].legs[0].start_location.lat(),
         lng: response.routes[0].legs[0].start_location.lng()
@@ -250,11 +273,9 @@ export default function BrokerCalculator() {
         getAutoShowMultiplier(deliveryAutoShows, selectedDate)
       );
    
-      // Проверяем цены на топливо
       const routePoints = getRoutePoints(response);
       const fuelPriceMultiplier = await getFuelPriceMultiplier(routePoints, window.google);
    
-      // Расчет базовой цены
       const basePrice = getBaseRate(distanceInMiles, transportType);
       
       const basePriceBreakdown = {
@@ -263,16 +284,13 @@ export default function BrokerCalculator() {
         total: basePrice
       };
    
-      // Расчет множителя дополнительных услуг
       const additionalServicesMultiplier = 1.0 + 
         (premiumEnhancements ? 0.3 : 0) +
         (specialLoad ? 0.3 : 0) +
         (inoperable ? 0.3 : 0);
    
-      // Получение множителей
       const vehicleMultiplier = VEHICLE_VALUE_TYPES[vehicleValue].multiplier;
    
-      // Расчет toll costs
       const totalTollCost = calculateTollCost(distanceInMiles, response.routes[0]);
       const tollSegments = getRouteSegments(response, totalTollCost);
       const tollCosts = {
@@ -280,7 +298,6 @@ export default function BrokerCalculator() {
         total: totalTollCost
       };
    
-      // Финальная цена с учетом всех факторов, включая толлы
       const finalPrice = basePrice * 
                         vehicleMultiplier * 
                         1.0 * 
@@ -320,12 +337,11 @@ export default function BrokerCalculator() {
     } finally {
       setLoading(false);
     }
-   };
+  };
 
-   return (
+  return (
     <div className="min-h-screen bg-white p-24">
       <div className="max-w-7xl mx-auto space-y-24">
-        {/* Calculator Form Section */}
         <div className="bg-white rounded-[32px] p-24">
           <div className="flex items-center mb-24">
             <div className="flex items-center space-x-16">
@@ -333,10 +349,8 @@ export default function BrokerCalculator() {
               <h1 className="font-jost text-[32px] font-bold">Delivery Calculator</h1>
             </div>
           </div>
-  
-          {/* Main Form */}
+
           <div className="space-y-24">
-            {/* Top Grid - Date, Transport Type, Vehicle Value */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-24">
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
@@ -347,6 +361,7 @@ export default function BrokerCalculator() {
                   onDateChange={(date) => {
                     setSelectedDate(date);
                     setError(null);
+                    clearResults();
                   }}
                 />
               </div>
@@ -355,72 +370,193 @@ export default function BrokerCalculator() {
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Transport Type
                 </label>
-                <select
-                  value={transportType}
-                  onChange={(e) => setTransportType(e.target.value as keyof typeof TRANSPORT_TYPES)}
-                  className={`mt-8 block w-full rounded-[24px]
-                    bg-gray-50
-                    border-gray-300
-                    text-gray-900
-                    focus:ring-[#1356BE] focus:border-[#1356BE]
-                    font-montserrat text-p2
-                    ${!transportType && error ? 'border-red-300 ring-red-300' : ''}`}
-                >
-                  <option value="" disabled>Select transport type...</option>
-                  {Object.entries(TRANSPORT_TYPES).map(([type, data]) => (
-                    <option key={type} value={type}>{data.name}</option>
-                  ))}
-                </select>
+                {isMounted && (
+                  <Select
+                    options={Object.entries(TRANSPORT_TYPES).map(([type, data]): SelectOption => ({
+                      value: type,
+                      label: data.name
+                    }))}
+                    placeholder="Select transport type..."
+                    value={transportType 
+                      ? { value: transportType, label: TRANSPORT_TYPES[transportType].name } 
+                      : null}
+                    onChange={(selectedOption: SingleValue<SelectOption>) => {
+                      setTransportType(selectedOption?.value as keyof typeof TRANSPORT_TYPES || '');
+                      clearResults();
+                    }}
+                    isSearchable={false}
+                    menuPortalTarget={document.body}
+                    styles={{
+                      menuPortal: base => ({
+                        ...base,
+                        zIndex: 9999
+                      }),
+                      control: (base) => ({
+                        ...base,
+                        marginTop: '0.5rem',
+                        borderRadius: '24px',
+                        backgroundColor: '#F3F4F6',
+                        borderColor: '#D1D5DB',
+                        '&:hover': {
+                          borderColor: '#1356BE'
+                        }
+                      }),
+                      option: (base, { isSelected, isFocused }) => ({
+                        ...base,
+                        backgroundColor: isSelected ? '#1356BE' : isFocused ? '#E5E7EB' : 'white',
+                        color: isSelected ? 'white' : 'black',
+                        ':active': {
+                          backgroundColor: '#1356BE',
+                          color: 'white'
+                        }
+                      }),
+                      menu: (base) => ({
+                        ...base,
+                        borderRadius: '24px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                      }),
+                      singleValue: (base) => ({
+                        ...base,
+                        color: '#1f2937'
+                      }),
+                      placeholder: (base) => ({
+                        ...base,
+                        color: '#6B7280'
+                      })
+                    }}
+                    menuPosition="fixed"
+                  />
+                )}
               </div>
-  
+
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Vehicle Type
                 </label>
-                <select
-                  value={vehicleType}
-                  onChange={(e) => setVehicleType(e.target.value as keyof typeof VEHICLE_TYPES)}
-                  className={`mt-8 block w-full rounded-[24px]
-                    bg-gray-50
-                    border-gray-300
-                    text-gray-900
-                    focus:ring-[#1356BE] focus:border-[#1356BE]
-                    font-montserrat text-p2
-                    ${!vehicleType && error ? 'border-red-300 ring-red-300' : ''}`}
-                >
-                  <option value="" disabled>Select vehicle type...</option>
-                  {Object.entries(VEHICLE_TYPES).map(([type, data]) => (
-                    <option key={type} value={type} title={data.description}>
-                      {data.name}
-                    </option>
-                  ))}
-                </select>
+                {isMounted && (
+                  <Select
+                    options={Object.entries(VEHICLE_TYPES).map(([type, data]): SelectOption => ({
+                      value: type,
+                      label: data.name,
+                      description: data.description
+                    }))}
+                    placeholder="Select vehicle type..."
+                    value={vehicleType 
+                      ? { value: vehicleType, label: VEHICLE_TYPES[vehicleType].name } 
+                      : null}
+                    onChange={(selectedOption: SingleValue<SelectOption>) => {
+                      setVehicleType(selectedOption?.value as keyof typeof VEHICLE_TYPES || '');
+                      clearResults();
+                    }}
+                    isSearchable={false}
+                    menuPortalTarget={document.body}
+                    styles={{
+                      menuPortal: base => ({
+                        ...base,
+                        zIndex: 9999
+                      }),
+                      control: (base) => ({
+                        ...base,
+                        marginTop: '0.5rem',
+                        borderRadius: '24px',
+                        backgroundColor: '#F3F4F6',
+                        borderColor: '#D1D5DB',
+                        '&:hover': {
+                          borderColor: '#1356BE'
+                        }
+                      }),
+                      option: (base, { isSelected, isFocused }) => ({
+                        ...base,
+                        backgroundColor: isSelected ? '#1356BE' : isFocused ? '#E5E7EB' : 'white',
+                        color: isSelected ? 'white' : 'black',
+                        ':active': {
+                          backgroundColor: '#1356BE',
+                          color: 'white'
+                        }
+                      }),
+                      menu: (base) => ({
+                        ...base,
+                        borderRadius: '24px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                      }),
+                      singleValue: (base) => ({
+                        ...base,
+                        color: '#1f2937'
+                      }),
+                      placeholder: (base) => ({
+                        ...base,
+                        color: '#6B7280'
+                      })
+                    }}
+                    menuPosition="fixed"
+                  />
+                )}
               </div>
-  
+
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Vehicle Value
                 </label>
-                <select
-                  value={vehicleValue}
-                  onChange={(e) => setVehicleValue(e.target.value as keyof typeof VEHICLE_VALUE_TYPES)}
-                  className={`mt-8 block w-full rounded-[24px]
-                    bg-gray-50
-                    border-gray-300
-                    text-gray-900
-                    focus:ring-[#1356BE] focus:border-[#1356BE]
-                    font-montserrat text-p2
-                    ${!vehicleValue && error ? 'border-red-300 ring-red-300' : ''}`}
-                >
-                  <option value="" disabled>Select vehicle value...</option>
-                  {Object.entries(VEHICLE_VALUE_TYPES).map(([type, data]) => (
-                    <option key={type} value={type}>{data.name}</option>
-                  ))}
-                </select>
+                {isMounted && (
+                  <Select
+                    options={Object.entries(VEHICLE_VALUE_TYPES).map(([type, data]): SelectOption => ({
+                      value: type,
+                      label: data.name
+                    }))}
+                    placeholder="Select vehicle value..."
+                    value={vehicleValue 
+                      ? { value: vehicleValue, label: VEHICLE_VALUE_TYPES[vehicleValue].name } 
+                      : null}
+                    onChange={(selectedOption: SingleValue<SelectOption>) => {
+                      setVehicleValue(selectedOption?.value as keyof typeof VEHICLE_VALUE_TYPES || '');
+                      clearResults();
+                    }}
+                    isSearchable={false}
+                    menuPortalTarget={document.body}
+                    styles={{
+                      menuPortal: base => ({
+                        ...base,
+                        zIndex: 9999
+                      }),
+                      control: (base) => ({
+                        ...base,
+                        marginTop: '0.5rem',
+                        borderRadius: '24px',
+                        backgroundColor: '#F3F4F6',
+                        borderColor: '#D1D5DB',
+                        '&:hover': {
+                          borderColor: '#1356BE'
+                        }
+                      }),
+                      option: (base, { isSelected, isFocused }) => ({
+                        ...base,
+                        backgroundColor: isSelected ? '#1356BE' : isFocused ? '#E5E7EB' : 'white',
+                        color: isSelected ? 'white' : 'black',
+                        ':active': {
+                          backgroundColor: '#1356BE',
+                          color: 'white'
+                        }
+                      }),
+                      menu: (base) => ({
+                        ...base,
+                        borderRadius: '24px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                      }),
+                      singleValue: (base) => ({
+                        ...base,
+                        color: '#1f2937'
+                      }),
+                      placeholder: (base) => ({
+                        ...base,
+                        color: '#6B7280'
+                      })
+                    }}
+                    menuPosition="fixed"
+                  />
+                )}
               </div>
             </div>
-  
-            {/* Locations */}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-24">
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
@@ -438,7 +574,10 @@ export default function BrokerCalculator() {
                     font-montserrat text-p2
                     ${!pickup && error ? 'border-red-300 ring-red-300' : ''}`}
                   value={pickup}
-                  onChange={(e) => setPickup(e.target.value)}
+                  onChange={(e) => {
+                    setPickup(e.target.value);
+                    clearResults();
+                  }}
                   placeholder="Enter pickup address"
                 />
               </div>
@@ -458,13 +597,15 @@ export default function BrokerCalculator() {
                     font-montserrat text-p2
                     ${!delivery && error ? 'border-red-300 ring-red-300' : ''}`}
                   value={delivery}
-                  onChange={(e) => setDelivery(e.target.value)}
+                  onChange={(e) => {
+                    setDelivery(e.target.value);
+                    clearResults();
+                  }}
                   placeholder="Enter delivery address"
                 />
               </div>
             </div>
-  
-            {/* Additional Services */}
+
             <div className="space-y-16">
               {Object.entries(ADDITIONAL_SERVICES).map(([key, service]: [string, AdditionalService]) => (
                 <div key={key} className="flex items-center space-x-12">
@@ -477,9 +618,18 @@ export default function BrokerCalculator() {
                               key === 'inoperable' ? inoperable : false}
                       disabled={key === 'premiumEnhancements' && (vehicleValue === 'under500k' || vehicleValue === 'over500k')}
                       onChange={(e) => {
-                        if (key === 'premiumEnhancements') setPremiumEnhancements(e.target.checked);
-                        else if (key === 'specialLoad') setSpecialLoad(e.target.checked);
-                        else if (key === 'inoperable') setInoperable(e.target.checked);
+                        if (key === 'premiumEnhancements') {
+                          setPremiumEnhancements(e.target.checked);
+                          clearResults();
+                        }
+                        else if (key === 'specialLoad') {
+                          setSpecialLoad(e.target.checked);
+                          clearResults();
+                        }
+                        else if (key === 'inoperable') {
+                          setInoperable(e.target.checked);
+                          clearResults();
+                        }
                       }}
                       className={`appearance-none h-24 w-24 rounded
                         border-2 border-gray-200
@@ -522,17 +672,17 @@ export default function BrokerCalculator() {
                           d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" 
                         />
                       </svg>
-                      <div className="invisible group-hover:visible absolute z-50 w-320 p-24
-                        bg-[#0A0A0B] rounded-[24px] shadow-lg -mt-8 ml-24">
-                        <div className="text-p3 font-montserrat font-semibold text-white mb-12">
+                      <div className="invisible group-hover:visible absolute z-50 w-[280px] p-16
+                        bg-white border border-gray-200 rounded-[24px] shadow-lg -mt-8 ml-24">
+                        <div className="text-sm font-montserrat font-semibold text-gray-900 mb-8">
                           {key === 'premiumEnhancements' ? 'Premium Service Benefits:' : 
                           key === 'specialLoad' ? 'Special Load Services:' : 
                           'Inoperable Vehicle Services:'}
                         </div>
-                        <ul className="space-y-8">
+                        <ul className="space-y-2">
                           {service.tooltip?.map((tip, index) => (
-                            <li key={index} className="flex text-p3 font-montserrat text-white">
-                              <span className="mr-8">•</span>
+                            <li key={index} className="flex text-xs font-montserrat text-gray-700 leading-tight">
+                              <span className="mr-4 text-sm">•</span>
                               <span>{tip}</span>
                             </li>
                           ))}
@@ -543,8 +693,7 @@ export default function BrokerCalculator() {
                 </div>
               ))}
             </div>
-  
-            {/* Calculate Button */}
+
             <button
               onClick={calculatePrice}
               disabled={loading}
@@ -565,7 +714,7 @@ export default function BrokerCalculator() {
                 'Calculate Route and Price'
               )}
             </button>
-  
+
             {error && (
               <div className="mt-16 p-16 bg-red-50 text-red-700 rounded-[24px] font-montserrat text-p2">
                 {error}
@@ -573,11 +722,9 @@ export default function BrokerCalculator() {
             )}
           </div>
         </div>
-  
-        {/* Results Section */}
+
         {distance && priceComponents && mapData && (
           <div className="space-y-24">
-            {/* Price Summary Component */}
             <PriceSummary 
               finalPrice={priceComponents.finalPrice}
               basePrice={priceComponents.basePrice}
@@ -586,8 +733,7 @@ export default function BrokerCalculator() {
                 console.log('Price calculation saved');
               }}
             />
-  
-            {/* Map and Weather section */}
+
             <div className="flex gap-24">
               <GoogleMap ref={mapRef} mapData={mapData} />
               {mapData && (
@@ -617,31 +763,31 @@ export default function BrokerCalculator() {
                 />
               )}
             </div>
-  
+
             <div className="lg:col-span-2 space-y-24">
-            <RouteInfo 
-              pickup={pickup}
-              delivery={delivery}
-              distance={distance}
-              finalPrice={priceComponents.finalPrice} // добавляем это
-              estimatedTime={routeInfo.estimatedTime}
-              isPopularRoute={routeInfo.isPopularRoute}
-              isRemoteArea={routeInfo.isRemoteArea}
-              trafficConditions={routeInfo.trafficConditions}
-              mapData={mapData}
-              selectedDate={selectedDate}
-              onTollUpdate={(tollCost: number, segments?: Array<{ location: string, cost: number }>) => {
-                setPriceComponents((prev) => 
-                  updatePriceComponents(prev, {
-                    tollCosts: {
-                      segments: segments || [],
-                      total: tollCost
-                    }
-                  })
-                );
-              }}
-            />
-                  
+              <RouteInfo 
+                pickup={pickup}
+                delivery={delivery}
+                distance={distance}
+                finalPrice={priceComponents.finalPrice}
+                estimatedTime={routeInfo.estimatedTime}
+                isPopularRoute={routeInfo.isPopularRoute}
+                isRemoteArea={routeInfo.isRemoteArea}
+                trafficConditions={routeInfo.trafficConditions}
+                mapData={mapData}
+                selectedDate={selectedDate}
+                onTollUpdate={(tollCost: number, segments?: Array<{ location: string, cost: number }>) => {
+                  setPriceComponents((prev) => 
+                    updatePriceComponents(prev, {
+                      tollCosts: {
+                        segments: segments || [],
+                        total: tollCost
+                      }
+                    })
+                  );
+                }}
+              />
+                    
               <PriceBreakdown
                 distance={distance}
                 basePrice={priceComponents.basePrice}

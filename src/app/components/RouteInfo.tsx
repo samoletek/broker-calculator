@@ -201,11 +201,6 @@ export default function RouteInfo({
           {/* Title and Date */}
           <div className="w-[371px] flex items-center gap-16">
             <h2 className="font-jost text-[32px] font-bold">Route Details</h2>
-            {selectedDate && (
-              <span className="font-montserrat text-p2 text-gray-600">
-                ({format(selectedDate, 'MMMM dd\'th\', yyyy')})
-              </span>
-            )}
           </div>
   
           {/* Price */}
