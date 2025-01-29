@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { type SingleValue } from 'react-select';
 import dynamic from 'next/dynamic';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Truck, Loader2 } from 'lucide-react';
@@ -31,9 +30,54 @@ interface SelectOption {
   description?: string;
 }
 
+type SelectChangeEvent = {
+  value: string;
+  label: string;
+  description?: string;
+} | null;
+
 const Select = dynamic(() => import('react-select'), { 
   ssr: false 
 });
+
+const selectStyles = {
+  menuPortal: (base: any) => ({
+    ...base,
+    zIndex: 9999
+  }),
+  control: (base: any) => ({
+    ...base,
+    marginTop: '0.5rem',
+    borderRadius: '24px',
+    backgroundColor: '#F3F4F6',
+    borderColor: '#D1D5DB',
+    '&:hover': {
+      borderColor: '#1356BE'
+    }
+  }),
+  option: (base: any, { isSelected, isFocused }: { isSelected: boolean; isFocused: boolean }) => ({
+    ...base,
+    backgroundColor: isSelected ? '#1356BE' : isFocused ? '#E5E7EB' : 'white',
+    color: isSelected ? 'white' : 'black',
+    ':active': {
+      backgroundColor: '#1356BE',
+      color: 'white'
+    }
+  }),
+  menu: (base: any) => ({
+    ...base,
+    borderRadius: '24px',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+  }),
+  singleValue: (base: any) => ({
+    ...base,
+    color: '#1f2937'
+  }),
+  placeholder: (base: any) => ({
+    ...base,
+    color: '#6B7280'
+  })
+};
 
 interface PriceComponents {
   selectedDate: Date | undefined;
@@ -104,6 +148,11 @@ export default function BrokerCalculator() {
   });
   
   const [priceComponents, setPriceComponents] = useState<PriceComponents | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const updatePriceComponents = (
     prevComponents: PriceComponents | null,
@@ -134,12 +183,6 @@ export default function BrokerCalculator() {
     return newComponents;
   };
 
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   const mapRef = useRef<HTMLDivElement>(null);
   const pickupInputRef = useRef<HTMLInputElement>(null);
   const deliveryInputRef = useRef<HTMLInputElement>(null);
@@ -153,7 +196,7 @@ export default function BrokerCalculator() {
       isPopularRoute: false,
       isRemoteArea: false,
       trafficConditions: {
-        status: 'light',
+        status: 'light' as 'light' | 'moderate' | 'heavy',
         delay: 0
       },
       estimatedTime: ''
@@ -342,7 +385,7 @@ export default function BrokerCalculator() {
   return (
     <div className="min-h-screen bg-white p-24">
       <div className="max-w-7xl mx-auto space-y-24">
-        <div className="bg-white rounded-[32px] p-24">
+        <div className="bg-white rounded-[32px] p-24 border border-[#1356BE]/10">
           <div className="flex items-center mb-24">
             <div className="flex items-center space-x-16">
               <Truck className="w-32 h-32 text-[#1356BE]" />
@@ -380,51 +423,14 @@ export default function BrokerCalculator() {
                     value={transportType 
                       ? { value: transportType, label: TRANSPORT_TYPES[transportType].name } 
                       : null}
-                    onChange={(selectedOption: SingleValue<SelectOption>) => {
-                      setTransportType(selectedOption?.value as keyof typeof TRANSPORT_TYPES || '');
+                    onChange={(newValue: any) => {
+                      setTransportType(newValue?.value || '');
                       clearResults();
                     }}
                     isSearchable={false}
                     menuPortalTarget={document.body}
-                    styles={{
-                      menuPortal: base => ({
-                        ...base,
-                        zIndex: 9999
-                      }),
-                      control: (base) => ({
-                        ...base,
-                        marginTop: '0.5rem',
-                        borderRadius: '24px',
-                        backgroundColor: '#F3F4F6',
-                        borderColor: '#D1D5DB',
-                        '&:hover': {
-                          borderColor: '#1356BE'
-                        }
-                      }),
-                      option: (base, { isSelected, isFocused }) => ({
-                        ...base,
-                        backgroundColor: isSelected ? '#1356BE' : isFocused ? '#E5E7EB' : 'white',
-                        color: isSelected ? 'white' : 'black',
-                        ':active': {
-                          backgroundColor: '#1356BE',
-                          color: 'white'
-                        }
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        borderRadius: '24px',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                      }),
-                      singleValue: (base) => ({
-                        ...base,
-                        color: '#1f2937'
-                      }),
-                      placeholder: (base) => ({
-                        ...base,
-                        color: '#6B7280'
-                      })
-                    }}
-                    menuPosition="fixed"
+                    styles={selectStyles}
+                    classNamePrefix="react-select"
                   />
                 )}
               </div>
@@ -444,51 +450,14 @@ export default function BrokerCalculator() {
                     value={vehicleType 
                       ? { value: vehicleType, label: VEHICLE_TYPES[vehicleType].name } 
                       : null}
-                    onChange={(selectedOption: SingleValue<SelectOption>) => {
-                      setVehicleType(selectedOption?.value as keyof typeof VEHICLE_TYPES || '');
+                    onChange={(newValue: any) => {
+                      setVehicleType(newValue?.value || '');
                       clearResults();
                     }}
                     isSearchable={false}
                     menuPortalTarget={document.body}
-                    styles={{
-                      menuPortal: base => ({
-                        ...base,
-                        zIndex: 9999
-                      }),
-                      control: (base) => ({
-                        ...base,
-                        marginTop: '0.5rem',
-                        borderRadius: '24px',
-                        backgroundColor: '#F3F4F6',
-                        borderColor: '#D1D5DB',
-                        '&:hover': {
-                          borderColor: '#1356BE'
-                        }
-                      }),
-                      option: (base, { isSelected, isFocused }) => ({
-                        ...base,
-                        backgroundColor: isSelected ? '#1356BE' : isFocused ? '#E5E7EB' : 'white',
-                        color: isSelected ? 'white' : 'black',
-                        ':active': {
-                          backgroundColor: '#1356BE',
-                          color: 'white'
-                        }
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        borderRadius: '24px',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                      }),
-                      singleValue: (base) => ({
-                        ...base,
-                        color: '#1f2937'
-                      }),
-                      placeholder: (base) => ({
-                        ...base,
-                        color: '#6B7280'
-                      })
-                    }}
-                    menuPosition="fixed"
+                    styles={selectStyles}
+                    classNamePrefix="react-select"
                   />
                 )}
               </div>
@@ -507,51 +476,14 @@ export default function BrokerCalculator() {
                     value={vehicleValue 
                       ? { value: vehicleValue, label: VEHICLE_VALUE_TYPES[vehicleValue].name } 
                       : null}
-                    onChange={(selectedOption: SingleValue<SelectOption>) => {
-                      setVehicleValue(selectedOption?.value as keyof typeof VEHICLE_VALUE_TYPES || '');
+                    onChange={(newValue: any) => {
+                      setVehicleValue(newValue?.value || '');
                       clearResults();
                     }}
                     isSearchable={false}
                     menuPortalTarget={document.body}
-                    styles={{
-                      menuPortal: base => ({
-                        ...base,
-                        zIndex: 9999
-                      }),
-                      control: (base) => ({
-                        ...base,
-                        marginTop: '0.5rem',
-                        borderRadius: '24px',
-                        backgroundColor: '#F3F4F6',
-                        borderColor: '#D1D5DB',
-                        '&:hover': {
-                          borderColor: '#1356BE'
-                        }
-                      }),
-                      option: (base, { isSelected, isFocused }) => ({
-                        ...base,
-                        backgroundColor: isSelected ? '#1356BE' : isFocused ? '#E5E7EB' : 'white',
-                        color: isSelected ? 'white' : 'black',
-                        ':active': {
-                          backgroundColor: '#1356BE',
-                          color: 'white'
-                        }
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        borderRadius: '24px',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                      }),
-                      singleValue: (base) => ({
-                        ...base,
-                        color: '#1f2937'
-                      }),
-                      placeholder: (base) => ({
-                        ...base,
-                        color: '#6B7280'
-                      })
-                    }}
-                    menuPosition="fixed"
+                    styles={selectStyles}
+                    classNamePrefix="react-select"
                   />
                 )}
               </div>
