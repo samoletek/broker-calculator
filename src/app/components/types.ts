@@ -1,8 +1,11 @@
+export interface TollSegment {
+  location: string;
+  cost: number;
+  details?: string;
+}
+
 export interface TollInfo {
-  segments: Array<{
-    location: string;
-    cost: number;
-  }>;
+  segments: TollSegment[];  // Используем TollSegment вместо inline типа
   totalCost: number;
 }
 
@@ -10,6 +13,7 @@ export interface RouteInfoProps {
   pickup: string;
   delivery: string;
   distance: number;
+  finalPrice: number;  // Добавляем эту строку
   estimatedTime?: string;
   isPopularRoute: boolean;
   isRemoteArea: boolean;
@@ -18,7 +22,6 @@ export interface RouteInfoProps {
     delay?: number;
     multiplier?: number;
   };
-  tollInfo?: TollInfo;
   mapData?: google.maps.DirectionsResult & {
     routes: Array<{
       legs: Array<{
@@ -108,11 +111,6 @@ export interface WeatherPoint {
   condition: string;
   temperature: number;
   multiplier: number;
-}
-
-export interface TollSegment {
-  location: string;
-  cost: number;
 }
 
 export interface WeatherResponse {

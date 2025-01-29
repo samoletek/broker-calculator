@@ -11,8 +11,8 @@ import { DatePickerComponent } from '@/app/components/DatePickerComponent';
 import { PriceBreakdown } from '@/app/components/PriceBreakdown';
 import { getFuelPriceMultiplier } from '@/utils/fuelUtils';
 import RouteInfo from '@/app/components/RouteInfo';
-import WeatherMap from '@/app/components/WeatherMap';
-import { ThemeToggle } from '@/app/components/ThemeToggle'
+import GoogleMap from '@/app/components/GoogleMap';
+import WeatherConditions from '@/app/components/WeatherConditions';
 import { isUSAddress } from '@/utils/addressUtils';
 import {
   TRANSPORT_TYPES,
@@ -128,6 +128,7 @@ export default function BrokerCalculator() {
   };
 
   // Рефы для Google Maps
+  const mapRef = useRef<HTMLDivElement>(null);
   const pickupInputRef = useRef<HTMLInputElement>(null);
   const deliveryInputRef = useRef<HTMLInputElement>(null);
   const googleRef = useRef<typeof google | null>(null);
@@ -321,25 +322,26 @@ export default function BrokerCalculator() {
     }
    };
 
-  return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <Truck className="w-8 h-8 text-blue-500" />
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Broker Dashboard</h1>
+   return (
+    <div className="min-h-screen bg-white p-24">
+      <div className="max-w-7xl mx-auto space-y-24">
+        {/* Calculator Form Section */}
+        <div className="bg-white rounded-[32px] p-24">
+          <div className="flex items-center mb-24">
+            <div className="flex items-center space-x-16">
+              <Truck className="w-32 h-32 text-[#1356BE]" />
+              <h1 className="font-jost text-[32px] font-bold">Delivery Calculator</h1>
             </div>
-            <ThemeToggle />
           </div>
   
           {/* Main Form */}
-          <div className="space-y-6">
+          <div className="space-y-24">
             {/* Top Grid - Date, Transport Type, Vehicle Value */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-24">
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Shipping Date</label>
+                <label className="block text-p2 font-montserrat font-medium mb-8">
+                  Shipping Date
+                </label>
                 <DatePickerComponent 
                   date={selectedDate} 
                   onDateChange={(date) => {
@@ -350,17 +352,19 @@ export default function BrokerCalculator() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Transport Type</label>
+                <label className="block text-p2 font-montserrat font-medium mb-8">
+                  Transport Type
+                </label>
                 <select
                   value={transportType}
                   onChange={(e) => setTransportType(e.target.value as keyof typeof TRANSPORT_TYPES)}
-                  className={`mt-1 block w-full rounded-md 
-                    bg-gray-50 dark:bg-gray-700
-                    border-gray-300 dark:border-gray-600
-                    text-gray-900 dark:text-gray-100
-                    focus:ring-blue-500 dark:focus:ring-blue-400
-                    focus:border-blue-500 dark:focus:border-blue-400
-                    ${!transportType && error ? 'border-red-300 dark:border-red-500 ring-red-300 dark:ring-red-500' : ''}`}
+                  className={`mt-8 block w-full rounded-[24px]
+                    bg-gray-50
+                    border-gray-300
+                    text-gray-900
+                    focus:ring-[#1356BE] focus:border-[#1356BE]
+                    font-montserrat text-p2
+                    ${!transportType && error ? 'border-red-300 ring-red-300' : ''}`}
                 >
                   <option value="" disabled>Select transport type...</option>
                   {Object.entries(TRANSPORT_TYPES).map(([type, data]) => (
@@ -370,17 +374,19 @@ export default function BrokerCalculator() {
               </div>
   
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Vehicle Type</label>
+                <label className="block text-p2 font-montserrat font-medium mb-8">
+                  Vehicle Type
+                </label>
                 <select
                   value={vehicleType}
                   onChange={(e) => setVehicleType(e.target.value as keyof typeof VEHICLE_TYPES)}
-                  className={`mt-1 block w-full rounded-md
-                    bg-gray-50 dark:bg-gray-700
-                    border-gray-300 dark:border-gray-600
-                    text-gray-900 dark:text-gray-100
-                    focus:ring-blue-500 dark:focus:ring-blue-400
-                    focus:border-blue-500 dark:focus:border-blue-400
-                    ${!vehicleType && error ? 'border-red-300 dark:border-red-500 ring-red-300 dark:ring-red-500' : ''}`}
+                  className={`mt-8 block w-full rounded-[24px]
+                    bg-gray-50
+                    border-gray-300
+                    text-gray-900
+                    focus:ring-[#1356BE] focus:border-[#1356BE]
+                    font-montserrat text-p2
+                    ${!vehicleType && error ? 'border-red-300 ring-red-300' : ''}`}
                 >
                   <option value="" disabled>Select vehicle type...</option>
                   {Object.entries(VEHICLE_TYPES).map(([type, data]) => (
@@ -392,17 +398,19 @@ export default function BrokerCalculator() {
               </div>
   
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Vehicle Value</label>
+                <label className="block text-p2 font-montserrat font-medium mb-8">
+                  Vehicle Value
+                </label>
                 <select
                   value={vehicleValue}
                   onChange={(e) => setVehicleValue(e.target.value as keyof typeof VEHICLE_VALUE_TYPES)}
-                  className={`mt-1 block w-full rounded-md
-                    bg-gray-50 dark:bg-gray-700
-                    border-gray-300 dark:border-gray-600
-                    text-gray-900 dark:text-gray-100
-                    focus:ring-blue-500 dark:focus:ring-blue-400
-                    focus:border-blue-500 dark:focus:border-blue-400
-                    ${!vehicleValue && error ? 'border-red-300 dark:border-red-500 ring-red-300 dark:ring-red-500' : ''}`}
+                  className={`mt-8 block w-full rounded-[24px]
+                    bg-gray-50
+                    border-gray-300
+                    text-gray-900
+                    focus:ring-[#1356BE] focus:border-[#1356BE]
+                    font-montserrat text-p2
+                    ${!vehicleValue && error ? 'border-red-300 ring-red-300' : ''}`}
                 >
                   <option value="" disabled>Select vehicle value...</option>
                   {Object.entries(VEHICLE_VALUE_TYPES).map(([type, data]) => (
@@ -413,38 +421,42 @@ export default function BrokerCalculator() {
             </div>
   
             {/* Locations */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-24">
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Pickup Location</label>
+                <label className="block text-p2 font-montserrat font-medium mb-8">
+                  Pickup Location
+                </label>
                 <input
                   ref={pickupInputRef}
                   type="text"
-                  className={`mt-1 block w-full rounded-md
-                    bg-gray-50 dark:bg-gray-700
-                    border-gray-300 dark:border-gray-600
-                    text-gray-900 dark:text-gray-100
-                    placeholder-gray-500 dark:placeholder-gray-400
-                    focus:ring-blue-500 dark:focus:ring-blue-400
-                    focus:border-blue-500 dark:focus:border-blue-400
-                    ${!pickup && error ? 'border-red-300 dark:border-red-500 ring-red-300 dark:ring-red-500' : ''}`}
+                  className={`mt-8 block w-full rounded-[24px]
+                    bg-gray-50
+                    border-gray-300
+                    text-gray-900
+                    placeholder-gray-500
+                    focus:ring-[#1356BE] focus:border-[#1356BE]
+                    font-montserrat text-p2
+                    ${!pickup && error ? 'border-red-300 ring-red-300' : ''}`}
                   value={pickup}
                   onChange={(e) => setPickup(e.target.value)}
                   placeholder="Enter pickup address"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Delivery Location</label>
+                <label className="block text-p2 font-montserrat font-medium mb-8">
+                  Delivery Location
+                </label>
                 <input
                   ref={deliveryInputRef}
                   type="text"
-                  className={`mt-1 block w-full rounded-md
-                    bg-gray-50 dark:bg-gray-700
-                    border-gray-300 dark:border-gray-600
-                    text-gray-900 dark:text-gray-100
-                    placeholder-gray-500 dark:placeholder-gray-400
-                    focus:ring-blue-500 dark:focus:ring-blue-400
-                    focus:border-blue-500 dark:focus:border-blue-400
-                    ${!delivery && error ? 'border-red-300 dark:border-red-500 ring-red-300 dark:ring-red-500' : ''}`}
+                  className={`mt-8 block w-full rounded-[24px]
+                    bg-gray-50
+                    border-gray-300
+                    text-gray-900
+                    placeholder-gray-500
+                    focus:ring-[#1356BE] focus:border-[#1356BE]
+                    font-montserrat text-p2
+                    ${!delivery && error ? 'border-red-300 ring-red-300' : ''}`}
                   value={delivery}
                   onChange={(e) => setDelivery(e.target.value)}
                   placeholder="Enter delivery address"
@@ -453,40 +465,56 @@ export default function BrokerCalculator() {
             </div>
   
             {/* Additional Services */}
-            <div className="space-y-4">
+            <div className="space-y-16">
               {Object.entries(ADDITIONAL_SERVICES).map(([key, service]: [string, AdditionalService]) => (
-                <div key={key} className="flex items-center space-x-4">
-                  <input
-                    type="checkbox"
-                    id={key}
-                    checked={key === 'premiumEnhancements' ? premiumEnhancements : 
-                            key === 'specialLoad' ? specialLoad : 
-                            key === 'inoperable' ? inoperable : false}
-                    disabled={key === 'premiumEnhancements' && (vehicleValue === 'under500k' || vehicleValue === 'over500k')}
-                    onChange={(e) => {
-                      if (key === 'premiumEnhancements') setPremiumEnhancements(e.target.checked);
-                      else if (key === 'specialLoad') setSpecialLoad(e.target.checked);
-                      else if (key === 'inoperable') setInoperable(e.target.checked);
-                    }}
-                    className={`rounded
-                      text-blue-600 dark:text-blue-400
-                      bg-gray-50 dark:bg-gray-700
-                      border-gray-300 dark:border-gray-600
-                      focus:ring-blue-500 dark:focus:ring-blue-400
-                      ${key === 'premiumEnhancements' && (vehicleValue === 'under500k' || vehicleValue === 'over500k') 
-                        ? 'opacity-50 cursor-not-allowed' 
-                        : ''}`}
-                  />
-                  <label className="text-gray-900 dark:text-gray-100 relative group" htmlFor={key}>
+                <div key={key} className="flex items-center space-x-12">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      id={key}
+                      checked={key === 'premiumEnhancements' ? premiumEnhancements : 
+                              key === 'specialLoad' ? specialLoad : 
+                              key === 'inoperable' ? inoperable : false}
+                      disabled={key === 'premiumEnhancements' && (vehicleValue === 'under500k' || vehicleValue === 'over500k')}
+                      onChange={(e) => {
+                        if (key === 'premiumEnhancements') setPremiumEnhancements(e.target.checked);
+                        else if (key === 'specialLoad') setSpecialLoad(e.target.checked);
+                        else if (key === 'inoperable') setInoperable(e.target.checked);
+                      }}
+                      className={`appearance-none h-24 w-24 rounded
+                        border-2 border-gray-200
+                        checked:bg-[#1356BE] checked:border-[#1356BE]
+                        relative cursor-pointer transition-all duration-200
+                        disabled:opacity-50 disabled:cursor-not-allowed
+                        focus:ring-offset-0 focus:ring-0
+                        ${key === 'premiumEnhancements' && (vehicleValue === 'under500k' || vehicleValue === 'over500k') 
+                          ? 'opacity-50 cursor-not-allowed' 
+                          : ''}`}
+                    />
+                    <svg 
+                      className={`absolute left-0 top-0 w-24 h-24 pointer-events-none text-white
+                        ${key === 'premiumEnhancements' ? premiumEnhancements : 
+                          key === 'specialLoad' ? specialLoad : 
+                          key === 'inoperable' ? inoperable ? 'block' : 'hidden' : 'hidden'}`}
+                      xmlns="http://www.w3.org/2000/svg" 
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <label className="text-p2 font-montserrat relative group" htmlFor={key}>
                     {service.name}
-                    <span className="ml-2 inline-block cursor-help">
+                    <span className="ml-8 inline-block cursor-help">
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         fill="none" 
                         viewBox="0 0 24 24" 
                         strokeWidth={1.5} 
                         stroke="currentColor" 
-                        className="w-4 h-4 text-gray-500 dark:text-gray-400"
+                        className="w-16 h-16 text-gray-500"
                       >
                         <path 
                           strokeLinecap="round" 
@@ -494,17 +522,17 @@ export default function BrokerCalculator() {
                           d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" 
                         />
                       </svg>
-                      <div className="invisible group-hover:visible absolute z-50 w-80 p-3.5 
-                        bg-gray-900 dark:bg-black text-white rounded-lg shadow-lg -mt-2 ml-6">
-                        <div className="text-sm font-semibold mb-2">
+                      <div className="invisible group-hover:visible absolute z-50 w-320 p-24
+                        bg-[#0A0A0B] rounded-[24px] shadow-lg -mt-8 ml-24">
+                        <div className="text-p3 font-montserrat font-semibold text-white mb-12">
                           {key === 'premiumEnhancements' ? 'Premium Service Benefits:' : 
                           key === 'specialLoad' ? 'Special Load Services:' : 
                           'Inoperable Vehicle Services:'}
                         </div>
-                        <ul className="space-y-1 text-xs">
+                        <ul className="space-y-8">
                           {service.tooltip?.map((tip, index) => (
-                            <li key={index} className="flex">
-                              <span className="mr-1.5">•</span>
+                            <li key={index} className="flex text-p3 font-montserrat text-white">
+                              <span className="mr-8">•</span>
                               <span>{tip}</span>
                             </li>
                           ))}
@@ -520,17 +548,17 @@ export default function BrokerCalculator() {
             <button
               onClick={calculatePrice}
               disabled={loading}
-              className="mt-6 w-full bg-blue-500 hover:bg-blue-600
-                dark:bg-blue-600 dark:hover:bg-blue-700
-                text-white py-2 px-4 rounded-md
-                disabled:bg-blue-300 dark:disabled:bg-blue-800
+              className="mt-24 w-full bg-[#1356BE] hover:bg-[#1356BE]/90
+                text-white py-12 px-16 rounded-[24px]
+                disabled:bg-[#1356BE]/50
                 disabled:cursor-not-allowed
                 transition-colors duration-200
-                flex items-center justify-center"
+                flex items-center justify-center
+                font-montserrat text-p2 font-medium"
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  <Loader2 className="w-20 h-20 mr-8 animate-spin" />
                   Calculating...
                 </>
               ) : (
@@ -539,7 +567,7 @@ export default function BrokerCalculator() {
             </button>
   
             {error && (
-              <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-md">
+              <div className="mt-16 p-16 bg-red-50 text-red-700 rounded-[24px] font-montserrat text-p2">
                 {error}
               </div>
             )}
@@ -548,8 +576,8 @@ export default function BrokerCalculator() {
   
         {/* Results Section */}
         {distance && priceComponents && mapData && (
-          <div className="space-y-6">
-            {/* New Price Summary Component */}
+          <div className="space-y-24">
+            {/* Price Summary Component */}
             <PriceSummary 
               finalPrice={priceComponents.finalPrice}
               basePrice={priceComponents.basePrice}
@@ -559,78 +587,79 @@ export default function BrokerCalculator() {
               }}
             />
   
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column - Route Info & Price Breakdown */}
-              <div className="lg:col-span-2 space-y-6">
-              <RouteInfo 
-                pickup={pickup}
-                delivery={delivery}
-                distance={distance}
-                estimatedTime={routeInfo.estimatedTime}
-                isPopularRoute={routeInfo.isPopularRoute}
-                isRemoteArea={routeInfo.isRemoteArea}
-                trafficConditions={routeInfo.trafficConditions}
-                mapData={mapData}
-                selectedDate={selectedDate}
-                onTollUpdate={(tollCost: number, segments?: Array<{ location: string, cost: number }>) => {
-                  setPriceComponents((prev) => 
-                    updatePriceComponents(prev, {
-                      tollCosts: {
-                        segments: segments || [],
-                        total: tollCost
-                      }
-                    })
-                  );
-                }}
-              />
-                  
-                <PriceBreakdown
-                  distance={distance}
-                  basePrice={priceComponents.basePrice}
-                  basePriceBreakdown={priceComponents.basePriceBreakdown}
-                  mainMultipliers={priceComponents.mainMultipliers}
-                  additionalServices={priceComponents.additionalServices}
-                  tollCosts={priceComponents.tollCosts}
-                  finalPrice={priceComponents.finalPrice}
-                  routeInfo={{
-                    isPopularRoute: routeInfo.isPopularRoute,
-                    isRemoteArea: routeInfo.isRemoteArea
+            {/* Map and Weather section */}
+            <div className="flex gap-24">
+              <GoogleMap ref={mapRef} mapData={mapData} />
+              {mapData && (
+                <WeatherConditions
+                  routePoints={{
+                    pickup: {
+                      lat: Number(mapData.routes[0].legs[0].start_location.lat()),
+                      lng: Number(mapData.routes[0].legs[0].start_location.lng())
+                    },
+                    delivery: {
+                      lat: Number(mapData.routes[0].legs[0].end_location.lat()),
+                      lng: Number(mapData.routes[0].legs[0].end_location.lng())
+                    },
+                    waypoints: []
                   }}
                   selectedDate={selectedDate}
+                  onWeatherUpdate={(weatherMultiplier) => {
+                    setPriceComponents((prev) => 
+                      updatePriceComponents(prev, {
+                        mainMultipliers: {
+                          ...prev!.mainMultipliers,
+                          weather: weatherMultiplier
+                        }
+                      })
+                    );
+                  }}
                 />
-              </div>
-
-            {/* Right Column - Weather Map */}
-            <div className="space-y-6">
-            <WeatherMap
-              routePoints={{
-                pickup: {
-                  lat: mapData.routes[0].legs[0].start_location.lat(),
-                  lng: mapData.routes[0].legs[0].start_location.lng()
-                },
-                delivery: {
-                  lat: mapData.routes[0].legs[0].end_location.lat(),
-                  lng: mapData.routes[0].legs[0].end_location.lng()
-                },
-                waypoints: []
-              }}
+              )}
+            </div>
+  
+            <div className="lg:col-span-2 space-y-24">
+            <RouteInfo 
+              pickup={pickup}
+              delivery={delivery}
+              distance={distance}
+              finalPrice={priceComponents.finalPrice} // добавляем это
+              estimatedTime={routeInfo.estimatedTime}
+              isPopularRoute={routeInfo.isPopularRoute}
+              isRemoteArea={routeInfo.isRemoteArea}
+              trafficConditions={routeInfo.trafficConditions}
+              mapData={mapData}
               selectedDate={selectedDate}
-              onWeatherUpdate={(multiplier) => {
+              onTollUpdate={(tollCost: number, segments?: Array<{ location: string, cost: number }>) => {
                 setPriceComponents((prev) => 
                   updatePriceComponents(prev, {
-                    mainMultipliers: {
-                      ...prev!.mainMultipliers,
-                      weather: multiplier
+                    tollCosts: {
+                      segments: segments || [],
+                      total: tollCost
                     }
                   })
                 );
               }}
             />
+                  
+              <PriceBreakdown
+                distance={distance}
+                basePrice={priceComponents.basePrice}
+                basePriceBreakdown={priceComponents.basePriceBreakdown}
+                mainMultipliers={priceComponents.mainMultipliers}
+                additionalServices={priceComponents.additionalServices}
+                tollCosts={priceComponents.tollCosts}
+                finalPrice={priceComponents.finalPrice}
+                routeInfo={{
+                  isPopularRoute: routeInfo.isPopularRoute,
+                  isRemoteArea: routeInfo.isRemoteArea
+                }}
+                selectedDate={selectedDate}
+              />
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
 }

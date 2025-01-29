@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Map, Navigation, AlertCircle, Clock, Car } from 'lucide-react';
-import { calculateTollCost, getRouteSegments } from '@/utils/tollUtils';
+import { Map, Navigation, AlertCircle, Clock, Car, MapPin } from 'lucide-react';import { calculateTollCost, getRouteSegments } from '@/utils/tollUtils';
 import { Loader } from '@googlemaps/js-api-loader';
 import { format } from 'date-fns';
 import type { 
@@ -13,76 +12,11 @@ import type {
 } from './types';
 import { analyzeTrafficConditions } from '@/utils/transportUtils';
 
-// Константа стилей для темной темы
-const darkMapStyles = [
-  {
-    elementType: "geometry",
-    stylers: [{ color: "#242f3e" }]
-  },
-  {
-    elementType: "labels.text.stroke",
-    stylers: [{ color: "#242f3e" }]
-  },
-  {
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#746855" }]
-  },
-  {
-    featureType: "administrative.locality",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#d59563" }]
-  },
-  {
-    featureType: "road",
-    elementType: "geometry",
-    stylers: [{ color: "#38414e" }]
-  },
-  {
-    featureType: "road",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#212a37" }]
-  },
-  {
-    featureType: "road",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#9ca5b3" }]
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry",
-    stylers: [{ color: "#746855" }]
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#1f2835" }]
-  },
-  {
-    featureType: "road.highway",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#f3d19c" }]
-  },
-  {
-    featureType: "water",
-    elementType: "geometry",
-    stylers: [{ color: "#17263c" }]
-  },
-  {
-    featureType: "water",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#515c6d" }]
-  },
-  {
-    featureType: "water",
-    elementType: "labels.text.stroke",
-    stylers: [{ color: "#17263c" }]
-  }
-];
-
 export default function RouteInfo({ 
   pickup, 
   delivery, 
   distance,
+  finalPrice,
   estimatedTime,
   isPopularRoute = false,
   isRemoteArea = false,
@@ -95,9 +29,9 @@ export default function RouteInfo({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  const mapInitializedRef = useRef(false);
   const [tollInfo, setTollInfo] = useState<TollInfo | null>(null);
   const [trafficInfo, setTrafficInfo] = useState<TrafficData | null>(null);
-  const mapInitializedRef = useRef(false);
   const lastTollRef = useRef<{ cost: number, segments: TollSegment[] } | null>(null);
 
   const updateTollInfo = useCallback((totalCost: number, segments: TollSegment[]) => {
@@ -188,7 +122,6 @@ export default function RouteInfo({
           await loader.load();
         }
 
-        const isDark = document.documentElement.classList.contains('dark');
         const map = new google.maps.Map(mapElement, {
           zoom: 4,
           center: { lat: 39.8283, lng: -98.5795 },
@@ -197,8 +130,7 @@ export default function RouteInfo({
               featureType: "poi",
               elementType: "labels",
               stylers: [{ visibility: "off" }]
-            },
-            ...(isDark ? darkMapStyles : [])
+            }
           ]
         });
 
@@ -217,31 +149,7 @@ export default function RouteInfo({
 
         directionsRenderer.setDirections(mapData);
 
-        // Добавляем слушатель изменения темы
-        const observer = new MutationObserver((mutations) => {
-          mutations.forEach((mutation) => {
-            if (mutation.attributeName === 'class' && mapInstanceRef.current) {
-              const isDark = document.documentElement.classList.contains('dark');
-              mapInstanceRef.current.setOptions({
-                styles: [
-                  {
-                    featureType: "poi",
-                    elementType: "labels",
-                    stylers: [{ visibility: "off" }]
-                  },
-                  ...(isDark ? darkMapStyles : [])
-                ]
-              });
-            }
-          });
-        });
-
-        observer.observe(document.documentElement, {
-          attributes: true,
-          attributeFilter: ['class']
-        });
-
-        // Очищаем observer при размонтировании
+        // Очищаем при размонтировании
         return () => {
           if (directionsRendererRef.current) {
             directionsRendererRef.current.setMap(null);
@@ -249,7 +157,6 @@ export default function RouteInfo({
           mapInstanceRef.current = null;
           directionsRendererRef.current = null;
           mapInitializedRef.current = false;
-          observer.disconnect();
         };
       } catch (error) {
         console.error('Error initializing map:', error);
@@ -287,119 +194,157 @@ export default function RouteInfo({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-      <div ref={mapRef} className="w-full h-[400px]" />
-  
-      <div className="p-6 space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
-          <Map className="w-5 h-5 mr-2" />
-          Route Details {selectedDate && 
-            <span className="text-sm text-gray-500 ml-2">
-              ({format(selectedDate, 'PPP')})
-            </span>
-          }
-        </h2>
-  
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <div className="text-sm text-gray-600 dark:text-gray-400">Pickup Location:</div>
-            <div className="font-medium text-gray-900 dark:text-white">{pickup}</div>
-          </div>
-          <div className="space-y-2">
-            <div className="text-sm text-gray-600 dark:text-gray-400">Delivery Location:</div>
-            <div className="font-medium text-gray-900 dark:text-white">{delivery}</div>
-          </div>
-        </div>
-  
-        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-          <div className="flex items-center space-x-2">
-            <Navigation className="w-5 h-5 text-blue-500" />
-            <div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Total Distance</div>
-              <div className="font-medium text-gray-900 dark:text-white">{distance} miles</div>
-            </div>
-          </div>
-  
-          <div className="flex items-center space-x-2">
-            <Clock className="w-5 h-5 text-blue-500" />
-            <div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Estimated Time</div>
-              <div className="font-medium text-gray-900 dark:text-white">{estimatedTime || 'Calculating...'}</div>
-            </div>
-          </div>
-        </div>
-  
-        <div className="pt-4 border-t">
-          <div className="flex items-start flex-col">
-            <div className="text-sm text-gray-600 mb-2">Traffic Conditions</div>
-            <div className="flex items-center">
-              <Car className={`w-5 h-5 mr-2 ${getTrafficStatusColor(trafficConditions.status)}`} />
-              <span className={`font-medium ${getTrafficStatusColor(trafficConditions.status)}`}>
-                {getTrafficDescription(trafficConditions.status, trafficConditions.delay || 0)}
+    <div className="w-[1200px] p-40 bg-white rounded-[24px] border border-[#1356BE]/10">
+      {/* Header Section */}
+      <div className="flex justify-between items-start mb-24">
+        <div className="space-y-16">
+          {/* Title and Date */}
+          <div className="w-[371px] flex items-center gap-16">
+            <h2 className="font-jost text-[32px] font-bold">Route Details</h2>
+            {selectedDate && (
+              <span className="font-montserrat text-p2 text-gray-600">
+                ({format(selectedDate, 'MMMM dd\'th\', yyyy')})
               </span>
+            )}
+          </div>
+  
+          {/* Price */}
+          <div className="w-[270px]">
+            <div className="font-jost text-[48px] leading-[57.6px] font-bold text-[#1356BE]">
+              ${finalPrice.toFixed(2)}
             </div>
-            {trafficInfo && trafficInfo.delay > 0 && (
-              <div className="mt-2 text-sm">
-                <div className="text-gray-600">Impact on delivery time:</div>
-                <div className="flex flex-col mt-1">
-                  <span className="text-orange-600">
-                    • Added {trafficInfo.delay} minutes to estimated time
-                  </span>
-                  <span className="text-gray-500 text-xs mt-1">
-                    Based on real-time traffic data
-                  </span>
+          </div>
+  
+          {/* Shipping Date */}
+          <div className="w-[275px] h-24">
+            <span className="font-montserrat text-p2 font-bold">Shipping Date: </span>
+            <span className="font-montserrat text-p2">
+              {format(selectedDate || new Date(), 'MMMM dd\'th\', yyyy')}
+            </span>
+          </div>
+        </div>
+      </div>
+  
+      {/* Top Divider */}
+      <div className="w-[1120px] h-[1px] bg-[#1356BE] opacity-10 mb-24" />
+  
+      {/* Route Info Details */}
+      <div className="grid grid-cols-5 gap-x-24 mb-24">
+        {/* Pickup Location */}
+        <div>
+          <div className="w-[166px] h-24 mb-8">
+            <h3 className="font-montserrat text-p2 font-bold flex items-center gap-8">
+              <MapPin className="w-16 h-16 text-[#1356BE]" />
+              Pickup Location
+            </h3>
+          </div>
+          <p className="font-montserrat text-p2 text-gray-600">
+            {pickup}
+          </p>
+        </div>
+  
+        {/* Delivery Location */}
+        <div>
+          <div className="w-[200px] h-24 mb-8">
+            <h3 className="font-montserrat text-p2 font-bold flex items-center gap-8">
+              <MapPin className="w-16 h-16 text-[#1356BE]" />
+              Delivery Location
+            </h3>
+          </div>
+          <p className="font-montserrat text-p2 text-gray-600">
+            {delivery}
+          </p>
+        </div>
+  
+        {/* Total Distance */}
+        <div>
+          <div className="w-[166px] h-24 mb-8">
+            <h3 className="font-montserrat text-p2 font-bold flex items-center gap-8">
+              <Navigation className="w-16 h-16 text-[#1356BE]" />
+              Total Distance
+            </h3>
+          </div>
+          <p className="font-montserrat text-p2 text-gray-600">
+            {distance} miles
+          </p>
+        </div>
+  
+        {/* Estimated Time */}
+        <div>
+          <div className="w-[166px] h-24 mb-8">
+            <h3 className="font-montserrat text-p2 font-bold flex items-center gap-8">
+              <Clock className="w-16 h-16 text-[#1356BE]" />
+              Estimated Time
+            </h3>
+          </div>
+          <p className="font-montserrat text-p2 text-gray-600">
+            {estimatedTime || '2 days'}
+          </p>
+        </div>
+  
+        {/* Traffic Conditions */}
+        <div>
+          <div className="w-[200px] h-24 mb-8">
+            <h3 className="font-montserrat text-p2 font-bold flex items-center gap-8">
+              <Car className="w-16 h-16 text-[#1356BE]" />
+              Traffic Conditions
+            </h3>
+          </div>
+          <p className="font-montserrat text-p2 text-gray-600">
+            Traffic flow is normal
+          </p>
+        </div>
+      </div>
+  
+      {/* Middle Divider */}
+      <div className="w-[1120px] h-[1px] bg-[#1356BE] opacity-10 mb-24" />
+  
+      {/* Toll Roads Section */}
+      <div className="mt-24">
+        {/* Toll Roads Header */}
+        <h3 className="w-[169px] h-24 font-montserrat text-p2 font-bold mb-16">
+          Expected Toll Roads
+        </h3>
+  
+        {/* Toll Roads List */}
+        <div className="space-y-16">
+          {tollInfo && tollInfo.segments.map((segment, index) => (
+            <div key={index} className="flex justify-between items-start">
+              <div className="space-y-4">
+                <div className="w-[250px] h-24 font-montserrat text-p2">
+                  {segment.location}
                 </div>
+                {segment.details && (
+                  <div className="font-montserrat text-p3 text-gray-600">
+                    {segment.details}
+                  </div>
+                )}
+              </div>
+              <div className="w-[67px] h-24 font-montserrat text-p2 font-bold text-[#1356BE]">
+                ~${segment.cost.toFixed(2)}
+              </div>
+            </div>
+          ))}
+  
+          {/* Bottom Divider */}
+          <div className="w-[1120px] h-[1px] bg-[#1356BE] opacity-10 my-16" />
+  
+          {/* Total Cost and Note */}
+          <div className="flex justify-between items-start">
+            <div className="space-y-8">
+              <div className="w-[185px] h-24 font-montserrat text-p2">
+                Total Toll Cost Estimate
+              </div>
+              <div className="w-[577px] h-21 font-montserrat text-p3 text-gray-600">
+                * Prices are approximate and may vary based on time of day and payment method
+              </div>
+            </div>
+            {tollInfo && (
+              <div className="w-[67px] h-24 font-montserrat text-p2 font-bold text-[#1356BE]">
+                ~${tollInfo.totalCost.toFixed(2)}
               </div>
             )}
           </div>
-        </div>
-  
-        {tollInfo && tollInfo.totalCost > 0 && (
-          <div className="pt-4 border-t">
-            <div className="flex items-start flex-col">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Expected Toll Roads</div>
-              <div className="space-y-2 w-full">
-                {tollInfo.segments.map((segment, index) => (
-                  <div key={index} className="flex justify-between items-center text-sm">
-                    <div className="flex flex-col">
-                      <span className="text-gray-700 dark:text-gray-300">{segment.location}</span>
-                      <span className="text-xs text-gray-500">
-                        {segment.location === "Northeast Region Tolls" && "(I-95, NJ/NY Turnpikes)"}
-                        {segment.location === "Midwest Region Tolls" && "(I-80/90, Ohio/Indiana/Illinois Tolls)"}
-                        {segment.location === "West Coast Tolls" && "(CA Bridges and Highways)"}
-                        {segment.location === "Florida Region Tolls" && "(FL Turnpike and Express Lanes)"}
-                        {segment.location === "Texas Region Tolls" && "(TX Tollways and Express Lanes)"}
-                        {segment.location === "Other Regional Toll Roads" && "(Various Local Tolls)"}
-                      </span>
-                    </div>
-                    <span className="font-medium text-blue-600 dark:text-blue-400">~${segment.cost.toFixed(2)}</span>
-                  </div>
-                ))}
-                <div className="flex justify-between items-center pt-2 border-t text-sm font-medium">
-                  <span className="text-gray-900 dark:text-white">Total Toll Cost Estimate</span>
-                  <span className="text-blue-600 dark:text-blue-400">~${tollInfo.totalCost.toFixed(2)}</span>
-                </div>
-                <div className="text-xs text-gray-500 mt-1 italic">
-                  * Prices are approximate and may vary based on time of day and payment method
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-  
-        <div className="pt-4 border-t space-y-2">
-          {isPopularRoute && (
-            <div className="flex items-center text-green-600">
-              <AlertCircle className="w-5 h-5 mr-2" />
-              <span>Popular route - discounted rates available</span>
-            </div>
-          )}
-          {isRemoteArea && (
-            <div className="flex items-center text-orange-600">
-              <AlertCircle className="w-5 h-5 mr-2" />
-              <span>Remote area - additional charges may apply</span>
-            </div>
-          )}
         </div>
       </div>
     </div>

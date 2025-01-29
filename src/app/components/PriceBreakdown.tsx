@@ -1,17 +1,19 @@
-"use client";
-
 import { DollarSign } from 'lucide-react';
 
 interface PriceBreakdownProps {
   distance: number;
   basePrice: number;
-  basePriceBreakdown: BasePriceBreakdown;
+  basePriceBreakdown: {
+    ratePerMile: number;
+    distance: number;
+    total: number;
+  };
   mainMultipliers: {
     vehicle: number;
     weather: number;
     traffic: number;
-    autoShow: number;
     fuel: number;
+    autoShow: number;
     totalMain: number;
   };
   additionalServices: {
@@ -35,12 +37,6 @@ interface PriceBreakdownProps {
   selectedDate?: Date;
 }
 
-interface BasePriceBreakdown {
-  ratePerMile: number;
-  distance: number;
-  total: number;
-}
-
 export const PriceBreakdown = ({
   distance,
   basePrice,
@@ -48,179 +44,93 @@ export const PriceBreakdown = ({
   mainMultipliers,
   additionalServices,
   tollCosts,
-  finalPrice,
+  finalPrice
 }: PriceBreakdownProps) => {
-  const formatPrice = (price: number) => `$${price.toFixed(2)}`;
-  
-  const formatMultiplierImpact = (multiplier: number, baseAmount: number) => {
-    const percentage = (multiplier - 1) * 100;
-    const impact = baseAmount * (multiplier - 1);
-    return `${formatPrice(impact)} (${percentage.toFixed(1)}%)`;
-  };
-
-  const calculateTotalFactorsImpact = (basePrice: number, multipliers: typeof mainMultipliers) => {
-    // Считаем общий процент влияния всех факторов
-    const totalPercentage = 
-      (multipliers.vehicle - 1) + 
-      (multipliers.weather - 1) + 
-      (multipliers.traffic - 1) +
-      (multipliers.fuel - 1) + 
-      (multipliers.autoShow - 1);
-
-    // Применяем общий процент к базовой цене
-    return basePrice * totalPercentage;
-  };
-
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 space-y-6">
-      {/* Заголовок */}
-      <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Price Breakdown</h2>
-        <span className="text-sm text-gray-500 dark:text-gray-400">{distance} miles</span>
+    <div className="w-[1200px] p-40 space-y-40 bg-white rounded-[24px] border border-[#1356BE]/10">
+      {/* Header with mileage */}
+      <div className="flex justify-between items-center">
+        <h2 className="font-jost text-[32px] font-bold">Price Breakdown</h2>
+        <span className="font-montserrat text-p2 text-gray-600">{distance} miles</span>
       </div>
 
-      {/* Базовая цена */}
-      <div className="space-y-4">
-        <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Base Calculation</h3>
-          <div className="space-y-2">
-            <div className="flex justify-between text-gray-800 dark:text-gray-200">
-              <span>Rate per mile</span>
-              <span className="font-medium">${basePriceBreakdown.ratePerMile.toFixed(2)}/mile</span>
-            </div>
-            <div className="flex justify-between text-gray-800 dark:text-gray-200">
-              <span>Distance</span>
-              <span className="font-medium">{Math.round(basePriceBreakdown.distance)} miles</span>
-            </div>
-            <div className="flex justify-between text-gray-800 dark:text-gray-200 border-t border-gray-200 dark:border-gray-600 pt-2">
-              <span>Base Price</span>
-              <span className="font-bold">{formatPrice(basePrice)}</span>
-            </div>
+      {/* Base Calculation */}
+      <div className="p-24 space-y-16 bg-[#F6F6FA] rounded-[24px]">
+        <h3 className="font-montserrat text-p2 font-bold">Base Calculation</h3>
+        <div className="space-y-12">
+          <div className="flex justify-between text-p2">
+            <span className="text-gray-600">Rate per mile</span>
+            <span>${basePriceBreakdown.ratePerMile.toFixed(2)}/mile</span>
+          </div>
+          <div className="flex justify-between text-p2">
+            <span className="text-gray-600">Distance</span>
+            <span>{Math.round(basePriceBreakdown.distance)} miles</span>
+          </div>
+          <div className="flex justify-between text-p2 pt-12 border-t border-gray-200">
+            <span>Base Price</span>
+            <span className="font-bold">${basePrice.toFixed(2)}</span>
           </div>
         </div>
       </div>
 
-      {/* Множители */}
-      <div className="space-y-4">
-        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Supplemental Price Factors</h3>
-          <div className="space-y-2">
-            <div className="flex justify-between text-gray-800 dark:text-gray-200">
-              <span>Vehicle Value Impact</span>
-              <span className="font-medium text-blue-600 dark:text-blue-400">
-                {formatMultiplierImpact(mainMultipliers.vehicle, basePrice)}
-              </span>
-            </div>
-            <div className="flex justify-between text-gray-800 dark:text-gray-200">
-              <span>Weather Impact</span>
-              <span className="font-medium text-blue-600 dark:text-blue-400">
-                {formatMultiplierImpact(mainMultipliers.weather, basePrice)}
-              </span>
-            </div>
-            <div className="flex justify-between text-gray-800 dark:text-gray-200">
-              <span>Traffic Impact</span>
-              <span className="font-medium text-blue-600 dark:text-blue-400">
-                {formatMultiplierImpact(mainMultipliers.traffic, basePrice)}
-              </span>
-            </div>
-            <div className="flex justify-between text-gray-800 dark:text-gray-200">
-              <span>Diesel Price Impact</span>
-              <span className="font-medium text-blue-600 dark:text-blue-400">
-                {formatMultiplierImpact(mainMultipliers.fuel, basePrice)}
-              </span>
-            </div>
-            <div className="flex justify-between text-gray-800 dark:text-gray-200">
-              <span>Congestion Impact</span>
-              <span className="font-medium text-blue-600 dark:text-blue-400">
-                {formatMultiplierImpact(mainMultipliers.autoShow, basePrice)}
-              </span>
-            </div>
-            <div className="flex justify-between text-gray-800 dark:text-gray-200 border-t border-gray-200 dark:border-gray-600 pt-2">
-              <span>Total Factors Impact</span>
-              <span className="font-bold text-blue-700 dark:text-blue-400">
-                {formatPrice(calculateTotalFactorsImpact(basePrice, mainMultipliers))}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Дополнительные услуги */}
-      {additionalServices.totalAdditional > 0 && (
-        <div className="space-y-4">
-          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Additional Services</h3>
-            <div className="space-y-2">
-              {additionalServices.premium > 0 && (
-                <div className="flex justify-between text-gray-800 dark:text-gray-200">
-                  <span>Premium Service</span>
-                  <span className="font-medium text-green-600 dark:text-green-400">
-                    {formatPrice(basePrice * additionalServices.premium)}
-                    {' '}({(additionalServices.premium * 100).toFixed(1)}%)
-                  </span>
-                </div>
-              )}
-              {additionalServices.special > 0 && (
-                <div className="flex justify-between text-gray-800 dark:text-gray-200">
-                  <span>Special Load Service</span>
-                  <span className="font-medium text-green-600 dark:text-green-400">
-                    {formatPrice(basePrice * additionalServices.special)}
-                    {' '}({(additionalServices.special * 100).toFixed(1)}%)
-                  </span>
-                </div>
-              )}
-              {additionalServices.inoperable > 0 && (
-                <div className="flex justify-between text-gray-800 dark:text-gray-200">
-                  <span>Inoperable Vehicle</span>
-                  <span className="font-medium text-green-600 dark:text-green-400">
-                    {formatPrice(basePrice * additionalServices.inoperable)}
-                    {' '}({(additionalServices.inoperable * 100).toFixed(1)}%)
-                  </span>
-                </div>
-              )}
-              <div className="flex justify-between text-gray-800 dark:text-gray-200 border-t border-gray-200 dark:border-gray-600 pt-2">
-                <span>Total Services Cost</span>
-                <span className="font-bold text-green-700 dark:text-green-400">
-                  {formatPrice(basePrice * additionalServices.totalAdditional)}
+      {/* Supplemental Price Factors */}
+      <div className="p-24 space-y-16 bg-[#1356BE1A] rounded-[24px]">
+        <h3 className="font-montserrat text-p2 font-bold">Supplemental Price Factors</h3>
+        <div className="space-y-12">
+          {Object.entries(mainMultipliers).map(([key, value]) => 
+            key !== 'totalMain' && (
+              <div key={key} className="flex justify-between text-p2">
+                <span className="text-gray-600">
+                  {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')} Impact
                 </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Платные дороги */}
-      {tollCosts && tollCosts.total > 0 && (
-        <div className="space-y-4">
-          <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Toll Charges</h3>
-            <div className="space-y-2">
-              {tollCosts.segments.map((segment, index) => (
-                <div key={index} className="flex justify-between text-gray-800 dark:text-gray-200">
-                  <span>{segment.location}</span>
-                  <span className="font-medium text-purple-600 dark:text-purple-400">
-                    {formatPrice(segment.cost)}
+                <div className="flex items-center gap-8">
+                  <span className="text-[#1356BE]">
+                    ${(basePrice * (value - 1)).toFixed(2)}
+                  </span>
+                  <span className="text-gray-500">
+                    ({((value - 1) * 100).toFixed(1)}%)
                   </span>
                 </div>
-              ))}
-              <div className="flex justify-between text-gray-800 dark:text-gray-200 border-t border-gray-200 dark:border-gray-600 pt-2">
-                <span>Total Toll Charges</span>
-                <span className="font-bold text-purple-700 dark:text-purple-400">{formatPrice(tollCosts.total)}</span>
               </div>
-            </div>
+            )
+          )}
+          <div className="flex justify-between text-p2 pt-12 border-t border-gray-200">
+            <span className="font-bold">Total Factors Impact</span>
+            <span className="text-[#1356BE] font-bold">
+              ${(basePrice * (mainMultipliers.totalMain - 1)).toFixed(2)}
+            </span>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Финальная цена */}
-      <div className="mt-6 bg-gray-900 dark:bg-gray-700 p-4 rounded-lg">
-        <div className="flex justify-between items-center text-white">
-          <span className="flex items-center text-lg">
-            <DollarSign className="w-6 h-6 mr-2" />
-            Final Price
-          </span>
-          <span className="text-xl font-bold">{formatPrice(finalPrice)}</span>
+      {/* Toll Charges */}
+      <div className="p-24 space-y-16 bg-[#1356BE33] rounded-[24px]">
+        <h3 className="font-montserrat text-p2 font-bold">Toll Charges</h3>
+        <div className="space-y-12">
+          {tollCosts?.segments.map((segment, index) => (
+            <div key={index} className="flex justify-between text-p2">
+              <span className="text-gray-600">{segment.location}</span>
+              <span className="text-[#1356BE]">${segment.cost.toFixed(2)}</span>
+            </div>
+          ))}
+          <div className="flex justify-between text-p2 pt-12 border-t border-gray-200">
+            <span>Total Toll Costs</span>
+            <span className="text-[#1356BE] font-bold">
+              ${tollCosts?.total.toFixed(2) || '0.00'}
+            </span>
+          </div>
         </div>
+      </div>
+
+      {/* Final Price */}
+      <div className="p-24 flex justify-between items-center bg-[#1356BE] rounded-[24px] text-white">
+        <div className="flex items-center gap-8">
+          <DollarSign className="w-20 h-20" />
+          <span className="font-montserrat text-p2">Final Price</span>
+        </div>
+        <span className="font-montserrat text-p2 font-bold">
+          ${finalPrice.toFixed(2)}
+        </span>
       </div>
     </div>
   );

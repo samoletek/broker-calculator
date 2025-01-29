@@ -56,7 +56,7 @@ export const getRouteSegments = (route: google.maps.DirectionsResult, totalCost:
         routeText.includes('nj') ||
         routeText.includes('ny'),
       name: "Northeast Region Tolls",
-      description: "(I-95, NJ/NY Turnpikes)",
+      details: "(I-95, NJ/NY Turnpikes)",
       multiplier: 0.35
     },
     {
@@ -68,7 +68,7 @@ export const getRouteSegments = (route: google.maps.DirectionsResult, totalCost:
         routeText.includes('indiana') ||
         routeText.includes('ohio'),
       name: "Midwest Region Tolls",
-      description: "(I-80/90, Ohio/Indiana/Illinois Tolls)",
+      details: "(I-80/90, Ohio/Indiana/Illinois Tolls)",
       multiplier: 0.4
     },
     {
@@ -78,7 +78,7 @@ export const getRouteSegments = (route: google.maps.DirectionsResult, totalCost:
         routeText.includes('los angeles') ||
         routeText.includes('ca'),
       name: "West Coast Tolls",
-      description: "(CA Bridges and Highways)",
+      details: "(CA Bridges and Highways)",
       multiplier: 0.8
     },
     {
@@ -89,7 +89,7 @@ export const getRouteSegments = (route: google.maps.DirectionsResult, totalCost:
         routeText.includes('orlando') ||
         routeText.includes('tampa'),
       name: "Florida Region Tolls",
-      description: "(FL Turnpike and Express Lanes)",
+      details: "(FL Turnpike and Express Lanes)",
       multiplier: 0.7
     },
     {
@@ -99,7 +99,7 @@ export const getRouteSegments = (route: google.maps.DirectionsResult, totalCost:
         routeText.includes('houston') ||
         routeText.includes('dallas'),
       name: "Texas Region Tolls",
-      description: "(TX Tollways and Express Lanes)",
+      details: "(TX Tollways and Express Lanes)",
       multiplier: 0.6
     }
   ];
@@ -109,7 +109,8 @@ export const getRouteSegments = (route: google.maps.DirectionsResult, totalCost:
       const regionCost = Math.round(remainingCost * region.multiplier * 100) / 100;
       segments.push({
         location: region.name,
-        cost: regionCost
+        cost: regionCost,
+        details: region.details
       });
       remainingCost -= regionCost;
     }
@@ -118,7 +119,8 @@ export const getRouteSegments = (route: google.maps.DirectionsResult, totalCost:
   if (remainingCost > 5) {
     segments.push({
       location: "Other Regional Toll Roads",
-      cost: Math.round(remainingCost * 100) / 100
+      cost: Math.round(remainingCost * 100) / 100,
+      details: "(Various Local Tolls)"
     });
   }
 

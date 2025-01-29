@@ -1,11 +1,7 @@
+// PriceSummary.tsx
 import React, { useState } from 'react';
 import { DollarSign, Save, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
-
-interface SavedToast {
-  show: boolean;
-  message: string;
-}
 
 interface PriceSummaryProps {
   finalPrice: number;
@@ -14,7 +10,12 @@ interface PriceSummaryProps {
   onSavePrice?: () => void;
 }
 
-const PriceSummary = ({ finalPrice, basePrice, selectedDate, onSavePrice }: PriceSummaryProps) => {
+interface SavedToast {
+  show: boolean;
+  message: string;
+}
+
+export default function PriceSummary({ finalPrice, basePrice, selectedDate, onSavePrice }: PriceSummaryProps) {
   const [toast, setToast] = useState<SavedToast>({ show: false, message: '' });
 
   const handleSavePrice = () => {
@@ -38,55 +39,68 @@ const PriceSummary = ({ finalPrice, basePrice, selectedDate, onSavePrice }: Pric
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-            <DollarSign className="w-8 h-8 text-green-500 mr-2" />
-            Final Price
-          </h2>
-          <div className="text-4xl font-bold text-green-600 dark:text-green-400">
+    <div className="w-full">
+      <div className="flex justify-between items-center">
+        {/* Left side - Price block */}
+        <div className="space-y-12">
+          <h2 className="font-jost text-[32px] font-bold">Final Price</h2>
+          <div className="text-[48px] font-jost font-bold text-[#1356BE]">
             ${finalPrice.toFixed(2)}
           </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Base Price: ${basePrice.toFixed(2)}
-          </div>
-          {selectedDate && (
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Shipping Date: {format(selectedDate, 'PPP')}
+          <div className="space-y-4">
+            <div className="font-montserrat text-p2">
+              <span className="font-bold">Base Price:</span>
+              <span className="ml-4 text-gray-600">${basePrice.toFixed(2)}</span>
             </div>
-          )}
+            {selectedDate && (
+              <div className="font-montserrat text-p2">
+                <span className="font-bold">Shipping Date:</span>
+                <span className="ml-4 text-gray-600">
+                  {format(selectedDate, 'MMMM dd\'th\', yyyy')}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-col justify-center gap-4">
+        {/* Right side - Buttons stacked vertically */}
+        <div className="flex flex-col justify-center gap-12 self-center">
           <button
             onClick={handleSavePrice}
-            className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg transition-colors"
+            className="whitespace-nowrap flex items-center justify-center px-24 py-12 
+              bg-[#1356BE] text-white rounded-[24px] 
+              font-montserrat text-p2 font-medium
+              hover:bg-[#1356BE]/90 transition-colors duration-200"
           >
-            <Save className="w-5 h-5" />
-            Save Price for Me
+            <Save className="w-16 h-16 mr-8" />
+            Save price for me!
           </button>
           
           <button
             onClick={() => alert('Booking feature coming soon!')}
-            className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg transition-colors"
+            className="whitespace-nowrap flex items-center justify-center px-24 py-12 
+              border border-[#1356BE] text-[#1356BE] rounded-[24px] 
+              font-montserrat text-p2 font-medium
+              hover:bg-[#1356BE] hover:text-white 
+              transition-all duration-200"
           >
-            <ArrowRight className="w-5 h-5" />
-            Continue to Booking
-            <span className="text-xs bg-white/20 px-2 py-1 rounded ml-2">
-              Coming Soon
-            </span>
+            <ArrowRight className="w-16 h-16 mr-8" />
+            Continue to booking
           </button>
         </div>
       </div>
 
+      {/* Toast notification */}
       {toast.show && (
-        <div className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
+        <div className="fixed bottom-24 right-24 
+          bg-green-500 text-white px-24 py-12 
+          rounded-[24px] shadow-lg 
+          font-montserrat text-p2 
+          animate-fade-in-up"
+        >
           {toast.message}
         </div>
       )}
     </div>
   );
-};
-
-export default PriceSummary;
+}
