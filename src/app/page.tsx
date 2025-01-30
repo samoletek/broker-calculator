@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import Select from 'react-select';
+import type { SingleValue } from 'react-select';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Truck, Loader2 } from 'lucide-react';
 import PriceSummary from '@/app/components/PriceSummary';
@@ -29,12 +31,6 @@ interface SelectOption {
   label: string;
   description?: string;
 }
-
-type SelectChangeEvent = {
-  value: string;
-  label: string;
-  description?: string;
-} | null;
 
 const selectStyles = {
   menuPortal: (base: any) => ({
@@ -126,13 +122,6 @@ interface BasePriceBreakdown {
   total: number;
 }
 
-const mapLoader = new Loader({
-  apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-  version: "weekly",
-  libraries: ["places"],
-  channel: 'broker-calculator'
-});
-
 export default function BrokerCalculator() {
   const [pickup, setPickup] = useState('');
   const [delivery, setDelivery] = useState('');
@@ -160,11 +149,6 @@ export default function BrokerCalculator() {
   });
   
   const [priceComponents, setPriceComponents] = useState<PriceComponents | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const updatePriceComponents = (
     prevComponents: PriceComponents | null,
@@ -223,9 +207,48 @@ export default function BrokerCalculator() {
   }, [vehicleValue]);
   
   useEffect(() => {
-    const initAutocomplete = async () => {
+    const initAutocomplete = () => {
+      if (!googleRef.current || !pickupInputRef.current || !deliveryInputRef.current) return;
+    
+      const pickupAutocomplete = new googleRef.current.maps.places.Autocomplete(pickupInputRef.current, {
+        types: ['geocode'],
+        componentRestrictions: { country: 'us' },
+      });
+      
+      const deliveryAutocomplete = new googleRef.current.maps.places.Autocomplete(deliveryInputRef.current, {
+        types: ['geocode'],
+        componentRestrictions: { country: 'us' },
+      });
+    
+      pickupAutocomplete.addListener('place_changed', () => {
+        const place = pickupAutocomplete.getPlace();
+        setPickup(place.formatted_address || '');
+        clearResults();
+      });
+    
+      deliveryAutocomplete.addListener('place_changed', () => {
+        const place = deliveryAutocomplete.getPlace();
+        setDelivery(place.formatted_address || '');
+        clearResults();
+      });
+    };
+
+    initAutocomplete();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+  
+    const initGoogleMaps = async () => {
       try {
-        const google = await mapLoader.load();
+        const loader = new Loader({
+          apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+          version: "weekly",
+          libraries: ["places"],
+          channel: 'broker-calculator'
+        });
+        
+        const google = await loader.load();
         googleRef.current = google;
         
         if (pickupInputRef.current && deliveryInputRef.current) {
@@ -238,13 +261,13 @@ export default function BrokerCalculator() {
             types: ['geocode'],
             componentRestrictions: { country: 'us' },
           });
-
+      
           pickupAutocomplete.addListener('place_changed', () => {
             const place = pickupAutocomplete.getPlace();
             setPickup(place.formatted_address || '');
             clearResults();
           });
-
+      
           deliveryAutocomplete.addListener('place_changed', () => {
             const place = deliveryAutocomplete.getPlace();
             setDelivery(place.formatted_address || '');
@@ -252,14 +275,15 @@ export default function BrokerCalculator() {
           });
         }
       } catch (err) {
-        console.error('Error initializing autocomplete:', err);
+        console.error('Error initializing Google Maps:', err);
       }
     };
-
-    initAutocomplete();
-  }, []);
+  
+    initGoogleMaps();
+  }, []); 
 
   const calculatePrice = async () => {
+    if (typeof window === 'undefined' || !window.google) return;
     if (!selectedDate) {
       setError('Please select a shipping date');
       return;
@@ -404,7 +428,7 @@ export default function BrokerCalculator() {
               <h1 className="font-jost text-[32px] font-bold">Delivery Calculator</h1>
             </div>
           </div>
-
+  
           <div className="space-y-24">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-24">
               <div>
@@ -425,76 +449,76 @@ export default function BrokerCalculator() {
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Transport Type
                 </label>
-                  <Select
-                    options={Object.entries(TRANSPORT_TYPES).map(([type, data]): SelectOption => ({
-                      value: type,
-                      label: data.name
-                    }))}
-                    placeholder="Select transport type..."
-                    value={transportType 
-                      ? { value: transportType, label: TRANSPORT_TYPES[transportType].name } 
-                      : null}
-                    onChange={(newValue: any) => {
-                      setTransportType(newValue?.value || '');
-                      clearResults();
-                    }}
-                    isSearchable={false}
-                    menuPortalTarget={document.body}
-                    styles={selectStyles}
-                    classNamePrefix="react-select"
-                  />
+                <Select
+                  options={Object.entries(TRANSPORT_TYPES).map(([type, data]): SelectOption => ({
+                    value: type,
+                    label: data.name
+                  }))}
+                  placeholder="Select transport type..."
+                  value={transportType 
+                    ? { value: transportType, label: TRANSPORT_TYPES[transportType].name } 
+                    : null}
+                  onChange={(newValue: SingleValue<SelectOption>) => {
+                    setTransportType((newValue?.value as keyof typeof TRANSPORT_TYPES) || '');
+                    clearResults();
+                  }}
+                  isSearchable={false}
+                  menuPortalTarget={document.body}
+                  styles={selectStyles}
+                  classNamePrefix="react-select"
+                />
               </div>
-
+  
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Vehicle Type
                 </label>
-                  <Select
-                    options={Object.entries(VEHICLE_TYPES).map(([type, data]): SelectOption => ({
-                      value: type,
-                      label: data.name,
-                      description: data.description
-                    }))}
-                    placeholder="Select vehicle type..."
-                    value={vehicleType 
-                      ? { value: vehicleType, label: VEHICLE_TYPES[vehicleType].name } 
-                      : null}
-                    onChange={(newValue: any) => {
-                      setVehicleType(newValue?.value || '');
-                      clearResults();
-                    }}
-                    isSearchable={false}
-                    menuPortalTarget={document.body}
-                    styles={selectStyles}
-                    classNamePrefix="react-select"
-                  />
+                <Select
+                  options={Object.entries(VEHICLE_TYPES).map(([type, data]): SelectOption => ({
+                    value: type,
+                    label: data.name,
+                    description: data.description
+                  }))}
+                  placeholder="Select vehicle type..."
+                  value={vehicleType 
+                    ? { value: vehicleType, label: VEHICLE_TYPES[vehicleType].name } 
+                    : null}
+                  onChange={(newValue: SingleValue<SelectOption>) => {
+                    setVehicleType((newValue?.value as keyof typeof VEHICLE_TYPES) || '');
+                    clearResults();
+                  }}
+                  isSearchable={false}
+                  menuPortalTarget={document.body}
+                  styles={selectStyles}
+                  classNamePrefix="react-select"
+                />
               </div>
-
+  
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Vehicle Value
                 </label>
-                  <Select
-                    options={Object.entries(VEHICLE_VALUE_TYPES).map(([type, data]): SelectOption => ({
-                      value: type,
-                      label: data.name
-                    }))}
-                    placeholder="Select vehicle value..."
-                    value={vehicleValue 
-                      ? { value: vehicleValue, label: VEHICLE_VALUE_TYPES[vehicleValue].name } 
-                      : null}
-                    onChange={(newValue: any) => {
-                      setVehicleValue(newValue?.value || '');
-                      clearResults();
-                    }}
-                    isSearchable={false}
-                    menuPortalTarget={document.body}
-                    styles={selectStyles}
-                    classNamePrefix="react-select"
-                  />
+                <Select
+                  options={Object.entries(VEHICLE_VALUE_TYPES).map(([type, data]): SelectOption => ({
+                    value: type,
+                    label: data.name
+                  }))}
+                  placeholder="Select vehicle value..."
+                  value={vehicleValue 
+                    ? { value: vehicleValue, label: VEHICLE_VALUE_TYPES[vehicleValue].name } 
+                    : null}
+                  onChange={(newValue: SingleValue<SelectOption>) => {
+                    setVehicleValue((newValue?.value as keyof typeof VEHICLE_VALUE_TYPES) || '');
+                    clearResults();
+                  }}
+                  isSearchable={false}
+                  menuPortalTarget={document.body}
+                  styles={selectStyles}
+                  classNamePrefix="react-select"
+                />
               </div>
             </div>
-
+  
             <div className="grid grid-cols-1 md:grid-cols-2 gap-24">
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
@@ -543,7 +567,7 @@ export default function BrokerCalculator() {
                 />
               </div>
             </div>
-
+  
             <div className="space-y-16">
               {Object.entries(ADDITIONAL_SERVICES).map(([key, service]: [string, AdditionalService]) => (
                 <div key={key} className="flex items-center space-x-12">
@@ -631,7 +655,7 @@ export default function BrokerCalculator() {
                 </div>
               ))}
             </div>
-
+  
             <button
               onClick={calculatePrice}
               disabled={loading}
@@ -652,7 +676,7 @@ export default function BrokerCalculator() {
                 'Calculate Route and Price'
               )}
             </button>
-
+  
             {error && (
               <div className="mt-16 p-16 bg-red-50 text-red-700 rounded-[24px] font-montserrat text-p2">
                 {error}
@@ -660,7 +684,7 @@ export default function BrokerCalculator() {
             )}
           </div>
         </div>
-
+  
         {distance && priceComponents && mapData && (
           <div className="space-y-24">
             <PriceSummary 
@@ -671,7 +695,7 @@ export default function BrokerCalculator() {
                 console.log('Price calculation saved');
               }}
             />
-
+  
             <div className="flex gap-24">
               <GoogleMap ref={mapRef} mapData={mapData} />
               {mapData && (
@@ -701,7 +725,7 @@ export default function BrokerCalculator() {
                 />
               )}
             </div>
-
+  
             <div className="lg:col-span-2 space-y-24">
               <RouteInfo 
                 pickup={pickup}

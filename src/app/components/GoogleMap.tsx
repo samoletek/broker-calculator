@@ -1,3 +1,4 @@
+"use client";
 import React, { forwardRef, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 
@@ -8,10 +9,12 @@ interface GoogleMapProps {
 const GoogleMap = forwardRef<HTMLDivElement, GoogleMapProps>(({ mapData }, ref) => {
     const mapInstanceRef = useRef<google.maps.Map | null>(null);
     const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
-
+  
     useEffect(() => {
-        const initMap = async () => {
-            try {
+      if (typeof window === 'undefined') return;
+  
+      const initMap = async () => {
+        try {
                 if (!window.google) {
                     const loader = new Loader({
                         apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',

@@ -91,6 +91,8 @@ export default function WeatherConditions({
   }, [onWeatherUpdate]);
 
   const fetchWeatherData = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    
     const cacheKey = getCacheKey();
     if (requestInProgress.current) return;
     
@@ -137,9 +139,6 @@ export default function WeatherConditions({
     } catch (error) {
       console.error('Error fetching weather data:', error);
       setError('Failed to fetch weather data. Please try again later.');
-    } finally {
-      setIsLoading(false);
-      requestInProgress.current = false;
     }
   }, [routePoints, selectedDate, getCacheKey, updateWeatherState]);
 

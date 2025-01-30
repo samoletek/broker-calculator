@@ -49,7 +49,7 @@ export default function RouteInfo({
   }, [onTollUpdate]);
 
   useEffect(() => {
-    if (!mapData || !selectedDate || !window.google) return;
+    if (typeof window === 'undefined' || !mapData || !selectedDate) return;
 
     const analyzeTraffic = async () => {
       try {
