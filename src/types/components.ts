@@ -52,14 +52,3 @@ export interface RouteInfoProps {
     selectedDate?: Date;
     onWeatherUpdate: (multiplier: number) => void;
   }
-  
-  export interface MarketInfoProps {
-    route: {
-      from: string;
-      to: string;
-      distance: number;
-    };
-    selectedDate?: Date;
-    vehicleType: string;
-    onMarketUpdate: (marketFactor: number) => void;
-  }

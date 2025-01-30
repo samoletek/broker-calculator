@@ -192,7 +192,7 @@ export default function WeatherConditions({
       {memoizedWeatherData.length > 0 && (
         <div className="mt-16">
           <span>Weather Impact Summary: </span>
-          <span className="text-[#1356BE]">
+          <span className="text-primary">
             Good weather conditions throughout the route
           </span>
         </div>

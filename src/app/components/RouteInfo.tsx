@@ -194,7 +194,7 @@ export default function RouteInfo({
   };
 
   return (
-    <div className="w-[1200px] p-40 bg-white rounded-[24px] border border-[#1356BE]/10">
+    <div className="w-[1200px] p-40 bg-white rounded-[24px] border border-primary/10">
       {/* Header Section */}
       <div className="flex justify-between items-start mb-24">
         <div className="space-y-16">
@@ -205,7 +205,7 @@ export default function RouteInfo({
   
           {/* Price */}
           <div className="w-[270px]">
-            <div className="font-jost text-[48px] leading-[57.6px] font-bold text-[#1356BE]">
+            <div className="font-jost text-[48px] leading-[57.6px] font-bold text-primary">
               ${finalPrice.toFixed(2)}
             </div>
           </div>
@@ -221,7 +221,7 @@ export default function RouteInfo({
       </div>
   
       {/* Top Divider */}
-      <div className="w-[1120px] h-[1px] bg-[#1356BE] opacity-10 mb-24" />
+      <div className="w-[1120px] h-[1px] bg-primary opacity-10 mb-24" />
   
       {/* Route Info Details */}
       <div className="grid grid-cols-5 gap-x-24 mb-24">
@@ -229,7 +229,7 @@ export default function RouteInfo({
         <div>
           <div className="w-[166px] h-24 mb-8">
             <h3 className="font-montserrat text-p2 font-bold flex items-center gap-8">
-              <MapPin className="w-16 h-16 text-[#1356BE]" />
+              <MapPin className="w-16 h-16 text-primary" />
               Pickup Location
             </h3>
           </div>
@@ -327,7 +327,7 @@ export default function RouteInfo({
           {/* Total Cost and Note */}
           <div className="flex justify-between items-start">
             <div className="space-y-8">
-              <div className="w-[185px] h-24 font-montserrat text-p2">
+              <div className="w-[200px] h-24 font-montserrat font-bold text-p2">
                 Total Toll Cost Estimate
               </div>
               <div className="w-[577px] h-21 font-montserrat text-p3 text-gray-600">

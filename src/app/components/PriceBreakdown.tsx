@@ -47,7 +47,7 @@ export const PriceBreakdown = ({
   finalPrice
 }: PriceBreakdownProps) => {
   return (
-    <div className="w-[1200px] p-40 space-y-40 bg-white rounded-[24px] border border-[#1356BE]/10">
+    <div className="w-[1200px] p-40 space-y-40 bg-white rounded-[24px] border border-primary/10">
       {/* Header with mileage */}
       <div className="flex justify-between items-center">
         <h2 className="font-jost text-[32px] font-bold">Price Breakdown</h2>
@@ -67,14 +67,14 @@ export const PriceBreakdown = ({
             <span>{Math.round(basePriceBreakdown.distance)} miles</span>
           </div>
           <div className="flex justify-between text-p2 pt-12 border-t border-gray-200">
-            <span>Base Price</span>
+            <span className="font-bold">Base Price</span>
             <span className="font-bold">${basePrice.toFixed(2)}</span>
           </div>
         </div>
       </div>
 
       {/* Supplemental Price Factors */}
-      <div className="p-24 space-y-16 bg-[#1356BE1A] rounded-[24px]">
+      <div className="p-24 space-y-16 bg-primary/10 rounded-[24px]">
         <h3 className="font-montserrat text-p2 font-bold">Supplemental Price Factors</h3>
         <div className="space-y-12">
           {Object.entries(mainMultipliers).map(([key, value]) => 
@@ -84,7 +84,7 @@ export const PriceBreakdown = ({
                   {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')} Impact
                 </span>
                 <div className="flex items-center gap-8">
-                  <span className="text-[#1356BE]">
+                  <span className="text-primary">
                     ${(basePrice * (value - 1)).toFixed(2)}
                   </span>
                   <span className="text-gray-500">
@@ -104,7 +104,7 @@ export const PriceBreakdown = ({
       </div>
 
       {/* Toll Charges */}
-      <div className="p-24 space-y-16 bg-[#1356BE33] rounded-[24px]">
+      <div className="p-24 space-y-16 bg-primary/20 rounded-[24px]">
         <h3 className="font-montserrat text-p2 font-bold">Toll Charges</h3>
         <div className="space-y-12">
           {tollCosts?.segments.map((segment, index) => (
@@ -114,7 +114,7 @@ export const PriceBreakdown = ({
             </div>
           ))}
           <div className="flex justify-between text-p2 pt-12 border-t border-gray-200">
-            <span>Total Toll Costs</span>
+          <span className="font-bold">Total Toll Costs</span>
             <span className="text-[#1356BE] font-bold">
               ${tollCosts?.total.toFixed(2) || '0.00'}
             </span>
@@ -123,10 +123,10 @@ export const PriceBreakdown = ({
       </div>
 
       {/* Final Price */}
-      <div className="p-24 flex justify-between items-center bg-[#1356BE] rounded-[24px] text-white">
+      <div className="p-24 flex justify-between items-center bg-primary rounded-[24px] text-white">
         <div className="flex items-center gap-8">
           <DollarSign className="w-20 h-20" />
-          <span className="font-montserrat text-p2">Final Price</span>
+          <span className="font-montserrat font-bold text-p2">Final Price</span>
         </div>
         <span className="font-montserrat text-p2 font-bold">
           ${finalPrice.toFixed(2)}

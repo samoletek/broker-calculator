@@ -9,10 +9,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
-        primary: "#4B6FFF",
-        'primary-hover': "#3D5BDB",
+        primary: "#1356BE",
+        'primary-hover': "#0D4599",
       },
       fontFamily: {
         jost: ['Jost', 'sans-serif'],

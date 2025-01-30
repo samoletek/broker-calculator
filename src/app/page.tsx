@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import dynamic from 'next/dynamic';
+import Select from 'react-select';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Truck, Loader2 } from 'lucide-react';
 import PriceSummary from '@/app/components/PriceSummary';
@@ -36,10 +36,6 @@ type SelectChangeEvent = {
   description?: string;
 } | null;
 
-const Select = dynamic(() => import('react-select'), { 
-  ssr: false 
-});
-
 const selectStyles = {
   menuPortal: (base: any) => ({
     ...base,
@@ -49,25 +45,41 @@ const selectStyles = {
     ...base,
     marginTop: '0.5rem',
     borderRadius: '24px',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: 'rgb(249 250 251)',
     borderColor: '#D1D5DB',
     '&:hover': {
-      borderColor: '#1356BE'
+      borderColor: 'var(--primary)'
     }
   }),
   option: (base: any, { isSelected, isFocused }: { isSelected: boolean; isFocused: boolean }) => ({
     ...base,
-    backgroundColor: isSelected ? '#1356BE' : isFocused ? '#E5E7EB' : 'white',
+    backgroundColor: isSelected ? 'var(--primary)' : isFocused ? '#E5E7EB' : 'white',
     color: isSelected ? 'white' : 'black',
     ':active': {
-      backgroundColor: '#1356BE',
+      backgroundColor: 'var(--primary)',
       color: 'white'
-    }
+    },
+    padding: '8px 16px',
   }),
   menu: (base: any) => ({
     ...base,
+    margin: '4px 0',
     borderRadius: '24px',
+    overflow: 'hidden',
+    border: '1px solid #D1D5DB',
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+  }),
+  indicatorSeparator: () => ({
+    display: 'none'
+  }),
+  menuList: (base: any) => ({
+    ...base,
+    padding: 0,
+    borderRadius: 0,
+    '::-webkit-scrollbar': {
+      display: 'none'
+    },
+    scrollbarWidth: 'none'
   }),
   singleValue: (base: any) => ({
     ...base,
@@ -385,10 +397,10 @@ export default function BrokerCalculator() {
   return (
     <div className="min-h-screen bg-white p-24">
       <div className="max-w-7xl mx-auto space-y-24">
-        <div className="bg-white rounded-[32px] p-24 border border-[#1356BE]/10">
+        <div className="bg-white rounded-[32px] p-24 border border-primary/10">
           <div className="flex items-center mb-24">
             <div className="flex items-center space-x-16">
-              <Truck className="w-32 h-32 text-[#1356BE]" />
+              <Truck className="w-32 h-32 text-primary" />
               <h1 className="font-jost text-[32px] font-bold">Delivery Calculator</h1>
             </div>
           </div>
@@ -413,7 +425,6 @@ export default function BrokerCalculator() {
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Transport Type
                 </label>
-                {isMounted && (
                   <Select
                     options={Object.entries(TRANSPORT_TYPES).map(([type, data]): SelectOption => ({
                       value: type,
@@ -432,14 +443,12 @@ export default function BrokerCalculator() {
                     styles={selectStyles}
                     classNamePrefix="react-select"
                   />
-                )}
               </div>
 
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Vehicle Type
                 </label>
-                {isMounted && (
                   <Select
                     options={Object.entries(VEHICLE_TYPES).map(([type, data]): SelectOption => ({
                       value: type,
@@ -459,14 +468,12 @@ export default function BrokerCalculator() {
                     styles={selectStyles}
                     classNamePrefix="react-select"
                   />
-                )}
               </div>
 
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Vehicle Value
                 </label>
-                {isMounted && (
                   <Select
                     options={Object.entries(VEHICLE_VALUE_TYPES).map(([type, data]): SelectOption => ({
                       value: type,
@@ -485,7 +492,6 @@ export default function BrokerCalculator() {
                     styles={selectStyles}
                     classNamePrefix="react-select"
                   />
-                )}
               </div>
             </div>
 
@@ -502,7 +508,7 @@ export default function BrokerCalculator() {
                     border-gray-300
                     text-gray-900
                     placeholder-gray-500
-                    focus:ring-[#1356BE] focus:border-[#1356BE]
+                    focus:ring-primary focus:border-primary
                     font-montserrat text-p2
                     ${!pickup && error ? 'border-red-300 ring-red-300' : ''}`}
                   value={pickup}
@@ -565,7 +571,7 @@ export default function BrokerCalculator() {
                       }}
                       className={`appearance-none h-24 w-24 rounded
                         border-2 border-gray-200
-                        checked:bg-[#1356BE] checked:border-[#1356BE]
+                        checked:bg-primary checked:border-primary
                         relative cursor-pointer transition-all duration-200
                         disabled:opacity-50 disabled:cursor-not-allowed
                         focus:ring-offset-0 focus:ring-0
@@ -629,9 +635,9 @@ export default function BrokerCalculator() {
             <button
               onClick={calculatePrice}
               disabled={loading}
-              className="mt-24 w-full bg-[#1356BE] hover:bg-[#1356BE]/90
+              className="mt-24 w-full bg-primary hover:bg-primary/90
                 text-white py-12 px-16 rounded-[24px]
-                disabled:bg-[#1356BE]/50
+                disabled:bg-primary/50
                 disabled:cursor-not-allowed
                 transition-colors duration-200
                 flex items-center justify-center

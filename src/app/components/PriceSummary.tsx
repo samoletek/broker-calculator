@@ -44,7 +44,7 @@ export default function PriceSummary({ finalPrice, basePrice, selectedDate, onSa
         {/* Left side - Price block */}
         <div className="space-y-12">
           <h2 className="font-jost text-[32px] font-bold">Final Price</h2>
-          <div className="text-[48px] font-jost font-bold text-[#1356BE]">
+          <div className="text-[48px] font-jost font-bold text-primary">
             ${finalPrice.toFixed(2)}
           </div>
           <div className="space-y-4">
@@ -68,9 +68,9 @@ export default function PriceSummary({ finalPrice, basePrice, selectedDate, onSa
           <button
             onClick={handleSavePrice}
             className="whitespace-nowrap flex items-center justify-center px-24 py-12 
-              bg-[#1356BE] text-white rounded-[24px] 
+              bg-primary text-white rounded-[24px] 
               font-montserrat text-p2 font-medium
-              hover:bg-[#1356BE]/90 transition-colors duration-200"
+              hover:bg-primary/90 transition-colors duration-200"
           >
             <Save className="w-16 h-16 mr-8" />
             Save price for me!
@@ -79,9 +79,9 @@ export default function PriceSummary({ finalPrice, basePrice, selectedDate, onSa
           <button
             onClick={() => alert('Booking feature coming soon!')}
             className="whitespace-nowrap flex items-center justify-center px-24 py-12 
-              border border-[#1356BE] text-[#1356BE] rounded-[24px] 
+              border border-primary text-primary rounded-[24px] 
               font-montserrat text-p2 font-medium
-              hover:bg-[#1356BE] hover:text-white 
+              hover:bg-primary hover:text-white 
               transition-all duration-200"
           >
             <ArrowRight className="w-16 h-16 mr-8" />

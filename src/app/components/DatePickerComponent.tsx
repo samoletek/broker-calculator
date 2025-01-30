@@ -106,7 +106,7 @@ export function DatePickerComponent({ date, onDateChange }: DatePickerProps) {
             border-gray-300
             text-gray-900
             placeholder-gray-500
-            focus:ring-[#1356BE] focus:border-[#1356BE]
+            focus:ring-primary focus:border-primary
             font-montserrat text-p2
             cursor-pointer"
         />
@@ -156,11 +156,11 @@ export function DatePickerComponent({ date, onDateChange }: DatePickerProps) {
                 onClick={() => handleDateSelect(day)}
                 className={`aspect-square rounded-full text-center flex items-center justify-center
                   ${!day ? 'bg-transparent' : ''}
-                  ${day && day.toDateString() === today.toDateString() ? 'bg-[#1356BE] text-white' : ''}
-                  ${day && selectedDate && day.toDateString() === selectedDate.toDateString() ? 'bg-[#1356BE]/20' : ''}
+                  ${day && day.toDateString() === today.toDateString() ? 'bg-primary text-white' : ''}
+                  ${day && selectedDate && day.toDateString() === selectedDate.toDateString() ? 'bg-primary/20' : ''}
                   ${day && day < today ? 'text-gray-300 cursor-not-allowed' : ''}
                   ${day && day > maxDate ? 'text-gray-300 cursor-not-allowed' : ''}
-                  hover:bg-[#1356BE]/10 transition-colors`}
+                  hover:bg-primary/10 transition-colors`}
               >
                 {day ? day.getDate() : ''}
               </button>
@@ -186,10 +186,10 @@ export function DatePickerComponent({ date, onDateChange }: DatePickerProps) {
               onClick={handleApply}
               className="flex items-center gap-8 
                 px-12 py-8 
-                bg-[#1356BE] 
+                bg-primary
                 text-white 
                 rounded-[24px] 
-                hover:bg-[#1356BE]/90 
+                hover:bg-primary/90 
                 transition-colors"
             >
               <Check className="w-16 h-16" />
