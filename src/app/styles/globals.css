@@ -5,6 +5,11 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --primary: #1356BE;
+  --primary-hover: #0D4599;
+}
+
 body {
   font-family: 'Montserrat', sans-serif;
 }
@@ -26,7 +31,7 @@ body {
   .text-p3 { font-size: 14px; }
 }
 
-/* Кастомные стили для селектов */
+/* Custom select styles */
 select {
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -38,7 +43,6 @@ select {
   padding-right: 2.5rem;
 }
 
-/* Стили для options */
 select option {
   background-color: white;
   color: #1f2937;
@@ -51,7 +55,7 @@ select option:hover {
 }
 
 select option:checked {
-  background-color: #1356BE;
+  background-color: var(--primary);
   color: white;
 }
 

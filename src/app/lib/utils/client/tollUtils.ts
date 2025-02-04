@@ -1,4 +1,4 @@
-import { TollSegment } from '@/app/components/types';
+import type { TollSegment } from '@/app/types/pricing.types';
 
 export const calculateTollCost = (distance: number, mainRoute: google.maps.DirectionsRoute) => {
   const baseRate = 0.12;
@@ -68,7 +68,7 @@ export const getRouteSegments = (route: google.maps.DirectionsResult, totalCost:
         routeText.includes('indiana') ||
         routeText.includes('ohio'),
       name: "Midwest Region Tolls",
-      details: "(I-80/90, Ohio/Indiana/Illinois Tolls)",
+      details: "(I-80/90, OH/IN/IL Tolls)",
       multiplier: 0.4
     },
     {
@@ -91,16 +91,6 @@ export const getRouteSegments = (route: google.maps.DirectionsResult, totalCost:
       name: "Florida Region Tolls",
       details: "(FL Turnpike and Express Lanes)",
       multiplier: 0.7
-    },
-    {
-      condition: () => 
-        routeText.includes('texas') || 
-        routeText.includes('tx') ||
-        routeText.includes('houston') ||
-        routeText.includes('dallas'),
-      name: "Texas Region Tolls",
-      details: "(TX Tollways and Express Lanes)",
-      multiplier: 0.6
     }
   ];
 

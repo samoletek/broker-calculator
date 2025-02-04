@@ -1,0 +1,58 @@
+/* React Select Styles */
+.react-select__control {
+    border-radius: 24px !important;
+    background-color: rgb(249 250 251) !important;
+    border-color: #D1D5DB !important;
+  }
+  
+  .react-select__control:hover {
+    border-color: var(--primary) !important;
+  }
+  
+  .react-select__control--is-focused {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 1px var(--primary) !important;
+  }
+  
+  .react-select__menu {
+    border-radius: 24px !important;
+    overflow: hidden !important;
+    border: 1px solid #D1D5DB !important;
+  }
+  
+  .react-select__option {
+    padding: 8px 16px !important;
+  }
+  
+  .react-select__option--is-selected {
+    background-color: var(--primary) !important;
+    color: white !important;
+  }
+  
+  .react-select__option--is-focused:not(.react-select__option--is-selected) {
+    background-color: #E5E7EB !important;
+  }
+  
+  .react-select__indicator-separator {
+    display: none !important;
+  }
+  
+  .react-select__placeholder {
+    color: #6B7280 !important;
+  }
+  
+  /* Animation Classes */
+  .animate-fade-in-up {
+    animation: fadeInUp 0.3s ease-out;
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }

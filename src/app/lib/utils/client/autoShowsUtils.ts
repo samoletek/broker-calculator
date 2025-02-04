@@ -27,7 +27,7 @@ export const checkAutoShows = async (
   
   const searchParams: google.maps.places.PlaceSearchRequest = {
     location: location,
-    radius: 32186, // 20 миль в метрах
+    radius: 32186, // 20 miles in meters
     keyword: 'auto show car show automotive exhibition convention center stadium'
   };
 
@@ -37,22 +37,21 @@ export const checkAutoShows = async (
         if (status === google.maps.places.PlacesServiceStatus.OK && results) {
           resolve(results);
         } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-          resolve([]); // Возвращаем пустой массив вместо ошибки
+          resolve([]);
         } else {
           reject(status);
         }
       });
     });
 
-    // Дата поиска +/- 3 дня
+    // Search date +/- 3 days
     const searchStartDate = new Date(date);
     searchStartDate.setDate(searchStartDate.getDate() - 3);
     const searchEndDate = new Date(date);
     searchEndDate.setDate(searchEndDate.getDate() + 3);
 
-    // Обрабатываем результаты только если есть места
     if (places.length === 0) {
-      return []; // Возвращаем пустой массив если нет результатов
+      return [];
     }
 
     const detailedResults = await Promise.all(
@@ -81,7 +80,7 @@ export const checkAutoShows = async (
           const distance = google.maps.geometry.spherical.computeDistanceBetween(
             new google.maps.LatLng(location),
             placeInfo.geometry.location
-          ) / 1609.34; // конвертируем метры в мили
+          ) / 1609.34; // convert to miles
 
           return {
             name: placeInfo.name || 'Unknown Event',
@@ -102,16 +101,16 @@ export const checkAutoShows = async (
       })
     );
 
-    return detailedResults.filter(result => result !== null) as AutoShowEvent[];
+    return detailedResults.filter((result): result is AutoShowEvent => result !== null);
   } catch (error) {
     console.warn('Error searching for auto shows:', error);
-    return []; // Возвращаем пустой массив вместо выброса ошибки
+    return [];
   }
 };
 
 export const getAutoShowMultiplier = (autoShows: AutoShowEvent[], date: Date): number => {
   if (autoShows.length > 0) {
-    return 1.1; // +10% к базовой цене
+    return 1.1; // +10% to base price
   }
   return 1.0;
 };

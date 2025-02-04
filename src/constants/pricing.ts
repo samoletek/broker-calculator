@@ -1,6 +1,6 @@
 // src/constants/pricing.ts
 
-// Interfaces
+// Интерфейсы
 interface RateRange {
   min: number;
   max: number;
@@ -27,33 +27,13 @@ interface VehicleTypeData {
   description: string;
 }
 
-export interface AdditionalService {
+interface AdditionalService {
   name: string;
   multiplier: number;
   tooltip?: string[];
 }
 
-// Убираем дублирующий интерфейс AutoShowData и переименовываем AutoShowInfo в AutoShowData
-export interface AutoShowData {
-  pickup: AutoShowEvent[];
-  delivery: AutoShowEvent[];
-  multiplier: number;
-}
-
-interface AutoShowEvent {
-  name: string;
-  location: {
-    lat: number;
-    lng: number;
-  };
-  dates: {
-    start: Date;
-    end: Date;
-  };
-  distance: number;
-}
-
-// Transport Types Configuration
+// Конфигурация типов транспорта
 export const TRANSPORT_TYPES: Record<string, TransportTypeData> = {
   openTransport: {
     name: 'Open Transport',
@@ -71,7 +51,7 @@ export const TRANSPORT_TYPES: Record<string, TransportTypeData> = {
   }
 };
 
-// Vehicle Value Types
+// Типы стоимости автомобилей
 export const VEHICLE_VALUE_TYPES: Record<string, VehicleValueType> = {
   under100k: {
     name: 'Under $100k',
@@ -91,7 +71,7 @@ export const VEHICLE_VALUE_TYPES: Record<string, VehicleValueType> = {
   }
 };
 
-// Vehicle Types without multipliers
+// Типы транспортных средств
 export const VEHICLE_TYPES: Record<string, VehicleTypeData> = {
   SEDAN: {
     name: 'Sedan',
@@ -171,7 +151,7 @@ export const VEHICLE_TYPES: Record<string, VehicleTypeData> = {
   }
 };
 
-// Additional Services
+// Дополнительные услуги
 export const ADDITIONAL_SERVICES: Record<string, AdditionalService> = {
   premiumEnhancements: {
     name: 'Premium Enhancements',
@@ -208,24 +188,24 @@ export const ADDITIONAL_SERVICES: Record<string, AdditionalService> = {
   }
 };
 
-// Weather Configuration
+// Конфигурация погодных условий
 export const WEATHER_MULTIPLIERS: Record<string, number> = {
   clear: 1.0,
   cloudy: 1.0,
-  rain: 1.0,
+  rain: 1.05,
   snow: 1.1,
   storm: 1.1,
-  extreme: 1.1
+  extreme: 1.2
 };
 
-// Route Configuration
+// Конфигурация маршрутов
 export const ROUTE_FACTORS: Record<string, number> = {
   popular: 0.9,
   regular: 1.0,
   remote: 1.2
 };
 
-// Popular Routes
+// Популярные маршруты
 export const POPULAR_ROUTES: PopularRoute[] = [
   { from: "New York", to: "Los Angeles", factor: 0.9 },
   { from: "Miami", to: "Chicago", factor: 0.9 },
@@ -240,15 +220,11 @@ export const POPULAR_ROUTES: PopularRoute[] = [
   { from: "Los Angeles", to: "Chicago", factor: 0.9 },
 ];
 
-// Utility Functions
+// Вспомогательные функции
 export const getBaseRate = (distance: number, transportType: keyof typeof TRANSPORT_TYPES) => {
   const type = TRANSPORT_TYPES[transportType];
   const ratePerMile = type.baseRatePerMile.max;
   return distance * ratePerMile;
-};
-
-export const getSeasonalMultiplier = (date: Date): number => {
-  return 1.0;
 };
 
 export const getRouteFactor = (pickup: string, delivery: string): number => {
@@ -273,6 +249,6 @@ export const getRouteFactor = (pickup: string, delivery: string): number => {
 };
 
 export const isDistanceValid = (distance: number): boolean => {
-  const MAX_DISTANCE = 3500;
+  const MAX_DISTANCE = 3500; // максимальная дистанция в милях
   return distance <= MAX_DISTANCE;
 };

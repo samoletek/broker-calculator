@@ -1,13 +1,11 @@
+'use client';
+
 import React, { useState, useEffect, useRef } from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { AlertCircle, Calendar, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
+import type { DatePickerProps } from '@/app/types/components.types';
 
-interface DatePickerProps {
-  date: Date | undefined;
-  onDateChange: (date: Date | undefined) => void;
-}
-
-export function DatePickerComponent({ date, onDateChange }: DatePickerProps) {
+export function DatePicker({ date, onDateChange }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(date);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -19,7 +17,6 @@ export function DatePickerComponent({ date, onDateChange }: DatePickerProps) {
   const maxDate = new Date();
   maxDate.setFullYear(maxDate.getFullYear() + 1);
 
-  // Закрытие календаря при клике вне его
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -38,7 +35,6 @@ export function DatePickerComponent({ date, onDateChange }: DatePickerProps) {
     };
   }, []);
 
-  // Проверка даты при изменении
   useEffect(() => {
     if (selectedDate) {
       const oneMonthFromNow = new Date();
@@ -47,18 +43,15 @@ export function DatePickerComponent({ date, onDateChange }: DatePickerProps) {
     }
   }, [selectedDate]);
 
-  // Генерация дней для календаря
   const generateCalendarDays = () => {
     const days = [];
     const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
     const lastDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
 
-    // Добавляем пустые места перед первым днем месяца
     for (let i = 0; i < firstDayOfMonth.getDay(); i++) {
       days.push(null);
     }
 
-    // Добавляем дни месяца
     for (let d = 1; d <= lastDayOfMonth.getDate(); d++) {
       const currentDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), d);
       days.push(currentDate);
@@ -79,12 +72,7 @@ export function DatePickerComponent({ date, onDateChange }: DatePickerProps) {
 
   const handleDateSelect = (newDate: Date | null) => {
     if (!newDate) return;
-
-    // Проверяем, что дата не раньше сегодня и не позже максимальной даты
-    if (
-      newDate >= today && 
-      newDate <= maxDate
-    ) {
+    if (newDate >= today && newDate <= maxDate) {
       setSelectedDate(newDate);
     }
   };
@@ -123,7 +111,6 @@ export function DatePickerComponent({ date, onDateChange }: DatePickerProps) {
             rounded-[24px] shadow-lg border border-gray-200 
             font-montserrat text-p2 overflow-hidden"
         >
-          {/* Month Navigation */}
           <div className="flex items-center justify-between p-12 border-b">
             <button 
               onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
@@ -142,7 +129,6 @@ export function DatePickerComponent({ date, onDateChange }: DatePickerProps) {
             </button>
           </div>
 
-          {/* Calendar Grid */}
           <div className="grid grid-cols-7 gap-1 px-16 pt-4">
             {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
               <div key={day} className="text-center text-xs font-bold text-gray-600 py-1">
@@ -166,9 +152,7 @@ export function DatePickerComponent({ date, onDateChange }: DatePickerProps) {
               </button>
             ))}
           </div>
-          <div className="h-4"></div>
 
-          {/* Actions */}
           <div className="flex justify-center gap-8 p-16 border-t">
             <button
               onClick={handleCancel}

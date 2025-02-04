@@ -1,12 +1,10 @@
-import { TrafficData, TrafficPoint } from '@/app/components/types';
+import { TrafficData, TrafficPoint } from '@/app/types/components.types';
 
 export const calculateEstimatedTransitTime = (distance: number): string => {
- const DAILY_DRIVING_MILES = 500; // Активные мили в световой день
+ const DAILY_DRIVING_MILES = 500; // Active miles per day
  
- // Сколько полных дней потребуется
  const transitDays = Math.ceil(distance / DAILY_DRIVING_MILES);
  
- // Форматирование результата
  if (transitDays === 1) {
    return '1 day';
  } else if (transitDays < 1) {
@@ -25,15 +23,12 @@ export const analyzeTrafficConditions = async (
   try {
     const service = new google.maps.DirectionsService();
     
-    // Проверяем, что выбранная дата не в прошлом
     const now = new Date();
     const departureTime = new Date(date);
     
-    // Если дата сегодня, используем текущее время
     if (departureTime.toDateString() === now.toDateString()) {
       departureTime.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
     }
-    // Если дата в прошлом, используем текущее время
     else if (departureTime < now) {
       departureTime.setTime(now.getTime());
     }
@@ -51,12 +46,10 @@ export const analyzeTrafficConditions = async (
     const result = await service.route(request);
     const leg = result.routes[0].legs[0];
     
-    // Вычисляем разницу между обычным временем и временем с учетом трафика
     const normalDuration = leg.duration?.value || 0;
     const durationInTraffic = leg.duration_in_traffic?.value || normalDuration;
-    const delay = Math.round((durationInTraffic - normalDuration) / 60); // в минутах
+    const delay = Math.round((durationInTraffic - normalDuration) / 60); // in minutes
     
-    // Вычисляем загруженность
     const congestion = durationInTraffic / normalDuration;
     
     let status: 'light' | 'moderate' | 'heavy';
@@ -73,12 +66,11 @@ export const analyzeTrafficConditions = async (
       multiplier = 1.2;
     }
 
-    // Собираем точки маршрута
     const path = result.routes[0].overview_path;
     const points: TrafficPoint[] = path.map(point => ({
       lat: point.lat(),
       lng: point.lng(),
-      speed: 0, // Google не предоставляет точную скорость
+      speed: 0, // Google doesn't provide exact speed
       congestion: congestion
     }));
 
@@ -99,12 +91,11 @@ export const analyzeTrafficConditions = async (
   }
 };
 
-// Вспомогательная функция для получения точек маршрута
 export const getRoutePoints = (route: google.maps.DirectionsResult): Array<{ lat: number; lng: number }> => {
  const points: Array<{ lat: number; lng: number }> = [];
  const path = route.routes[0].overview_path;
  
- // Берем каждую 10-ю точку маршрута для анализа трафика
+ // Take every 10th point of the route for traffic analysis
  for (let i = 0; i < path.length; i += 10) {
    points.push({
      lat: path[i].lat(),

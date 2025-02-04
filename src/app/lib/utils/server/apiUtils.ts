@@ -4,7 +4,7 @@ import {
   TrafficResponse,
   ApiTestResult,
   GoogleGeocodingResponse
-} from '@/types/api';
+} from '@/app/types/api.types';
 
 interface WeatherTestResult extends ApiTestResult<WeatherTestResponse> {
   condition?: string;

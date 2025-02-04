@@ -1,21 +1,18 @@
-// PriceSummary.tsx
+'use client';
+
 import React, { useState } from 'react';
 import { DollarSign, Save, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
+import Button from '@/app/components/ui/Button';
+import type { PriceSummaryProps } from '@/app/types/components.types';
+import type { SavedToast } from '@/app/types/common.types';
 
-interface PriceSummaryProps {
-  finalPrice: number;
-  basePrice: number;
-  selectedDate?: Date;
-  onSavePrice?: () => void;
-}
-
-interface SavedToast {
-  show: boolean;
-  message: string;
-}
-
-export default function PriceSummary({ finalPrice, basePrice, selectedDate, onSavePrice }: PriceSummaryProps) {
+export function PriceSummary({ 
+  finalPrice, 
+  basePrice, 
+  selectedDate, 
+  onSavePrice 
+}: PriceSummaryProps) {
   const [toast, setToast] = useState<SavedToast>({ show: false, message: '' });
 
   const handleSavePrice = () => {
@@ -26,20 +23,26 @@ export default function PriceSummary({ finalPrice, basePrice, selectedDate, onSa
       savedAt: new Date().toISOString()
     };
     
-    const savedCalculations = JSON.parse(localStorage.getItem('savedCalculations') || '[]');
-    savedCalculations.push(savedCalculation);
-    localStorage.setItem('savedCalculations', JSON.stringify(savedCalculations));
-    
-    setToast({ show: true, message: 'Price calculation saved!' });
-    setTimeout(() => setToast({ show: false, message: '' }), 3000);
-    
-    if (onSavePrice) {
-      onSavePrice();
+    try {
+      const savedCalculations = JSON.parse(localStorage.getItem('savedCalculations') || '[]');
+      savedCalculations.push(savedCalculation);
+      localStorage.setItem('savedCalculations', JSON.stringify(savedCalculations));
+      
+      setToast({ show: true, message: 'Price calculation saved!' });
+      setTimeout(() => setToast({ show: false, message: '' }), 3000);
+      
+      if (onSavePrice) {
+        onSavePrice();
+      }
+    } catch (error) {
+      console.error('Error saving calculation:', error);
+      setToast({ show: true, message: 'Failed to save calculation' });
+      setTimeout(() => setToast({ show: false, message: '' }), 3000);
     }
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full bg-white rounded-[24px] p-24">
       <div className="flex justify-between items-center">
         {/* Left side - Price block */}
         <div className="space-y-12">
@@ -65,8 +68,9 @@ export default function PriceSummary({ finalPrice, basePrice, selectedDate, onSa
 
         {/* Right side - Buttons stacked vertically */}
         <div className="flex flex-col justify-center gap-12 self-center">
-          <button
+          <Button
             onClick={handleSavePrice}
+            variant="primary"
             className="whitespace-nowrap flex items-center justify-center px-24 py-12 
               bg-primary text-white rounded-[24px] 
               font-montserrat text-p2 font-medium
@@ -74,10 +78,11 @@ export default function PriceSummary({ finalPrice, basePrice, selectedDate, onSa
           >
             <Save className="w-16 h-16 mr-8" />
             Save price for me!
-          </button>
+          </Button>
           
-          <button
+          <Button
             onClick={() => alert('Booking feature coming soon!')}
+            variant="secondary"
             className="whitespace-nowrap flex items-center justify-center px-24 py-12 
               border border-primary text-primary rounded-[24px] 
               font-montserrat text-p2 font-medium
@@ -86,7 +91,7 @@ export default function PriceSummary({ finalPrice, basePrice, selectedDate, onSa
           >
             <ArrowRight className="w-16 h-16 mr-8" />
             Continue to booking
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -96,7 +101,8 @@ export default function PriceSummary({ finalPrice, basePrice, selectedDate, onSa
           bg-green-500 text-white px-24 py-12 
           rounded-[24px] shadow-lg 
           font-montserrat text-p2 
-          animate-fade-in-up"
+          animate-fade-in-up
+          z-50"
         >
           {toast.message}
         </div>
@@ -104,3 +110,5 @@ export default function PriceSummary({ finalPrice, basePrice, selectedDate, onSa
     </div>
   );
 }
+
+export default PriceSummary;
