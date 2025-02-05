@@ -57,6 +57,25 @@ export default function BrokerCalculator() {
   const [vehicleValue, setVehicleValue] = useState<keyof typeof VEHICLE_VALUE_TYPES | ''>('');
   const [vehicleType, setVehicleType] = useState<keyof typeof VEHICLE_TYPES | ''>('');
   
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  
+  const [errors, setErrors] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    pickup: '',
+    delivery: '',
+    transportType: '',
+    vehicleType: '',
+    vehicleValue: '',
+    selectedDate: '',
+    general: ''
+  });
+  
+  
+
   const [premiumEnhancements, setPremiumEnhancements] = useState(false);
   const [specialLoad, setSpecialLoad] = useState(false);
   const [inoperable, setInoperable] = useState(false);
@@ -135,113 +154,138 @@ export default function BrokerCalculator() {
     });
   };
 
-  const calculatePrice = async () => {
-    if (typeof window === 'undefined' || !googleMaps) return;
-    if (!selectedDate) {
-      setError('Please select a shipping date');
-      return;
+  // Validations
+  const validateFields = () => {
+    let newErrors: Record<string, string> = {};
+    let isValid = true;
+  
+    if (!name.trim() || name.length < 2) {
+      newErrors.name = 'Name must be at least 2 characters';
+      isValid = false;
     }
-   
-    const errors = [];
-    if (!pickup || !delivery) {
-      errors.push('pickup and delivery locations');
+  
+    if (!/^\+?\d{10,15}$/.test(phone)) {
+      newErrors.phone = 'Enter a valid phone number';
+      isValid = false;
     }
+  
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = 'Enter a valid email address';
+      isValid = false;
+    }
+  
+    if (!pickup.trim()) {
+      newErrors.pickup = 'Please enter a pickup location';
+      isValid = false;
+    }
+  
+    if (!delivery.trim()) {
+      newErrors.delivery = 'Please enter a delivery location';
+      isValid = false;
+    }
+  
     if (!transportType) {
-      errors.push('transport type');
+      newErrors.transportType = 'Please select a transport type';
+      isValid = false;
     }
+  
     if (!vehicleType) {
-      errors.push('vehicle type');
+      newErrors.vehicleType = 'Please select a vehicle type';
+      isValid = false;
     }
+  
     if (!vehicleValue) {
-      errors.push('vehicle value');
+      newErrors.vehicleValue = 'Please select a vehicle value';
+      isValid = false;
     }
-   
-    if (errors.length > 0) {
-      setError(`Please enter ${errors.join(', ')}`);
+  
+    setErrors((prev) => ({ ...prev, ...newErrors }));
+    return isValid;
+  };
+  
+  
+  
+  const calculatePrice = async () => {
+    if (!validateFields()) return;
+    if (typeof window === 'undefined' || !googleMaps) return;
+  
+    if (!selectedDate) {
+      setErrors((prev) => ({ ...prev, selectedDate: 'Please select a shipping date' }));
       return;
     }
-   
-    const isPickupValid = await isValidUSAddress(pickup, googleMaps);
-    const isDeliveryValid = await isValidUSAddress(delivery, googleMaps);
-   
-    if (!isPickupValid || !isDeliveryValid) {
-      setError('Please enter valid US addresses for pickup and delivery');
-      return;
-    }
-   
+  
     setLoading(true);
-    setError(null);
-   
+  
     try {
+      // Проверяем валидность адресов
+      const isPickupValid = await isValidUSAddress(pickup, googleMaps);
+      const isDeliveryValid = await isValidUSAddress(delivery, googleMaps);
+  
+      if (!isPickupValid || !isDeliveryValid) {
+        setErrors((prev) => ({
+          ...prev,
+          pickup: !isPickupValid ? 'Please enter a valid US pickup address' : '',
+          delivery: !isDeliveryValid ? 'Please enter a valid US delivery address' : ''
+        }));
+        return;
+      }
+  
       const service = new googleMaps.DirectionsService();
-      
       const response = await service.route({
         origin: pickup,
         destination: delivery,
         travelMode: googleMaps.TravelMode.DRIVING
       });
-   
+  
       setMapData(response);
       const distanceInMiles = (response.routes[0].legs[0].distance?.value || 0) / 1609.34;
-      
       setDistance(Math.round(distanceInMiles));
-      setRouteInfo(prev => ({
+  
+      setRouteInfo((prev) => ({
         ...prev,
         estimatedTime: calculateEstimatedTransitTime(distanceInMiles)
       }));
-   
+  
       const pickupAutoShows = await checkAutoShows(
-        {
-          lat: response.routes[0].legs[0].start_location.lat(),
-          lng: response.routes[0].legs[0].start_location.lng()
-        }, 
+        { lat: response.routes[0].legs[0].start_location.lat(), lng: response.routes[0].legs[0].start_location.lng() },
         selectedDate,
         window.google
       );
-      
+  
       const deliveryAutoShows = await checkAutoShows(
-        {
-          lat: response.routes[0].legs[0].end_location.lat(),
-          lng: response.routes[0].legs[0].end_location.lng()
-        }, 
+        { lat: response.routes[0].legs[0].end_location.lat(), lng: response.routes[0].legs[0].end_location.lng() },
         selectedDate,
         window.google
       );
-   
+  
       const autoShowMultiplier = Math.max(
         getAutoShowMultiplier(pickupAutoShows, selectedDate),
         getAutoShowMultiplier(deliveryAutoShows, selectedDate)
       );
-   
+  
       const routePoints = getRoutePoints(response);
       const fuelPriceMultiplier = await getFuelPriceMultiplier(routePoints, window.google);
-   
-      const basePrice = distanceInMiles <= 300 
-      ? 600 
-      : getBaseRate(distanceInMiles, transportType);
-    
+  
+      const basePrice = distanceInMiles <= 300 ? 600 : getBaseRate(distanceInMiles, transportType);
+  
       const basePriceBreakdown = {
-        ratePerMile: distanceInMiles <= 300 
-          ? 0
-          : TRANSPORT_TYPES[transportType].baseRatePerMile.max,
+        ratePerMile: distanceInMiles <= 300 ? 0 : TRANSPORT_TYPES[transportType].baseRatePerMile.max,
         distance: distanceInMiles,
         total: basePrice
       };
-   
-      const additionalServicesMultiplier = 1.0 + 
-        (premiumEnhancements ? 0.3 : 0) +
-        (specialLoad ? 0.3 : 0) +
-        (inoperable ? 0.3 : 0);
-   
+  
+      const additionalServicesMultiplier =
+        1.0 + (premiumEnhancements ? 0.3 : 0) + (specialLoad ? 0.3 : 0) + (inoperable ? 0.3 : 0);
+  
       const vehicleMultiplier = VEHICLE_VALUE_TYPES[vehicleValue].multiplier;
-   
+  
       const totalTollCost = calculateTollCost(distanceInMiles, response.routes[0]);
       const tollSegments = getRouteSegments(response, totalTollCost);
       const tollCosts = {
         segments: tollSegments,
         total: totalTollCost
       };
-   
+  
       setPriceComponents({
         selectedDate,
         basePrice,
@@ -261,22 +305,27 @@ export default function BrokerCalculator() {
           totalAdditional: additionalServicesMultiplier - 1.0
         },
         tollCosts,
-        finalPrice: basePrice * 
-          vehicleMultiplier * 
-          1.0 * 
-          autoShowMultiplier * 
-          fuelPriceMultiplier * 
-          additionalServicesMultiplier + 
+        finalPrice:
+          basePrice *
+            vehicleMultiplier *
+            1.0 *
+            autoShowMultiplier *
+            fuelPriceMultiplier *
+            additionalServicesMultiplier +
           tollCosts.total
       });
-   
+  
+      // Очищаем все ошибки после успешного расчета
     } catch (err) {
       console.error('Calculation error:', err);
-      setError('Error calculating route. Please check the addresses and try again.');
+      setErrors((prev) => ({ ...prev, general: 'Error calculating route. Please check the addresses and try again.' }));
     } finally {
       setLoading(false);
     }
   };
+  
+  
+  
 
   return (
     <div className="min-h-screen bg-white p-24">
@@ -322,12 +371,13 @@ export default function BrokerCalculator() {
                     const value = (option as SelectOption)?.value;
                     if (value) {
                       setTransportType(value as keyof typeof TRANSPORT_TYPES);
-                      clearResults();
                     }
                   }}
                   isSearchable={false}
                 />
+                {errors.transportType && <p className="text-red-500 text-sm mt-2">{errors.transportType}</p>}
               </div>
+
 
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
@@ -346,10 +396,10 @@ export default function BrokerCalculator() {
                   onChange={(option) => {
                     const value = (option as SelectOption)?.value;
                     setVehicleType((value as keyof typeof VEHICLE_TYPES) || '');
-                    clearResults();
                   }}
                   isSearchable={false}
                 />
+                {errors.vehicleType && <p className="text-red-500 text-sm mt-2">{errors.vehicleType}</p>}
               </div>
 
               <div>
@@ -368,10 +418,10 @@ export default function BrokerCalculator() {
                   onChange={(option) => {
                     const value = (option as SelectOption)?.value;
                     setVehicleValue((value as keyof typeof VEHICLE_VALUE_TYPES) || '');
-                    clearResults();
                   }}
                   isSearchable={false}
                 />
+                {errors.vehicleValue && <p className="text-red-500 text-sm mt-2">{errors.vehicleValue}</p>}
               </div>
             </div>
 
@@ -383,22 +433,20 @@ export default function BrokerCalculator() {
                 <input
                   ref={pickupInputRef}
                   type="text"
-                  className={`mt-8 block w-full rounded-[24px]
-                    bg-gray-50
-                    border-gray-300
-                    text-gray-900
-                    placeholder-gray-500
-                    focus:ring-primary focus:border-primary
-                    font-montserrat text-p2
-                    ${!pickup && error ? 'border-red-300 ring-red-300' : ''}`}
+                  className={`mt-8 block w-full rounded-[24px] bg-gray-50 border text-gray-900 placeholder-gray-500 
+                    focus:ring-primary focus:border-primary font-montserrat text-p2
+                    ${errors.pickup ? 'border-red-500' : 'border-gray-300'}`}
                   value={pickup}
                   onChange={(e) => {
                     setPickup(e.target.value);
-                    clearResults();
+                    setErrors((prev) => ({ ...prev, pickup: '' }));
                   }}
                   placeholder="Enter pickup address"
                 />
+                {errors.pickup && <p className="text-red-500 text-sm mt-2">{errors.pickup}</p>}
               </div>
+
+
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Delivery Location
@@ -406,21 +454,17 @@ export default function BrokerCalculator() {
                 <input
                   ref={deliveryInputRef}
                   type="text"
-                  className={`mt-8 block w-full rounded-[24px]
-                    bg-gray-50
-                    border-gray-300
-                    text-gray-900
-                    placeholder-gray-500
-                    focus:ring-[#1356BE] focus:border-[#1356BE]
-                    font-montserrat text-p2
-                    ${!delivery && error ? 'border-red-300 ring-red-300' : ''}`}
+                  className={`mt-8 block w-full rounded-[24px] bg-gray-50 border text-gray-900 placeholder-gray-500 
+                    focus:ring-primary focus:border-primary font-montserrat text-p2
+                    ${errors.delivery ? 'border-red-500' : 'border-gray-300'}`}
                   value={delivery}
                   onChange={(e) => {
-                    setDelivery(e.target.value);
-                    clearResults();
+                    setDelivery(e.target.value)
+                    setErrors((prev) => ({ ...prev, delivery: '' }));
                   }}
                   placeholder="Enter delivery address"
                 />
+                {errors.delivery && <p className="text-red-500 text-sm mt-2">{errors.delivery}</p>}
               </div>
             </div>
 
@@ -512,6 +556,60 @@ export default function BrokerCalculator() {
               ))}
             </div>
   
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-24">
+              {/* Name */}
+              <div>
+                <label className="block text-p2 font-montserrat font-medium mb-8">Name</label>
+                <input
+                  type="text"
+                  className={`mt-8 block w-full rounded-[24px] bg-gray-50 border text-gray-900 placeholder-gray-500 
+                    focus:ring-primary focus:border-primary font-montserrat text-p2
+                    ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    setErrors((prev) => ({ ...prev, name: '' }));
+                  }}
+                  placeholder="Enter your name"
+                />
+                {errors.name && <p className="text-red-500 text-sm mt-2">{errors.name}</p>}
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label className="block text-p2 font-montserrat font-medium mb-8">Phone</label>
+                <input
+                  type="tel"
+                  className={`mt-8 block w-full rounded-[24px] bg-gray-50 border text-gray-900 placeholder-gray-500 
+                    focus:ring-primary focus:border-primary font-montserrat text-p2
+                    ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
+                  value={phone}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    setErrors((prev) => ({ ...prev, phone: '' }));
+                  }}
+                  placeholder="+1 123-456-7890"
+                />
+                {errors.phone && <p className="text-red-500 text-sm mt-2">{errors.phone}</p>}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-p2 font-montserrat font-medium mb-8">Email</label>
+                <input
+                  type="email"
+                  className={`mt-8 block w-full rounded-[24px] bg-gray-50 border text-gray-900 placeholder-gray-500 
+                    focus:ring-primary focus:border-primary font-montserrat text-p2
+                    ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                />
+                {errors.email && <p className="text-red-500 text-sm mt-2">{errors.email}</p>}
+              </div>
+            </div>
+
+
             <button
               onClick={calculatePrice}
               disabled={loading}
@@ -547,6 +645,23 @@ export default function BrokerCalculator() {
               finalPrice={priceComponents.finalPrice}
               basePrice={priceComponents.basePrice}
               selectedDate={selectedDate}
+              contactInfo={{
+                name,
+                phone,
+                email
+              }}
+              pickup={pickup}
+              delivery={delivery}
+              transportType={transportType}
+              vehicleType={vehicleType}
+              vehicleValue={vehicleValue}
+              additionalServices={{
+                premiumEnhancements,
+                specialLoad,
+                inoperable
+              }}
+              distance={distance}
+              estimatedTime={routeInfo.estimatedTime}
               onSavePrice={() => {
                 console.log('Price calculation saved');
               }}
@@ -607,20 +722,20 @@ export default function BrokerCalculator() {
               }}
             />
                     
-              <PriceBreakdown
-                distance={distance}
-                basePrice={priceComponents.basePrice}
-                basePriceBreakdown={priceComponents.basePriceBreakdown}
-                mainMultipliers={priceComponents.mainMultipliers}
-                additionalServices={priceComponents.additionalServices}
-                tollCosts={priceComponents.tollCosts}
-                finalPrice={priceComponents.finalPrice}
-                routeInfo={{
-                  isPopularRoute: routeInfo.isPopularRoute,
-                  isRemoteArea: routeInfo.isRemoteArea
-                }}
-                selectedDate={selectedDate}
-              />
+                    <PriceBreakdown
+                      distance={distance}
+                      basePrice={priceComponents.basePrice}
+                      basePriceBreakdown={priceComponents.basePriceBreakdown}
+                      mainMultipliers={priceComponents.mainMultipliers}
+                      additionalServices={priceComponents.additionalServices}
+                      tollCosts={priceComponents.tollCosts}
+                      finalPrice={priceComponents.finalPrice}
+                      routeInfo={{
+                        isPopularRoute: routeInfo.isPopularRoute,
+                        isRemoteArea: routeInfo.isRemoteArea
+                      }}
+                      selectedDate={selectedDate}
+                    />
             </div>
           </div>
         )}

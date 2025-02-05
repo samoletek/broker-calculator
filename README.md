@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vehicle Transport Price Calculator
 
-## Getting Started
+## Overview
+Advanced price calculation system for vehicle transportation services, providing real-time quotes based on multiple factors including weather conditions, traffic, seasonal events, and route specifics.
 
-First, run the development server:
+### Key Features
+- Real-time price calculation with multiple factors
+- Interactive route visualization using Google Maps
+- Weather impact analysis along the route
+- Traffic condition monitoring
+- Toll cost estimation
+- Auto show event detection
+- Fuel price consideration
+- Detailed price breakdown
+- Quote saving functionality
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Technical Stack
+- **Frontend:** React 18 + TypeScript
+- **Styling:** Tailwind CSS
+- **UI Components:** shadcn/ui
+- **Maps Integration:** Google Maps API
+- **Weather Data:** Weather API
+- **Charts:** Recharts
+- **Icons:** Lucide React
+- **Date Handling:** date-fns
+- **Utilities:** Lodash, Axios
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## System Requirements
+- Node.js 18.0 or higher
+- NPM 8.0 or higher
+- Active API keys for:
+  - Google Maps API (with Places, Directions, and Distance Matrix services enabled)
+  - Weather API
+  - EIA API (for fuel prices)

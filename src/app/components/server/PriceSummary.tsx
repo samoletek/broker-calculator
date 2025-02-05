@@ -4,16 +4,52 @@ import React, { useState } from 'react';
 import { DollarSign, Save, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import Button from '@/app/components/ui/Button';
-import type { PriceSummaryProps } from '@/app/types/components.types';
 import type { SavedToast } from '@/app/types/common.types';
+import { navigateToBooking } from '@/app/lib/utils/client/navigation';
+import type { BookingFormData } from '@/app/types/booking.types';
+
+interface ContactInfo {
+  name: string;
+  phone: string;
+  email: string;
+}
+
+export interface PriceSummaryProps {
+  finalPrice: number;
+  basePrice: number;
+  selectedDate?: Date;
+  onSavePrice?: () => void;
+  contactInfo?: ContactInfo;
+  pickup?: string;
+  delivery?: string;
+  transportType?: string;
+  vehicleType?: string;
+  vehicleValue?: string;
+  additionalServices?: {
+    premiumEnhancements: boolean;
+    specialLoad: boolean;
+    inoperable: boolean;
+  };
+  distance?: number;
+  estimatedTime?: string;
+}
 
 export function PriceSummary({ 
   finalPrice, 
   basePrice, 
-  selectedDate, 
+  selectedDate,
+  contactInfo,
+  pickup,
+  delivery,
+  transportType,
+  vehicleType,
+  vehicleValue,
+  additionalServices,
+  distance,
+  estimatedTime,
   onSavePrice 
 }: PriceSummaryProps) {
-  const [toast, setToast] = useState<SavedToast>({ show: false, message: '' });
+  const [toast, setToast] = useState<SavedToast>({ show: false, message: '', type: 'success' });
 
   const handleSavePrice = () => {
     const savedCalculation = {
@@ -28,7 +64,7 @@ export function PriceSummary({
       savedCalculations.push(savedCalculation);
       localStorage.setItem('savedCalculations', JSON.stringify(savedCalculations));
       
-      setToast({ show: true, message: 'Price calculation saved!' });
+      setToast({ show: true, message: 'Price calculation saved!', type: 'success' });
       setTimeout(() => setToast({ show: false, message: '' }), 3000);
       
       if (onSavePrice) {
@@ -36,9 +72,48 @@ export function PriceSummary({
       }
     } catch (error) {
       console.error('Error saving calculation:', error);
-      setToast({ show: true, message: 'Failed to save calculation' });
+      setToast({ show: true, message: 'Failed to save calculation', type: 'error' });
       setTimeout(() => setToast({ show: false, message: '' }), 3000);
     }
+  };
+
+  const handleContinueToBooking = () => {
+    if (!contactInfo?.name || !contactInfo?.phone || !contactInfo?.email) {
+      setToast({ 
+        show: true, 
+        message: 'Please fill in all contact information',
+        type: 'error'
+      });
+      setTimeout(() => setToast({ show: false, message: '' }), 3000);
+      return;
+    }
+
+    if (!pickup || !delivery || !transportType || !vehicleType || !vehicleValue || !selectedDate) {
+      setToast({ 
+        show: true, 
+        message: 'Please complete all required fields',
+        type: 'error'
+      });
+      setTimeout(() => setToast({ show: false, message: '' }), 3000);
+      return;
+    }
+
+    const bookingData: BookingFormData = {
+      name: contactInfo.name,
+      phone: contactInfo.phone,
+      email: contactInfo.email,
+      pickup,
+      delivery,
+      transportType,
+      vehicleType,
+      vehicleValue,
+      premiumEnhancements: additionalServices?.premiumEnhancements || false,
+      specialLoad: additionalServices?.specialLoad || false,
+      inoperable: additionalServices?.inoperable || false,
+      selectedDate: selectedDate.toISOString()
+    };
+
+    navigateToBooking(bookingData);
   };
 
   return (
@@ -81,7 +156,7 @@ export function PriceSummary({
           </Button>
           
           <Button
-            onClick={() => alert('Booking feature coming soon!')}
+            onClick={handleContinueToBooking}
             variant="secondary"
             className="whitespace-nowrap flex items-center justify-center px-24 py-12 
               border border-primary text-primary rounded-[24px] 
@@ -97,12 +172,13 @@ export function PriceSummary({
 
       {/* Toast notification */}
       {toast.show && (
-        <div className="fixed bottom-24 right-24 
-          bg-green-500 text-white px-24 py-12 
+        <div className={`fixed bottom-24 right-24 
+          ${toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'}
+          text-white px-24 py-12 
           rounded-[24px] shadow-lg 
           font-montserrat text-p2 
           animate-fade-in-up
-          z-50"
+          z-50`}
         >
           {toast.message}
         </div>

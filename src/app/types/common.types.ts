@@ -24,6 +24,7 @@ export interface SavedCalculation {
 export interface SavedToast {
   show: boolean;
   message: string;
+  type?: 'success' | 'error';
 }
 
 export interface BasePriceBreakdown {
