@@ -18,6 +18,13 @@ import {
   getBaseRate
 } from '@/constants/pricing';
 
+import { 
+  validateName, 
+  validatePhone, 
+  validateEmail, 
+  formatPhoneNumber 
+} from '@/app/lib/utils/client/validation';
+
 import { useGoogleMaps } from '@/app/lib/hooks/useGoogleMaps';
 import { usePricing } from '@/app/lib/hooks/usePricing';
 import { isValidUSAddress } from '@/app/lib/utils/client/maps';
@@ -164,7 +171,8 @@ export default function BrokerCalculator() {
       isValid = false;
     }
   
-    if (!/^\+?\d{10,15}$/.test(phone)) {
+    const phoneDigits = phone.replace(/\D/g, '');
+    if (phoneDigits.length !== 10) {
       newErrors.phone = 'Enter a valid phone number';
       isValid = false;
     }
@@ -468,7 +476,7 @@ export default function BrokerCalculator() {
               </div>
             </div>
 
-            <div className="space-y-16">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-24">
               {Object.entries(ADDITIONAL_SERVICES).map(([key, service]) => (
                 <div key={key} className="flex items-center space-x-12">
                   <div className="relative">
@@ -556,56 +564,86 @@ export default function BrokerCalculator() {
               ))}
             </div>
   
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-24">
+            {/* Contact Information */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-24">
               {/* Name */}
               <div>
-                <label className="block text-p2 font-montserrat font-medium mb-8">Name</label>
+                <label className="block text-p2 font-montserrat font-medium mb-8">
+                  Name
+                </label>
                 <input
                   type="text"
-                  className={`mt-8 block w-full rounded-[24px] bg-gray-50 border text-gray-900 placeholder-gray-500 
-                    focus:ring-primary focus:border-primary font-montserrat text-p2
-                    ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
                   value={name}
                   onChange={(e) => {
-                    setName(e.target.value);
-                    setErrors((prev) => ({ ...prev, name: '' }));
+                    const value = e.target.value;
+                    if (value === '' || /^[A-Za-zА-Яа-я\s'-]*$/.test(value)) {
+                      setName(value);
+                      const validation = validateName(value);
+                      setErrors(prev => ({ ...prev, name: validation.error || '' }));
+                    }
                   }}
+                  className={`mt-8 block w-full rounded-[24px] bg-gray-50 border 
+                    text-gray-900 placeholder-gray-500 
+                    focus:ring-primary focus:border-primary 
+                    font-montserrat text-p2
+                    ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="Enter your name"
                 />
-                {errors.name && <p className="text-red-500 text-sm mt-2">{errors.name}</p>}
+                {errors.name && (
+                  <p className="text-red-500 text-sm mt-2">{errors.name}</p>
+                )}
               </div>
 
               {/* Phone */}
               <div>
-                <label className="block text-p2 font-montserrat font-medium mb-8">Phone</label>
+                <label className="block text-p2 font-montserrat font-medium mb-8">
+                  Phone
+                </label>
                 <input
                   type="tel"
-                  className={`mt-8 block w-full rounded-[24px] bg-gray-50 border text-gray-900 placeholder-gray-500 
-                    focus:ring-primary focus:border-primary font-montserrat text-p2
-                    ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
                   value={phone}
                   onChange={(e) => {
-                    setPhone(e.target.value);
-                    setErrors((prev) => ({ ...prev, phone: '' }));
+                    const formattedNumber = formatPhoneNumber(e.target.value);
+                    setPhone(formattedNumber);
+                    const validation = validatePhone(formattedNumber);
+                    setErrors(prev => ({ ...prev, phone: validation.error || '' }));
                   }}
-                  placeholder="+1 123-456-7890"
+                  className={`mt-8 block w-full rounded-[24px] bg-gray-50 border 
+                    text-gray-900 placeholder-gray-500 
+                    focus:ring-primary focus:border-primary 
+                    font-montserrat text-p2
+                    ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="(XXX) XXX-XXXX"
                 />
-                {errors.phone && <p className="text-red-500 text-sm mt-2">{errors.phone}</p>}
+                {errors.phone && (
+                  <p className="text-red-500 text-sm mt-2">{errors.phone}</p>
+                )}
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-p2 font-montserrat font-medium mb-8">Email</label>
+                <label className="block text-p2 font-montserrat font-medium mb-8">
+                  Email
+                </label>
                 <input
                   type="email"
-                  className={`mt-8 block w-full rounded-[24px] bg-gray-50 border text-gray-900 placeholder-gray-500 
-                    focus:ring-primary focus:border-primary font-montserrat text-p2
-                    ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value.toLowerCase();
+                    setEmail(value);
+                    const validation = validateEmail(value);
+                    setErrors(prev => ({ ...prev, email: validation.error || '' }));
+                  }}
+                  className={`mt-8 block w-full rounded-[24px] bg-gray-50 border 
+                    text-gray-900 placeholder-gray-500 
+                    focus:ring-primary focus:border-primary 
+                    font-montserrat text-p2
+                    ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="your@email.com"
                 />
-                {errors.email && <p className="text-red-500 text-sm mt-2">{errors.email}</p>}
+                {errors.email && (
+                  <p className="text-red-500 text-sm mt-2">{errors.email}</p>
+                )}
               </div>
             </div>
 

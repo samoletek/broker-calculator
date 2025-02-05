@@ -165,7 +165,7 @@ export const ADDITIONAL_SERVICES: Record<string, AdditionalService> = {
     ]
   },
   specialLoad: {
-    name: 'Special Load (Roundtrip, port/military base)',
+    name: 'Special Load',
     multiplier: 1.1,
     tooltip: [
       'Multi-point deliveries or roundtrip transportation',
