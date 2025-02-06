@@ -421,6 +421,7 @@ export default function BrokerCalculator() {
                     const value = (option as SelectOption)?.value;
                     if (value) {
                       setTransportType(value as keyof typeof TRANSPORT_TYPES);
+                      clearResults();
                     }
                   }}
                   isSearchable={false}
@@ -446,6 +447,7 @@ export default function BrokerCalculator() {
                   onChange={(option) => {
                     const value = (option as SelectOption)?.value;
                     setVehicleType((value as keyof typeof VEHICLE_TYPES) || '');
+                    clearResults();
                   }}
                   isSearchable={false}
                 />
@@ -468,6 +470,7 @@ export default function BrokerCalculator() {
                   onChange={(option) => {
                     const value = (option as SelectOption)?.value;
                     setVehicleValue((value as keyof typeof VEHICLE_VALUE_TYPES) || '');
+                    clearResults();
                   }}
                   isSearchable={false}
                 />
