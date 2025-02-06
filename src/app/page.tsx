@@ -6,7 +6,7 @@ import { Truck, Loader2 } from 'lucide-react';
 import Select from '@/app/components/ui/Select';
 import Button from '@/app/components/ui/Button';
 import { DatePicker } from '@/app/components/client/DatePicker';
-import PriceBreakdown from '@/app/components/server/PriceBreakdown';
+import { PriceBreakdown }  from '@/app/components/server/PriceBreakdown';
 import PriceSummary from '@/app/components/server/PriceSummary';
 import RouteInfo from '@/app/components/server/RouteInfo';
 
@@ -27,7 +27,7 @@ import {
 
 import { useGoogleMaps } from '@/app/lib/hooks/useGoogleMaps';
 import { usePricing } from '@/app/lib/hooks/usePricing';
-import { isValidUSAddress } from '@/app/lib/utils/client/maps';
+import { isValidUSAddress, formatAddress, calculateDistance } from '@/app/lib/utils/client/maps';
 import { calculateTollCost, getRouteSegments } from '@/app/lib/utils/client/tollUtils';
 import { checkAutoShows, getAutoShowMultiplier } from '@/app/lib/utils/client/autoShowsUtils';
 import { calculateEstimatedTransitTime, getRoutePoints } from '@/app/lib/utils/client/transportUtils';
@@ -159,6 +159,20 @@ export default function BrokerCalculator() {
       },
       estimatedTime: ''
     });
+  
+    // Очистка ошибок
+    setErrors({
+      name: '',
+      phone: '',
+      email: '',
+      pickup: '',
+      delivery: '',
+      transportType: '',
+      vehicleType: '',
+      vehicleValue: '',
+      selectedDate: '',
+      general: ''
+    });
   };
 
   // Validations
@@ -254,6 +268,7 @@ export default function BrokerCalculator() {
         estimatedTime: calculateEstimatedTransitTime(distanceInMiles)
       }));
   
+      // Проверяем наличие автошоу
       const pickupAutoShows = await checkAutoShows(
         { lat: response.routes[0].legs[0].start_location.lat(), lng: response.routes[0].legs[0].start_location.lng() },
         selectedDate,
@@ -266,27 +281,59 @@ export default function BrokerCalculator() {
         window.google
       );
   
-      const autoShowMultiplier = Math.max(
-        getAutoShowMultiplier(pickupAutoShows, selectedDate),
-        getAutoShowMultiplier(deliveryAutoShows, selectedDate)
-      );
+      // Определяем базовую цену
+      const basePrice = distanceInMiles <= 300 ? 
+        600 : 
+        getBaseRate(distanceInMiles, transportType);
   
-      const routePoints = getRoutePoints(response);
-      const fuelPriceMultiplier = await getFuelPriceMultiplier(routePoints, window.google);
-  
-      const basePrice = distanceInMiles <= 300 ? 600 : getBaseRate(distanceInMiles, transportType);
-  
+      // Данные для разбивки базовой цены
       const basePriceBreakdown = {
         ratePerMile: distanceInMiles <= 300 ? 0 : TRANSPORT_TYPES[transportType].baseRatePerMile.max,
         distance: distanceInMiles,
         total: basePrice
       };
   
-      const additionalServicesMultiplier =
-        1.0 + (premiumEnhancements ? 0.3 : 0) + (specialLoad ? 0.3 : 0) + (inoperable ? 0.3 : 0);
-  
+      // Получаем множители
       const vehicleMultiplier = VEHICLE_VALUE_TYPES[vehicleValue].multiplier;
+      const autoShowMultiplier = Math.max(
+        getAutoShowMultiplier(pickupAutoShows, selectedDate),
+        getAutoShowMultiplier(deliveryAutoShows, selectedDate)
+      );
+      const routePoints = getRoutePoints(response);
+      const fuelPriceMultiplier = await getFuelPriceMultiplier(routePoints, window.google);
+      const weatherMultiplier = 1.0;
+      const trafficMultiplier = 1.0;
+
+      // Рассчитываем денежный impact для каждого фактора
+      const vehicleImpact = basePrice * (vehicleMultiplier - 1);
+      const weatherImpact = basePrice * (weatherMultiplier - 1);
+      const trafficImpact = basePrice * (trafficMultiplier - 1);
+      const autoShowImpact = basePrice * (autoShowMultiplier - 1);
+      const fuelImpact = basePrice * (fuelPriceMultiplier - 1);
+
+      // Суммируем все impact-ы
+      const totalImpact = 
+        vehicleImpact + 
+        weatherImpact + 
+        trafficImpact + 
+        autoShowImpact + 
+        fuelImpact;
+
+      // Дополнительные услуги
+      const additionalServices = {
+        premium: premiumEnhancements ? 0.3 : 0,
+        special: specialLoad ? 0.3 : 0,
+        inoperable: inoperable ? 0.3 : 0
+      };
+
+      const additionalServicesSum = 
+        (additionalServices.premium + 
+        additionalServices.special + 
+        additionalServices.inoperable);
+
+      const additionalServicesImpact = basePrice * additionalServicesSum;
   
+      // Расчет платных дорог
       const totalTollCost = calculateTollCost(distanceInMiles, response.routes[0]);
       const tollSegments = getRouteSegments(response, totalTollCost);
       const tollCosts = {
@@ -294,36 +341,34 @@ export default function BrokerCalculator() {
         total: totalTollCost
       };
   
+      // Устанавливаем компоненты цены
       setPriceComponents({
         selectedDate,
         basePrice,
         basePriceBreakdown,
         mainMultipliers: {
-          vehicle: vehicleMultiplier,
-          weather: 1.0,
-          traffic: 1.0,
-          autoShow: autoShowMultiplier,
-          fuel: fuelPriceMultiplier,
-          totalMain: vehicleMultiplier * 1.0 * autoShowMultiplier * fuelPriceMultiplier
+          // Множители для процентов
+          vehicleMultiplier,
+          weatherMultiplier,
+          trafficMultiplier,
+          autoShowMultiplier,
+          fuelMultiplier: fuelPriceMultiplier,
+          // Импакты в долларах
+          vehicleImpact,
+          weatherImpact,
+          trafficImpact,
+          autoShowImpact,
+          fuelImpact,
+          totalImpact
         },
         additionalServices: {
-          premium: premiumEnhancements ? 0.3 : 0,
-          special: specialLoad ? 0.3 : 0,
-          inoperable: inoperable ? 0.3 : 0,
-          totalAdditional: additionalServicesMultiplier - 1.0
+          ...additionalServices,
+          totalAdditional: additionalServicesSum
         },
         tollCosts,
-        finalPrice:
-          basePrice *
-            vehicleMultiplier *
-            1.0 *
-            autoShowMultiplier *
-            fuelPriceMultiplier *
-            additionalServicesMultiplier +
-          tollCosts.total
+        finalPrice: basePrice + totalImpact + additionalServicesImpact + tollCosts.total
       });
   
-      // Очищаем все ошибки после успешного расчета
     } catch (err) {
       console.error('Calculation error:', err);
       setErrors((prev) => ({ ...prev, general: 'Error calculating route. Please check the addresses and try again.' }));
@@ -332,9 +377,6 @@ export default function BrokerCalculator() {
     }
   };
   
-  
-  
-
   return (
     <div className="min-h-screen bg-white p-24">
       <div className="max-w-7xl mx-auto space-y-24">
@@ -448,6 +490,7 @@ export default function BrokerCalculator() {
                   onChange={(e) => {
                     setPickup(e.target.value);
                     setErrors((prev) => ({ ...prev, pickup: '' }));
+                    clearResults();
                   }}
                   placeholder="Enter pickup address"
                 />
@@ -469,6 +512,7 @@ export default function BrokerCalculator() {
                   onChange={(e) => {
                     setDelivery(e.target.value)
                     setErrors((prev) => ({ ...prev, delivery: '' }));
+                    clearResults();
                   }}
                   placeholder="Enter delivery address"
                 />
@@ -722,14 +766,17 @@ export default function BrokerCalculator() {
                   }}
                   selectedDate={selectedDate}
                   onWeatherUpdate={(weatherMultiplier) => {
-                    setPriceComponents((prev) => 
-                      updatePriceComponents(prev, {
-                        mainMultipliers: {
-                          ...prev!.mainMultipliers,
-                          weather: weatherMultiplier
-                        }
-                      })
-                    );
+                    if (priceComponents) {
+                      setPriceComponents((prev) => {
+                        if (!prev) return null;
+                        return updatePriceComponents(prev, {
+                          mainMultipliers: {
+                            ...prev.mainMultipliers,
+                            weatherMultiplier: weatherMultiplier
+                          }
+                        });
+                      });
+                    }
                   }}
                 />
               )}
@@ -747,16 +794,19 @@ export default function BrokerCalculator() {
               trafficConditions={routeInfo.trafficConditions}
               mapData={mapData}
               selectedDate={selectedDate}
-              tollCosts={priceComponents.tollCosts}  // Добавляем это
+              tollCosts={priceComponents.tollCosts}
               onTollUpdate={(tollCost: number, segments?: Array<{ location: string, cost: number }>) => {
-                setPriceComponents((prev) => 
-                  updatePriceComponents(prev, {
-                    tollCosts: {
-                      segments: segments || [],
-                      total: tollCost
-                    }
-                  })
-                );
+                if (priceComponents) {
+                  setPriceComponents((prev) => {
+                    if (!prev) return null;
+                    return updatePriceComponents(prev, {
+                      tollCosts: {
+                        segments: segments || [],
+                        total: tollCost
+                      }
+                    });
+                  });
+                }
               }}
             />
                     

@@ -3,6 +3,35 @@ import { format } from 'date-fns';
 import type { WeatherResponse } from '@/app/types/api.types';
 import type { GeoPoint } from '@/app/types/common.types';
 
+// Общие типы для погодных условий
+export interface WeatherData {
+  condition: string;
+  temperature: number;
+  multiplier: number;
+  location?: string;
+  details?: string;
+}
+
+// Константы для погодных условий
+export const WEATHER_CONDITIONS = {
+  CLEAR: 'clear',
+  RAIN: 'rain',
+  SNOW: 'snow',
+  STORM: 'storm',
+  CLOUDY: 'cloudy'
+} as const;
+
+type WeatherConditionType = typeof WEATHER_CONDITIONS[keyof typeof WEATHER_CONDITIONS];
+
+export const WEATHER_MULTIPLIERS: Record<WeatherConditionType, number> = {
+  'clear': 1.0,
+  'cloudy': 1.0,
+  'rain': 1.05,
+  'snow': 1.2,
+  'storm': 1.15,
+};
+
+// Основная функция получения погодных данных
 export const getWeatherData = async (
   point: GeoPoint,
   date?: Date
@@ -19,18 +48,63 @@ export const getWeatherData = async (
       }
     );
     
-    return response.data as WeatherResponse;
+    return response.data;
   } catch (error) {
     console.error('Weather API Error:', error);
     throw error;
   }
 };
 
-export const calculateWeatherMultiplier = (condition: string): number => {
+// Функция определения погодных условий
+export const determineWeatherCondition = (condition: string): WeatherConditionType => {
   const conditionLower = condition.toLowerCase();
-  if (conditionLower.includes('rain') || conditionLower.includes('drizzle')) return 1.05;
-  if (conditionLower.includes('snow')) return 1.2;
-  if (conditionLower.includes('storm') || conditionLower.includes('thunder')) return 1.15;
-  if (conditionLower.includes('blizzard') || conditionLower.includes('hurricane')) return 1.2;
-  return 1.0;
+  
+  if (conditionLower.includes('rain') || conditionLower.includes('drizzle')) {
+    return 'rain';
+  }
+  if (conditionLower.includes('snow')) {
+    return 'snow';
+  }
+  if (conditionLower.includes('storm') || conditionLower.includes('thunder')) {
+    return 'storm';
+  }
+  if (conditionLower.includes('cloud') || conditionLower.includes('overcast')) {
+    return 'cloudy';
+  }
+  return 'clear';
+};
+
+// Оптимизированная функция расчета погодного множителя
+export const calculateWeatherMultiplier = (condition: string): number => {
+  const weatherCondition = determineWeatherCondition(condition);
+  return WEATHER_MULTIPLIERS[weatherCondition];
+};
+
+// Функция для анализа погодных условий по маршруту
+export const analyzeRouteWeather = async (
+  points: GeoPoint[],
+  date?: Date
+): Promise<WeatherData[]> => {
+  try {
+    const weatherDataPromises = points.map(async point => {
+      const response = await getWeatherData(point, date);
+      const condition = response.current.condition.text;
+      
+      return {
+        condition,
+        temperature: response.current.temp_f,
+        multiplier: calculateWeatherMultiplier(condition)
+      };
+    });
+
+    return await Promise.all(weatherDataPromises);
+  } catch (error) {
+    console.error('Route weather analysis error:', error);
+    throw error;
+  }
+};
+
+// Функция получения наихудшего погодного множителя на маршруте
+export const getWorstWeatherMultiplier = (weatherData: WeatherData[]): number => {
+  return Math.max(...weatherData.map(data => data.multiplier));
 };

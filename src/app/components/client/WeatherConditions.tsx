@@ -1,27 +1,32 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import { Cloud, Sun, CloudRain, CloudSnow } from 'lucide-react';
 import { format } from 'date-fns';
-import { useWeather } from '@/app/lib/hooks/useWeather';
-import { calculateWeatherMultiplier } from '@/app/lib/utils/client/weather';
-import type { WeatherPoint, WeatherMapProps } from '@/app/types/components.types';
+import type { WeatherMapProps } from '@/app/types/components.types';
+import { 
+  WeatherData, 
+  analyzeRouteWeather, 
+  getWorstWeatherMultiplier,
+  determineWeatherCondition,
+  WEATHER_CONDITIONS 
+} from '@/app/lib/utils/client/weather';
 
 function getWeatherIcon(condition: string) {
-  const conditionLower = condition.toLowerCase();
-  if (conditionLower.includes('clear') || conditionLower.includes('sunny')) {
-    return <Sun className="w-5 h-5 text-yellow-500" />;
+  const weatherCondition = determineWeatherCondition(condition);
+  
+  switch(weatherCondition) {
+    case WEATHER_CONDITIONS.CLEAR:
+      return <Sun className="w-5 h-5 text-yellow-500" />;
+    case WEATHER_CONDITIONS.RAIN:
+      return <CloudRain className="w-5 h-5 text-blue-500" />;
+    case WEATHER_CONDITIONS.SNOW:
+      return <CloudSnow className="w-5 h-5 text-blue-300" />;
+    default:
+      return <Cloud className="w-5 h-5 text-gray-500" />;
   }
-  if (conditionLower.includes('rain') || conditionLower.includes('drizzle')) {
-    return <CloudRain className="w-5 h-5 text-blue-500" />;
-  }
-  if (conditionLower.includes('snow')) {
-    return <CloudSnow className="w-5 h-5 text-blue-300" />;
-  }
-  return <Cloud className="w-5 h-5 text-gray-500" />;
 }
 
-// Функция для получения средней точки маршрута
 function getMidPoint(start: { lat: number; lng: number }, end: { lat: number; lng: number }) {
   return {
     lat: (start.lat + end.lat) / 2,
@@ -29,57 +34,50 @@ function getMidPoint(start: { lat: number; lng: number }, end: { lat: number; ln
   };
 }
 
-const WeatherConditions: React.FC<WeatherMapProps> = memo(({
+const WeatherConditions = memo<WeatherMapProps>(({
   routePoints,
   onWeatherUpdate,
   selectedDate
 }) => {
-  const [weatherData, setWeatherData] = useState<WeatherPoint[]>([]);
-  const lastWeatherRef = useRef<{ multiplier: number } | null>(null);
+  const [weatherData, setWeatherData] = useState<WeatherData[]>([]);
 
   const midPoint = useMemo(() => 
     getMidPoint(routePoints.pickup, routePoints.delivery),
     [routePoints.pickup, routePoints.delivery]
   );
 
-  const { weather: pickupWeather } = useWeather(routePoints.pickup.lat, routePoints.pickup.lng, selectedDate);
-  const { weather: midPointWeather } = useWeather(midPoint.lat, midPoint.lng, selectedDate);
-  const { weather: deliveryWeather } = useWeather(routePoints.delivery.lat, routePoints.delivery.lng, selectedDate);
-
   useEffect(() => {
-    if (!pickupWeather || !midPointWeather || !deliveryWeather) return;
+    const fetchWeatherData = async () => {
+      try {
+        const points = [
+          routePoints.pickup,
+          midPoint,
+          routePoints.delivery
+        ];
 
-    const weatherPoints = [
-      {
-        location: 'Pickup',
-        condition: pickupWeather.current.condition.text,
-        temperature: pickupWeather.current.temp_f,
-        multiplier: calculateWeatherMultiplier(pickupWeather.current.condition.text)
-      },
-      {
-        location: 'Mid-Route',
-        condition: midPointWeather.current.condition.text,
-        temperature: midPointWeather.current.temp_f,
-        multiplier: calculateWeatherMultiplier(midPointWeather.current.condition.text)
-      },
-      {
-        location: 'Delivery',
-        condition: deliveryWeather.current.condition.text,
-        temperature: deliveryWeather.current.temp_f,
-        multiplier: calculateWeatherMultiplier(deliveryWeather.current.condition.text)
+        const weatherResults = await analyzeRouteWeather(points, selectedDate);
+        
+        const enrichedWeatherData = weatherResults.map((data, index) => ({
+          ...data,
+          location: index === 0 ? 'Pickup' : index === 1 ? 'Mid-Route' : 'Delivery'
+        }));
+
+        setWeatherData(enrichedWeatherData);
+
+        // Рассчитываем и обновляем weather multiplier
+        const worstMultiplier = getWorstWeatherMultiplier(enrichedWeatherData);
+        if (onWeatherUpdate) {
+          onWeatherUpdate(worstMultiplier || 1);
+        }
+      } catch (error) {
+        console.error('Error fetching weather data:', error);
       }
-    ];
+    };
 
-    setWeatherData(weatherPoints);
-
-    const worstMultiplier = Math.max(...weatherPoints.map(r => r.multiplier));
-    if (!lastWeatherRef.current || lastWeatherRef.current.multiplier !== worstMultiplier) {
-      lastWeatherRef.current = { multiplier: worstMultiplier };
-      onWeatherUpdate(worstMultiplier);
+    if (routePoints && selectedDate) {
+      fetchWeatherData();
     }
-  }, [pickupWeather, midPointWeather, deliveryWeather, onWeatherUpdate]);
-
-  const memoizedWeatherData = useMemo(() => weatherData, [weatherData]);
+  }, [routePoints, selectedDate, midPoint, onWeatherUpdate]);
 
   return (
     <div className="w-[478px] h-[422px] p-24 rounded-[24px] bg-white">
@@ -95,7 +93,7 @@ const WeatherConditions: React.FC<WeatherMapProps> = memo(({
       </div>
 
       <div className="space-y-16">
-        {memoizedWeatherData.map((point, index) => (
+        {weatherData.map((point, index) => (
           <div
             key={`${point.location}-${index}`}
             className="flex items-center justify-between bg-[#F6F6FA] rounded-[24px] p-16"
@@ -117,11 +115,11 @@ const WeatherConditions: React.FC<WeatherMapProps> = memo(({
         ))}
       </div>
 
-      {memoizedWeatherData.length > 0 && (
+      {weatherData.length > 0 && (
         <div className="mt-16">
           <span>Weather Impact Summary: </span>
           <span className="text-primary">
-            {lastWeatherRef.current?.multiplier === 1 
+            {getWorstWeatherMultiplier(weatherData) === 1 
               ? 'Good weather conditions throughout the route'
               : 'Weather conditions may affect delivery time'}
           </span>

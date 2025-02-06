@@ -1,20 +1,5 @@
 import type { BasePriceBreakdown, GeoPoint } from './common.types';
-
-export interface DatePickerProps {
-  date: Date | undefined;
-  onDateChange: (date: Date | undefined) => void;
-}
-
-export interface GoogleMapProps {
-  mapData: google.maps.DirectionsResult;
-}
-
-export interface WeatherPoint {
-  location: string;
-  condition: string;
-  temperature: number;
-  multiplier: number;
-}
+import type { WeatherData } from '@/app/lib/utils/client/weather';
 
 export interface WeatherMapProps {
   routePoints: {
@@ -24,6 +9,15 @@ export interface WeatherMapProps {
   };
   selectedDate?: Date;
   onWeatherUpdate: (multiplier: number) => void;
+}
+
+export interface DatePickerProps {
+  date: Date | undefined;
+  onDateChange: (date: Date | undefined) => void;
+}
+
+export interface GoogleMapProps {
+  mapData: google.maps.DirectionsResult;
 }
 
 export interface RouteInfoProps {
@@ -59,14 +53,6 @@ export interface PriceBreakdownProps {
   distance: number;
   basePrice: number;
   basePriceBreakdown: BasePriceBreakdown;
-  mainMultipliers: {
-    vehicle: number;
-    weather: number;
-    traffic: number;
-    fuel: number;
-    autoShow: number;
-    totalMain: number;
-  };
   additionalServices: {
     premium: number;
     special: number;
@@ -86,6 +72,19 @@ export interface PriceBreakdownProps {
     isRemoteArea: boolean;
   };
   selectedDate?: Date;
+  mainMultipliers: {
+    vehicleMultiplier: number;
+    weatherMultiplier: number;
+    trafficMultiplier: number;
+    autoShowMultiplier: number;
+    fuelMultiplier: number;
+    vehicleImpact: number;
+    weatherImpact: number;
+    trafficImpact: number;
+    autoShowImpact: number;
+    fuelImpact: number;
+    totalImpact: number;
+  };
 }
 
 export interface PriceSummaryProps {

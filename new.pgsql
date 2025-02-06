@@ -27,13 +27,15 @@ broker-calculator/
 │   │   │   │   ├── useWeather.ts
 │   │   │   ├── utils/
 │   │   │   │   ├── client/
-│   │   │   │   │   ├── maps.ts
-│   │   │   │   │   ├── weather.ts
 │   │   │   │   │   ├── addressUtils.ts
 │   │   │   │   │   ├── autoShowUtils.ts
 │   │   │   │   │   ├── fuelUtils.ts
+│   │   │   │   │   ├── maps.ts
+│   │   │   │   │   ├── navigation.ts
 │   │   │   │   │   ├── tollUtils.ts
 │   │   │   │   │   ├── transportUtils.ts
+│   │   │   │   │   ├── validation.ts
+│   │   │   │   │   ├── weather.ts
 │   │   │   │   ├── server/
 │   │   │   │   │   ├── apiUtils.ts
 │   │   ├── styles/
@@ -41,6 +43,7 @@ broker-calculator/
 │   │   │   ├── globals.css
 │   │   ├── types/
 │   │   │   ├── apiTypes.ts
+│   │   │   ├── booking.types.ts
 │   │   │   ├── common.types.ts
 │   │   │   ├── components.types.ts
 │   │   │   ├── index.ts

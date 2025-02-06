@@ -1,8 +1,6 @@
-'use client';
-
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { WeatherResponse } from '@/app/types/api.types';
+import { getWeatherData } from '@/app/lib/utils/client/weather';
 
 export function useWeather(lat: number, lng: number, date?: Date) {
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
@@ -17,17 +15,8 @@ export function useWeather(lat: number, lng: number, date?: Date) {
       setError(null);
       
       try {
-        const response = await axios.get<WeatherResponse>(
-          'https://api.weatherapi.com/v1/forecast.json',
-          {
-            params: {
-              key: process.env.NEXT_PUBLIC_WEATHER_API_KEY,
-              q: `${lat},${lng}`,
-              dt: date?.toISOString().split('T')[0]
-            }
-          }
-        );
-        setWeather(response.data);
+        const data = await getWeatherData({ lat, lng }, date);
+        setWeather(data);
       } catch (err) {
         setError('Failed to fetch weather data');
         console.error('Weather API Error:', err);

@@ -18,6 +18,7 @@ export const initializeGoogleMaps = async (): Promise<typeof google.maps> => {
   }
 };
 
+// Combined address validation functions
 export const isValidUSAddress = async (
   address: string, 
   googleMaps: typeof google.maps
@@ -44,4 +45,31 @@ export const calculateDistance = (point1: GeoPoint, point2: GeoPoint): number =>
   const p2 = new google.maps.LatLng(point2.lat, point2.lng);
   
   return google.maps.geometry.spherical.computeDistanceBetween(p1, p2) / 1609.34;
+};
+
+// Новые утилиты для работы с адресами
+export const formatAddress = (addressComponents: google.maps.GeocoderAddressComponent[]): string => {
+  const componentMap: { [key: string]: string } = {};
+  
+  addressComponents.forEach(component => {
+    const type = component.types[0];
+    componentMap[type] = component.long_name;
+  });
+  
+  return `${componentMap['street_number'] || ''} ${componentMap['route'] || ''}, ${
+    componentMap['locality'] || componentMap['sublocality'] || ''
+  }, ${componentMap['administrative_area_level_1'] || ''} ${
+    componentMap['postal_code'] || ''
+  }`.trim();
+};
+
+export const extractStateFromAddress = (addressComponents: google.maps.GeocoderAddressComponent[]): string | null => {
+  const stateComponent = addressComponents.find(
+    component => component.types.includes('administrative_area_level_1')
+  );
+  return stateComponent ? stateComponent.short_name : null;
+};
+
+export const isValidZipCode = (zipCode: string): boolean => {
+  return /^\d{5}(-\d{4})?$/.test(zipCode);
 };

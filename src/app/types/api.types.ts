@@ -7,6 +7,21 @@ export interface WeatherResponse {
     temp_c: number;
     temp_f: number;
   };
+  forecast?: {
+    forecastday: Array<{
+      date: string;
+      day: {
+        maxtemp_c: number;
+        maxtemp_f: number;
+        mintemp_c: number;
+        mintemp_f: number;
+        condition: {
+          text: string;
+          code: number;
+        };
+      };
+    }>;
+  };
 }
 
 export interface WeatherTestResponse {
