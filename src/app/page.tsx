@@ -18,12 +18,8 @@ import {
   getBaseRate
 } from '@/constants/pricing';
 
-import { 
-  validateName, 
-  validatePhone, 
-  validateEmail, 
-  formatPhoneNumber 
-} from '@/app/lib/utils/client/validation';
+import { validateName, validateEmail, validatePhoneNumber } from '@/app/lib/utils/client/validation';
+import { CountryCode } from 'libphonenumber-js';
 
 import { useGoogleMaps } from '@/app/lib/hooks/useGoogleMaps';
 import { usePricing } from '@/app/lib/hooks/usePricing';
@@ -68,6 +64,8 @@ export default function BrokerCalculator() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   
+  const [countryCode, setCountryCode] = useState<string>('US');
+
   const [errors, setErrors] = useState({
     name: '',
     phone: '',
@@ -185,10 +183,18 @@ export default function BrokerCalculator() {
       isValid = false;
     }
   
-    const phoneDigits = phone.replace(/\D/g, '');
-    if (phoneDigits.length !== 10) {
+    // Проверка телефона с libphonenumber-js
+    if (typeof phone !== 'string' || phone.trim() === '') {
       newErrors.phone = 'Enter a valid phone number';
       isValid = false;
+    } else {
+      const validation = validatePhoneNumber(phone, countryCode);
+      if (!validation.isValid) {
+        newErrors.phone = validation.error || 'Enter a valid phone number';
+        isValid = false;
+      } else if (validation.formatted) {
+        setPhone(validation.formatted);
+      }
     }
   
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -224,8 +230,6 @@ export default function BrokerCalculator() {
     setErrors((prev) => ({ ...prev, ...newErrors }));
     return isValid;
   };
-  
-  
   
   const calculatePrice = async () => {
     if (!validateFields()) return;
@@ -650,10 +654,15 @@ export default function BrokerCalculator() {
                   type="tel"
                   value={phone}
                   onChange={(e) => {
-                    const formattedNumber = formatPhoneNumber(e.target.value);
-                    setPhone(formattedNumber);
-                    const validation = validatePhone(formattedNumber);
-                    setErrors(prev => ({ ...prev, phone: validation.error || '' }));
+                    const validation = validatePhoneNumber(e.target.value, countryCode);
+                    setPhone(e.target.value);
+                    setErrors(prev => ({ 
+                      ...prev, 
+                      phone: validation.error || '' 
+                    }));
+                    if (validation.formatted) {
+                      setPhone(validation.formatted);
+                    }
                   }}
                   className={`mt-8 block w-full rounded-[24px] bg-gray-50 border 
                     text-gray-900 placeholder-gray-500 
