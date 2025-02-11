@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, memo } from 'react';
 import { Map, Navigation, AlertCircle, Clock, Car, MapPin } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { calculateTollCost, getRouteSegments } from '@/app/lib/utils/client/tollUtils';
 import type { RouteInfoProps } from '@/app/types/components.types';
 
@@ -22,6 +22,12 @@ const RouteInfo: React.FC<RouteInfoProps> = memo(({
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const hasCalculatedTolls = useRef(false);
+  
+  const calculateEstimatedDeliveryDate = (shippingDate: Date, estimatedTime: string): Date => {
+    const daysMatch = estimatedTime.match(/(\d+)/);
+    const days = daysMatch ? parseInt(daysMatch[0]) : 1;
+    return addDays(shippingDate, days);
+  };
 
   const calculateTolls = useCallback(() => {
     if (!mapData || !distance || hasCalculatedTolls.current) return;
@@ -67,10 +73,13 @@ const RouteInfo: React.FC<RouteInfoProps> = memo(({
             </div>
           </div>
           
-          <div className="w-[300px] h-24">
-            <span className="font-montserrat text-p2 font-bold">Shipping Date: </span>
+          <div className="w-[450px] h-24">
+            <span className="font-montserrat text-p2 font-bold">Estimated Delivery Date: </span>
             <span className="font-montserrat text-p2">
-              {format(selectedDate || new Date(), 'MMMM dd\'th\', yyyy')}
+              {selectedDate ? format(
+                calculateEstimatedDeliveryDate(selectedDate, estimatedTime),
+                "MMMM dd'th', yyyy"
+              ) : '-'}
             </span>
           </div>
         </div>

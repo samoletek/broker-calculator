@@ -134,7 +134,7 @@ export function PriceSummary({
               <div className="font-montserrat text-p2">
                 <span className="font-bold">Shipping Date:</span>
                 <span className="ml-4 text-gray-600">
-                  {format(selectedDate, 'MMMM dd\'th\', yyyy')}
+                  {format(selectedDate, "MMMM dd'th', yyyy")}
                 </span>
               </div>
             )}
