@@ -19,7 +19,6 @@ export function PriceBreakdown({
       {/* Header with mileage */}
       <div className="flex justify-between items-center">
         <h2 className="font-jost text-[32px] font-bold">Price Breakdown</h2>
-        <span className="font-montserrat text-p2 text-gray-600">{distance} miles</span>
       </div>
    
       {/* Base Calculation */}
