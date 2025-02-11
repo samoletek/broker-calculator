@@ -23,8 +23,7 @@ import { CountryCode } from 'libphonenumber-js';
 
 import { useGoogleMaps } from '@/app/lib/hooks/useGoogleMaps';
 import { usePricing } from '@/app/lib/hooks/usePricing';
-import { isValidUSAddress, formatAddress, calculateDistance } from '@/app/lib/utils/client/maps';
-import { calculateTollCost, getRouteSegments } from '@/app/lib/utils/client/tollUtils';
+import { validateAddress, isSameLocation, formatAddress, calculateDistance } from '@/app/lib/utils/client/maps';import { calculateTollCost, getRouteSegments } from '@/app/lib/utils/client/tollUtils';
 import { checkAutoShows, getAutoShowMultiplier } from '@/app/lib/utils/client/autoShowsUtils';
 import { calculateEstimatedTransitTime, getRoutePoints } from '@/app/lib/utils/client/transportUtils';
 import { getFuelPriceMultiplier } from '@/app/lib/utils/client/fuelUtils';
@@ -241,25 +240,54 @@ export default function BrokerCalculator() {
     }
   
     setLoading(true);
+    setErrors(prev => ({ ...prev, pickup: '', delivery: '', general: '' }));
   
     try {
-      // Проверяем валидность адресов
-      const isPickupValid = await isValidUSAddress(pickup, googleMaps);
-      const isDeliveryValid = await isValidUSAddress(delivery, googleMaps);
+      // Проверяем адреса
+      const [pickupValidation, deliveryValidation] = await Promise.all([
+        validateAddress(pickup, googleMaps),
+        validateAddress(delivery, googleMaps)
+      ]);
   
-      if (!isPickupValid || !isDeliveryValid) {
-        setErrors((prev) => ({
+      // Обрабатываем ошибки адресов
+      if (!pickupValidation.isValid || !deliveryValidation.isValid) {
+        setErrors(prev => ({
           ...prev,
-          pickup: !isPickupValid ? 'Please enter a valid US pickup address' : '',
-          delivery: !isDeliveryValid ? 'Please enter a valid US delivery address' : ''
+          pickup: pickupValidation.error || '',
+          delivery: deliveryValidation.error || ''
         }));
+  
+        if (pickupValidation.formattedAddress && !pickupValidation.hasZip) {
+          setPickup(pickupValidation.formattedAddress);
+        }
+        if (deliveryValidation.formattedAddress && !deliveryValidation.hasZip) {
+          setDelivery(deliveryValidation.formattedAddress);
+        }
+  
+        setLoading(false);
         return;
       }
   
+      // Проверяем, не одинаковые ли адреса
+      const isSame = await isSameLocation(pickup, delivery, googleMaps);
+      if (isSame) {
+        setErrors(prev => ({
+          ...prev,
+          pickup: 'Pickup and delivery locations must be different',
+          delivery: 'Pickup and delivery locations must be different'
+        }));
+        setLoading(false);
+        return;
+      }
+  
+      // Обновляем адреса форматированными версиями
+      setPickup(pickupValidation.formattedAddress!);
+      setDelivery(deliveryValidation.formattedAddress!);
+  
       const service = new googleMaps.DirectionsService();
       const response = await service.route({
-        origin: pickup,
-        destination: delivery,
+        origin: pickupValidation.formattedAddress!,
+        destination: deliveryValidation.formattedAddress!,
         travelMode: googleMaps.TravelMode.DRIVING
       });
   
@@ -307,14 +335,14 @@ export default function BrokerCalculator() {
       const fuelPriceMultiplier = await getFuelPriceMultiplier(routePoints, window.google);
       const weatherMultiplier = 1.0;
       const trafficMultiplier = 1.0;
-
+  
       // Рассчитываем денежный impact для каждого фактора
       const vehicleImpact = basePrice * (vehicleMultiplier - 1);
       const weatherImpact = basePrice * (weatherMultiplier - 1);
       const trafficImpact = basePrice * (trafficMultiplier - 1);
       const autoShowImpact = basePrice * (autoShowMultiplier - 1);
       const fuelImpact = basePrice * (fuelPriceMultiplier - 1);
-
+  
       // Суммируем все impact-ы
       const totalImpact = 
         vehicleImpact + 
@@ -322,19 +350,19 @@ export default function BrokerCalculator() {
         trafficImpact + 
         autoShowImpact + 
         fuelImpact;
-
+  
       // Дополнительные услуги
       const additionalServices = {
         premium: premiumEnhancements ? 0.3 : 0,
         special: specialLoad ? 0.3 : 0,
         inoperable: inoperable ? 0.3 : 0
       };
-
+  
       const additionalServicesSum = 
         (additionalServices.premium + 
         additionalServices.special + 
         additionalServices.inoperable);
-
+  
       const additionalServicesImpact = basePrice * additionalServicesSum;
   
       // Расчет платных дорог
@@ -375,7 +403,10 @@ export default function BrokerCalculator() {
   
     } catch (err) {
       console.error('Calculation error:', err);
-      setErrors((prev) => ({ ...prev, general: 'Error calculating route. Please check the addresses and try again.' }));
+      setErrors((prev) => ({ 
+        ...prev, 
+        general: 'Error calculating route. Please check the addresses and try again.' 
+      }));
     } finally {
       setLoading(false);
     }
