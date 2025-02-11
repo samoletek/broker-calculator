@@ -1,6 +1,3 @@
-// src/constants/pricing.ts
-
-// Интерфейсы
 interface RateRange {
   min: number;
   max: number;

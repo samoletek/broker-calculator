@@ -19,14 +19,12 @@ export function usePricing() {
 
     if (updates.mainMultipliers && newComponents.mainMultipliers) {
       const basePrice = newComponents.basePrice;
-      
-      // Обновляем множители и пересчитываем импакты
+    
       newComponents.mainMultipliers = {
         ...newComponents.mainMultipliers,
         ...updates.mainMultipliers
       };
 
-      // Пересчитываем импакты
       newComponents.mainMultipliers.vehicleImpact = 
         basePrice * (newComponents.mainMultipliers.vehicleMultiplier - 1);
       newComponents.mainMultipliers.weatherImpact = 
@@ -38,7 +36,6 @@ export function usePricing() {
       newComponents.mainMultipliers.fuelImpact = 
         basePrice * (newComponents.mainMultipliers.fuelMultiplier - 1);
 
-      // Обновляем общий импакт
       newComponents.mainMultipliers.totalImpact = 
         newComponents.mainMultipliers.vehicleImpact +
         newComponents.mainMultipliers.weatherImpact +
@@ -58,7 +55,6 @@ export function usePricing() {
       newComponents.tollCosts = updates.tollCosts;
     }
 
-    // Пересчитываем финальную цену
     const additionalServicesImpact = newComponents.basePrice * 
       newComponents.additionalServices.totalAdditional;
 

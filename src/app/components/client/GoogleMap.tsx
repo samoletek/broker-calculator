@@ -36,7 +36,7 @@ const GoogleMap = forwardRef<HTMLDivElement, GoogleMapProps>(({ mapData }, ref) 
       }
     });
 
-    // Если маршрут уже есть, сразу его рендерим
+    // Если маршрут уже есть, сразу рендерим
     if (mapData) {
       directionsRendererRef.current.setDirections(mapData);
     }

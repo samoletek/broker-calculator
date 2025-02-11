@@ -48,7 +48,7 @@ export const analyzeTrafficConditions = async (
     
     const normalDuration = leg.duration?.value || 0;
     const durationInTraffic = leg.duration_in_traffic?.value || normalDuration;
-    const delay = Math.round((durationInTraffic - normalDuration) / 60); // in minutes
+    const delay = Math.round((durationInTraffic - normalDuration) / 60); // minutes
     
     const congestion = durationInTraffic / normalDuration;
     
@@ -70,7 +70,7 @@ export const analyzeTrafficConditions = async (
     const points: TrafficPoint[] = path.map(point => ({
       lat: point.lat(),
       lng: point.lng(),
-      speed: 0, // Google doesn't provide exact speed
+      speed: 0,
       congestion: congestion
     }));
 

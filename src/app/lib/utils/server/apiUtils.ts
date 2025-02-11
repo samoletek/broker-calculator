@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { 
   WeatherTestResponse,
-  TrafficResponse,
   ApiTestResult,
   GoogleGeocodingResponse
 } from '@/app/types/api.types';

@@ -74,7 +74,7 @@ export const determineWeatherCondition = (condition: string): WeatherConditionTy
   return 'clear';
 };
 
-// Оптимизированная функция расчета погодного множителя
+// Функция расчета погодного множителя
 export const calculateWeatherMultiplier = (condition: string): number => {
   const weatherCondition = determineWeatherCondition(condition);
   return WEATHER_MULTIPLIERS[weatherCondition];

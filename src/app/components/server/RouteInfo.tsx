@@ -66,7 +66,6 @@ const RouteInfo: React.FC<RouteInfoProps> = memo(({
             <div className="flex items-center gap-8 sm:gap-16">
               <h2 className="font-jost text-2xl sm:text-[32px] font-bold">Route Details</h2>
             </div>
-          
           <div>
             <span className="font-montserrat text-sm sm:text-p2 font-bold">Estimated Delivery Date: </span>
             <span className="font-montserrat text-sm sm:text-p2">

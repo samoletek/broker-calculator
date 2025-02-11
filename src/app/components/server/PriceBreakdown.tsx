@@ -16,7 +16,7 @@ export function PriceBreakdown({
 }: PriceBreakdownProps) {
   return (
     <div className="w-full p-4 sm:p-40 space-y-20 sm:space-y-40 bg-white rounded-[24px] border border-primary/10">
-      {/* Header with mileage */}
+      {/* Header */}
       <div className="flex justify-between items-center">
         <h2 className="font-jost text-[32px] font-bold">Price Breakdown</h2>
       </div>

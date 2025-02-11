@@ -9,7 +9,6 @@ import { DatePicker } from '@/app/components/client/DatePicker';
 import { PriceBreakdown }  from '@/app/components/server/PriceBreakdown';
 import PriceSummary from '@/app/components/server/PriceSummary';
 import RouteInfo from '@/app/components/server/RouteInfo';
-
 import {
   TRANSPORT_TYPES,
   VEHICLE_VALUE_TYPES,
@@ -17,10 +16,7 @@ import {
   ADDITIONAL_SERVICES,
   getBaseRate
 } from '@/constants/pricing';
-
 import { validateName, validateEmail, validatePhoneNumber } from '@/app/lib/utils/client/validation';
-import { CountryCode } from 'libphonenumber-js';
-
 import { useGoogleMaps } from '@/app/lib/hooks/useGoogleMaps';
 import { usePricing } from '@/app/lib/hooks/usePricing';
 import { validateAddress, isSameLocation, formatAddress, calculateDistance } from '@/app/lib/utils/client/maps';import { calculateTollCost, getRouteSegments } from '@/app/lib/utils/client/tollUtils';
@@ -63,7 +59,7 @@ export default function BrokerCalculator() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   
-  const [countryCode, setCountryCode] = useState<string>('US');
+  const [countryCode] = useState<string>('US');
 
   const [errors, setErrors] = useState({
     name: '',
