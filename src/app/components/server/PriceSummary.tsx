@@ -118,20 +118,16 @@ export function PriceSummary({
 
   return (
     <div className="w-full p-4 sm:p-24 bg-white rounded-[24px]">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-8 sm:gap-0">
         {/* Left side - Price block */}
-        <div className="space-y-12">
-          <h2 className="font-jost text-[32px] font-bold">Final Price</h2>
-          <div className="text-[48px] font-jost font-bold text-primary">
+        <div className="space-y-7 sm:space-y-17 w-full sm:w-auto">
+          <h2 className="font-jost text-2xl sm:text-[32px] font-bold">Final Price</h2>
+          <div className="text-3xl sm:text-[48px] font-jost font-bold text-primary">
             ${finalPrice.toFixed(2)}
           </div>
-          <div className="space-y-4">
-            <div className="font-montserrat text-p2">
-              <span className="font-bold">Base Price:</span>
-              <span className="ml-4 text-gray-600">${basePrice.toFixed(2)}</span>
-            </div>
+          <div className="space-y-2 sm:space-y-5">
             {selectedDate && (
-              <div className="font-montserrat text-p2">
+              <div className="font-montserrat text-sm sm:text-p2">
                 <span className="font-bold">Shipping Date:</span>
                 <span className="ml-4 text-gray-600">
                   {format(selectedDate, "MMMM dd'th', yyyy")}
@@ -140,43 +136,45 @@ export function PriceSummary({
             )}
           </div>
         </div>
-
-        {/* Right side - Buttons stacked vertically */}
-        <div className="flex flex-col justify-center gap-12 self-center">
+  
+        {/* Right side - Buttons */}
+        <div className="flex flex-col gap-4 sm:gap-12 w-full sm:w-auto">
           <Button
             onClick={handleSavePrice}
             variant="primary"
-            className="whitespace-nowrap flex items-center justify-center px-24 py-12 
+            className="w-full sm:w-auto whitespace-nowrap flex items-center justify-center 
+              px-12 sm:px-24 py-8 sm:py-12 
               bg-primary text-white rounded-[24px] 
-              font-montserrat text-p2 font-medium
+              font-montserrat text-sm sm:text-p2 font-medium
               hover:bg-primary/90 transition-colors duration-200"
           >
-            <Save className="w-16 h-16 mr-8" />
+            <Save className="w-12 h-12 sm:w-16 sm:h-16 mr-4 sm:mr-8" />
             Save price for me!
           </Button>
           
           <Button
             onClick={handleContinueToBooking}
             variant="secondary"
-            className="whitespace-nowrap flex items-center justify-center px-24 py-12 
+            className="w-full sm:w-auto whitespace-nowrap flex items-center justify-center 
+              px-12 sm:px-24 py-8 sm:py-12 
               border border-primary text-primary rounded-[24px] 
-              font-montserrat text-p2 font-medium
+              font-montserrat text-sm sm:text-p2 font-medium
               hover:bg-primary hover:text-white 
               transition-all duration-200"
           >
-            <ArrowRight className="w-16 h-16 mr-8" />
+            <ArrowRight className="w-12 h-12 sm:w-16 sm:h-16 mr-4 sm:mr-8" />
             Continue to booking
           </Button>
         </div>
       </div>
-
+  
       {/* Toast notification */}
       {toast.show && (
-        <div className={`fixed bottom-24 right-24 
+        <div className={`fixed bottom-8 sm:bottom-24 right-8 sm:right-24 
           ${toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'}
-          text-white px-24 py-12 
+          text-white px-12 sm:px-24 py-8 sm:py-12 
           rounded-[24px] shadow-lg 
-          font-montserrat text-p2 
+          font-montserrat text-sm sm:text-p2 
           animate-fade-in-up
           z-50`}
         >

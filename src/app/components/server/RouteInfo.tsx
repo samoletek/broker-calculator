@@ -61,21 +61,15 @@ const RouteInfo: React.FC<RouteInfoProps> = memo(({
   return (
     <div className="w-full p-4 sm:p-40 bg-white rounded-[24px] border border-primary/10">
       {/* Header Section */}
-      <div className="flex justify-between items-start mb-24">
-        <div className="space-y-16">
-          <div className="w-[371px] flex items-center gap-16">
-            <h2 className="font-jost text-[32px] font-bold">Route Details</h2>
-          </div>
-          
-          <div className="w-[270px]">
-            <div className="font-jost text-[48px] leading-[57.6px] font-bold text-primary">
-              ${finalPrice.toFixed(2)}
+        <div className="flex flex-col sm:flex-row justify-between items-start mb-8 sm:mb-24">
+          <div className="space-y-8 sm:space-y-16 w-full">
+            <div className="flex items-center gap-8 sm:gap-16">
+              <h2 className="font-jost text-2xl sm:text-[32px] font-bold">Route Details</h2>
             </div>
-          </div>
           
-          <div className="w-[450px] h-24">
-            <span className="font-montserrat text-p2 font-bold">Estimated Delivery Date: </span>
-            <span className="font-montserrat text-p2">
+          <div>
+            <span className="font-montserrat text-sm sm:text-p2 font-bold">Estimated Delivery Date: </span>
+            <span className="font-montserrat text-sm sm:text-p2">
               {selectedDate ? format(
                 calculateEstimatedDeliveryDate(selectedDate, estimatedTime),
                 "MMMM dd'th', yyyy"
@@ -84,73 +78,73 @@ const RouteInfo: React.FC<RouteInfoProps> = memo(({
           </div>
         </div>
       </div>
-
+  
       {/* Divider */}
-      <div className="w-[1120px] h-[1px] bg-primary opacity-10 mb-24" />
-
+      <div className="w-full h-[1px] bg-primary opacity-10 my-8 sm:my-24" />
+  
       {/* Route Info Grid */}
-      <div className="grid grid-cols-5 gap-x-24 mb-24">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-x-24">
         {/* Pickup Location */}
         <div>
-          <div className="w-[166px] h-24 mb-8">
-            <h3 className="font-montserrat text-p2 font-bold flex items-center gap-8">
-              <MapPin className="w-16 h-16 text-primary" />
+          <div className="mb-4 sm:mb-8">
+            <h3 className="font-montserrat text-sm sm:text-p2 font-bold flex items-center gap-4 sm:gap-8">
+              <MapPin className="w-12 h-12 sm:w-16 sm:h-16 text-primary" />
               Pickup Location
             </h3>
           </div>
-          <p className="font-montserrat text-p2 text-gray-600">
+          <p className="font-montserrat text-sm sm:text-p2 text-gray-600 break-words">
             {pickup}
           </p>
         </div>
-
+  
         {/* Delivery Location */}
         <div>
-          <div className="w-[200px] h-24 mb-8">
-            <h3 className="font-montserrat text-p2 font-bold flex items-center gap-8">
-              <MapPin className="w-16 h-16 text-[#1356BE]" />
+          <div className="mb-4 sm:mb-8">
+            <h3 className="font-montserrat text-sm sm:text-p2 font-bold flex items-center gap-4 sm:gap-8">
+              <MapPin className="w-12 h-12 sm:w-16 sm:h-16 text-[#1356BE]" />
               Delivery Location
             </h3>
           </div>
-          <p className="font-montserrat text-p2 text-gray-600">
+          <p className="font-montserrat text-sm sm:text-p2 text-gray-600 break-words">
             {delivery}
           </p>
         </div>
-
+  
         {/* Total Distance */}
         <div>
-          <div className="w-[166px] h-24 mb-8">
-            <h3 className="font-montserrat text-p2 font-bold flex items-center gap-8">
-              <Navigation className="w-16 h-16 text-[#1356BE]" />
+          <div className="mb-4 sm:mb-8">
+            <h3 className="font-montserrat text-sm sm:text-p2 font-bold flex items-center gap-4 sm:gap-8">
+              <Navigation className="w-12 h-12 sm:w-16 sm:h-16 text-[#1356BE]" />
               Total Distance
             </h3>
           </div>
-          <p className="font-montserrat text-p2 text-gray-600">
+          <p className="font-montserrat text-sm sm:text-p2 text-gray-600">
             {distance} miles
           </p>
         </div>
-
+  
         {/* Estimated Time */}
         <div>
-          <div className="w-[166px] h-24 mb-8">
-            <h3 className="font-montserrat text-p2 font-bold flex items-center gap-8">
-              <Clock className="w-16 h-16 text-[#1356BE]" />
+          <div className="mb-4 sm:mb-8">
+            <h3 className="font-montserrat text-sm sm:text-p2 font-bold flex items-center gap-4 sm:gap-8">
+              <Clock className="w-12 h-12 sm:w-16 sm:h-16 text-[#1356BE]" />
               Estimated Time
             </h3>
           </div>
-          <p className="font-montserrat text-p2 text-gray-600">
+          <p className="font-montserrat text-sm sm:text-p2 text-gray-600">
             {estimatedTime}
           </p>
         </div>
-
+  
         {/* Traffic Conditions */}
         <div>
-          <div className="w-[200px] h-24 mb-8">
-            <h3 className="font-montserrat text-p2 font-bold flex items-center gap-8">
-              <Car className="w-16 h-16 text-[#1356BE]" />
+          <div className="mb-4 sm:mb-8">
+            <h3 className="font-montserrat text-sm sm:text-p2 font-bold flex items-center gap-4 sm:gap-8">
+              <Car className="w-12 h-12 sm:w-16 sm:h-16 text-[#1356BE]" />
               Traffic Conditions
             </h3>
           </div>
-          <p className="font-montserrat text-p2 text-gray-600">
+          <p className="font-montserrat text-sm sm:text-p2 text-gray-600">
             {trafficConditions.status === 'light' ? 'Traffic flow is normal' :
              trafficConditions.status === 'moderate' ? `Moderate traffic${trafficConditions.delay ? ` (expected delay: +${trafficConditions.delay} mins)` : ''}` :
              `Heavy traffic${trafficConditions.delay ? ` (expected delay: +${trafficConditions.delay} mins)` : ''}`}
