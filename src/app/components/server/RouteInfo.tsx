@@ -59,7 +59,7 @@ const RouteInfo: React.FC<RouteInfoProps> = memo(({
   }, [calculateTolls]);
 
   return (
-    <div className="w-[1200px] p-40 bg-white rounded-[24px] border border-primary/10">
+    <div className="w-full p-4 sm:p-40 bg-white rounded-[24px] border border-primary/10">
       {/* Header Section */}
       <div className="flex justify-between items-start mb-24">
         <div className="space-y-16">

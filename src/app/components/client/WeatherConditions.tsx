@@ -80,7 +80,7 @@ const WeatherConditions = memo<WeatherMapProps>(({
   }, [routePoints, selectedDate, midPoint, onWeatherUpdate]);
 
   return (
-    <div className="w-[478px] h-[422px] p-24 rounded-[24px] bg-white">
+    <div className="w-full h-auto sm:h-[422px] p-4 sm:p-24 rounded-[24px] bg-white">
       <div className="flex items-center justify-between mb-16">
         <h2 className="font-jost text-[32px] font-bold">
           Weather Conditions

@@ -117,7 +117,7 @@ export function PriceSummary({
   };
 
   return (
-    <div className="w-full bg-white rounded-[24px] p-24">
+    <div className="w-full p-4 sm:p-24 bg-white rounded-[24px]">
       <div className="flex justify-between items-center">
         {/* Left side - Price block */}
         <div className="space-y-12">

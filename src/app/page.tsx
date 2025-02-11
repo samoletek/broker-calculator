@@ -413,18 +413,18 @@ export default function BrokerCalculator() {
   };
   
   return (
-    <div className="min-h-screen bg-white p-24">
-      <div className="max-w-7xl mx-auto space-y-24">
-        <div className="bg-white rounded-[32px] p-24 border border-primary/10">
-          <div className="flex items-center mb-24">
-            <div className="flex items-center space-x-16">
-              <Truck className="w-32 h-32 text-primary" />
-              <h1 className="font-jost text-[32px] font-bold">Delivery Calculator</h1>
+    <div className="min-h-screen bg-white p-4 sm:p-8 md:p-24">
+      <div className="max-w-7xl mx-auto space-y-12 sm:space-y-24">
+        <div className="bg-white rounded-[32px] p-4 sm:p-8 md:p-24 border border-primary/10">
+          <div className="flex items-center mb-8 sm:mb-24">
+            <div className="flex items-center space-x-8 sm:space-x-16">
+              <Truck className="w-24 h-24 sm:w-32 sm:h-32 text-primary" />
+              <h1 className="font-jost text-2xl sm:text-[32px] font-bold">Delivery Calculator</h1>
             </div>
           </div>
 
-          <div className="space-y-24">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-24">
+          <div className="space-y-12 sm:space-y-24">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-24">
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Shipping Date
@@ -463,7 +463,6 @@ export default function BrokerCalculator() {
                 />
                 {errors.transportType && <p className="text-red-500 text-sm mt-2">{errors.transportType}</p>}
               </div>
-
 
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
@@ -513,7 +512,7 @@ export default function BrokerCalculator() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-24">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-24">
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Pickup Location
@@ -534,7 +533,6 @@ export default function BrokerCalculator() {
                 />
                 {errors.pickup && <p className="text-red-500 text-sm mt-2">{errors.pickup}</p>}
               </div>
-
 
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
@@ -558,9 +556,9 @@ export default function BrokerCalculator() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-24">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-24">
               {Object.entries(ADDITIONAL_SERVICES).map(([key, service]) => (
-                <div key={key} className="flex items-center space-x-12">
+                <div key={key} className="flex items-center space-x-8 sm:space-x-12">
                   <div className="relative">
                     <input
                       type="checkbox"
@@ -583,7 +581,7 @@ export default function BrokerCalculator() {
                           clearResults();
                         }
                       }}
-                      className={`appearance-none h-24 w-24 rounded
+                      className={`appearance-none h-20 w-20 sm:h-24 sm:w-24 rounded
                         border-2 border-gray-200
                         checked:bg-primary checked:border-primary
                         relative cursor-pointer transition-all duration-200
@@ -594,7 +592,7 @@ export default function BrokerCalculator() {
                           : ''}`}
                     />
                     <svg 
-                      className={`absolute left-0 top-0 w-24 h-24 pointer-events-none text-white
+                      className={`absolute left-0 top-0 w-20 h-20 sm:w-24 sm:h-24 pointer-events-none text-white
                         ${key === 'premiumEnhancements' ? premiumEnhancements : 
                           key === 'specialLoad' ? specialLoad : 
                           key === 'inoperable' ? inoperable ? 'block' : 'hidden' : 'hidden'}`}
@@ -607,16 +605,16 @@ export default function BrokerCalculator() {
                       <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
                   </div>
-                  <label className="text-p2 font-montserrat relative group" htmlFor={key}>
+                  <label className="text-sm sm:text-p2 font-montserrat relative group" htmlFor={key}>
                     {service.name}
-                    <span className="ml-8 inline-block cursor-help">
+                    <span className="ml-4 sm:ml-8 inline-block cursor-help">
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         fill="none" 
                         viewBox="0 0 24 24" 
                         strokeWidth={1.5} 
                         stroke="currentColor" 
-                        className="w-16 h-16 text-gray-500"
+                        className="w-12 h-12 sm:w-16 sm:h-16 text-gray-500"
                       >
                         <path 
                           strokeLinecap="round" 
@@ -624,12 +622,14 @@ export default function BrokerCalculator() {
                           d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" 
                         />
                       </svg>
-                      <div className="invisible group-hover:visible absolute z-50 w-[280px] p-16
-                        bg-white border border-gray-200 rounded-[24px] shadow-lg -mt-8 ml-24">
+                      <div className="invisible group-hover:visible absolute z-50 w-[280px] p-4 sm:p-16
+                        bg-white border border-gray-200 rounded-[24px] shadow-lg
+                        left-1/2 -translate-x-1/2 
+                        bottom-full mb-2">
                         <div className="text-sm font-montserrat font-semibold text-gray-900 mb-8">
                           {key === 'premiumEnhancements' ? 'Premium Service Benefits:' : 
-                           key === 'specialLoad' ? 'Special Load Services:' : 
-                           'Inoperable Vehicle Services:'}
+                          key === 'specialLoad' ? 'Special Load Services:' : 
+                          'Inoperable Vehicle Services:'}
                         </div>
                         <ul className="space-y-2">
                           {service.tooltip?.map((tip, index) => (
@@ -646,9 +646,7 @@ export default function BrokerCalculator() {
               ))}
             </div>
   
-            {/* Contact Information */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-24">
-              {/* Name */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-24">
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Name
@@ -676,7 +674,6 @@ export default function BrokerCalculator() {
                 )}
               </div>
 
-              {/* Phone */}
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Phone
@@ -707,7 +704,6 @@ export default function BrokerCalculator() {
                 )}
               </div>
 
-              {/* Email */}
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Email
@@ -734,21 +730,20 @@ export default function BrokerCalculator() {
               </div>
             </div>
 
-
             <button
               onClick={calculatePrice}
               disabled={loading}
-              className="mt-24 w-full bg-primary hover:bg-primary/90
-                text-white py-12 px-16 rounded-[24px]
+              className="mt-12 sm:mt-24 w-full bg-primary hover:bg-primary/90
+                text-white py-8 sm:py-12 px-8 sm:px-16 rounded-[24px]
                 disabled:bg-primary/50
                 disabled:cursor-not-allowed
                 transition-colors duration-200
                 flex items-center justify-center
-                font-montserrat text-p2 font-medium"
+                font-montserrat text-sm sm:text-p2 font-medium"
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-20 h-20 mr-8 animate-spin" />
+                  <Loader2 className="w-16 h-16 sm:w-20 sm:h-20 mr-4 sm:mr-8 animate-spin" />
                   Calculating...
                 </>
               ) : (
@@ -757,7 +752,7 @@ export default function BrokerCalculator() {
             </button>
   
             {error && (
-              <div className="mt-16 p-16 bg-red-50 text-red-700 rounded-[24px] font-montserrat text-p2">
+              <div className="mt-8 sm:mt-16 p-8 sm:p-16 bg-red-50 text-red-700 rounded-[24px] font-montserrat text-sm sm:text-p2">
                 {error}
               </div>
             )}
@@ -765,7 +760,7 @@ export default function BrokerCalculator() {
         </div>
   
         {distance && priceComponents && mapData && (
-          <div className="space-y-24">
+          <div className="space-y-12 sm:space-y-24">
             <PriceSummary 
               finalPrice={priceComponents.finalPrice}
               basePrice={priceComponents.basePrice}
@@ -792,81 +787,88 @@ export default function BrokerCalculator() {
               }}
             />
   
-            <div className="flex gap-24">
-              <GoogleMap ref={mapRef} mapData={mapData} />
+            <div className="flex flex-col lg:flex-row gap-8 sm:gap-24">
+              <div className="w-full lg:w-[698px]">
+                <GoogleMap ref={mapRef} mapData={mapData} />
+              </div>
               {mapData && (
-                <WeatherConditions
-                  routePoints={{
-                    pickup: {
-                      lat: Number(mapData.routes[0].legs[0].start_location.lat()),
-                      lng: Number(mapData.routes[0].legs[0].start_location.lng())
-                    },
-                    delivery: {
-                      lat: Number(mapData.routes[0].legs[0].end_location.lat()),
-                      lng: Number(mapData.routes[0].legs[0].end_location.lng())
-                    },
-                    waypoints: []
-                  }}
+                <div className="w-full lg:w-[478px]">
+                  <WeatherConditions
+                    routePoints={{
+                      pickup: {
+                        lat: Number(mapData.routes[0].legs[0].start_location.lat()),
+                        lng: Number(mapData.routes[0].legs[0].start_location.lng())
+                      },
+                      delivery: {
+                        lat: Number(mapData.routes[0].legs[0].end_location.lat()),
+                        lng: Number(mapData.routes[0].legs[0].end_location.lng())
+                      },
+                      waypoints: []
+                    }}
+                    selectedDate={selectedDate}
+                    onWeatherUpdate={(weatherMultiplier) => {
+                      if (priceComponents) {
+                        setPriceComponents((prev) => {
+                          if (!prev) return null;
+                          return updatePriceComponents(prev, {
+                            mainMultipliers: {
+                              ...prev.mainMultipliers,
+                              weatherMultiplier: weatherMultiplier
+                            }
+                          });
+                        });
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+  
+            <div className="space-y-12 sm:space-y-24">
+              <div className="w-full">
+                <RouteInfo 
+                  pickup={pickup}
+                  delivery={delivery}
+                  distance={distance}
+                  finalPrice={priceComponents.finalPrice}
+                  estimatedTime={routeInfo.estimatedTime}
+                  isPopularRoute={routeInfo.isPopularRoute}
+                  isRemoteArea={routeInfo.isRemoteArea}
+                  trafficConditions={routeInfo.trafficConditions}
+                  mapData={mapData}
                   selectedDate={selectedDate}
-                  onWeatherUpdate={(weatherMultiplier) => {
+                  tollCosts={priceComponents.tollCosts}
+                  onTollUpdate={(tollCost: number, segments?: Array<{ location: string, cost: number }>) => {
                     if (priceComponents) {
                       setPriceComponents((prev) => {
                         if (!prev) return null;
                         return updatePriceComponents(prev, {
-                          mainMultipliers: {
-                            ...prev.mainMultipliers,
-                            weatherMultiplier: weatherMultiplier
+                          tollCosts: {
+                            segments: segments || [],
+                            total: tollCost
                           }
                         });
                       });
                     }
                   }}
                 />
-              )}
-            </div>
-  
-            <div className="lg:col-span-2 space-y-24">
-            <RouteInfo 
-              pickup={pickup}
-              delivery={delivery}
-              distance={distance}
-              finalPrice={priceComponents.finalPrice}
-              estimatedTime={routeInfo.estimatedTime}
-              isPopularRoute={routeInfo.isPopularRoute}
-              isRemoteArea={routeInfo.isRemoteArea}
-              trafficConditions={routeInfo.trafficConditions}
-              mapData={mapData}
-              selectedDate={selectedDate}
-              tollCosts={priceComponents.tollCosts}
-              onTollUpdate={(tollCost: number, segments?: Array<{ location: string, cost: number }>) => {
-                if (priceComponents) {
-                  setPriceComponents((prev) => {
-                    if (!prev) return null;
-                    return updatePriceComponents(prev, {
-                      tollCosts: {
-                        segments: segments || [],
-                        total: tollCost
-                      }
-                    });
-                  });
-                }
-              }}
-            />
-                    
-                    <PriceBreakdown
-                      distance={distance}
-                      basePrice={priceComponents.basePrice}
-                      basePriceBreakdown={priceComponents.basePriceBreakdown}
-                      mainMultipliers={priceComponents.mainMultipliers}
-                      additionalServices={priceComponents.additionalServices}
-                      tollCosts={priceComponents.tollCosts}
-                      finalPrice={priceComponents.finalPrice}
-                      routeInfo={{
-                        isPopularRoute: routeInfo.isPopularRoute,
-                        isRemoteArea: routeInfo.isRemoteArea
-                      }}
-                      selectedDate={selectedDate}
-                    />
+              </div>
+              <div className="w-full">
+                <PriceBreakdown
+                  distance={distance}
+                  basePrice={priceComponents.basePrice}
+                  basePriceBreakdown={priceComponents.basePriceBreakdown}
+                  mainMultipliers={priceComponents.mainMultipliers}
+                  additionalServices={priceComponents.additionalServices}
+                  tollCosts={priceComponents.tollCosts}
+                  finalPrice={priceComponents.finalPrice}
+                  routeInfo={{
+                    isPopularRoute: routeInfo.isPopularRoute,
+                    isRemoteArea: routeInfo.isRemoteArea
+                  }}
+                  selectedDate={selectedDate}
+                />
+              </div>
             </div>
           </div>
         )}

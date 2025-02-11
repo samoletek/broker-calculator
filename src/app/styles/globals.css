@@ -31,6 +31,46 @@ body {
   .text-p3 { font-size: 14px; }
 }
 
+@layer utilities {
+  .safe-paddings {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+}
+
+@media (max-width: 640px) {
+  h1 { font-size: 48px; }
+  h2 { font-size: 40px; }
+  h3 { font-size: 32px; }
+  h4 { font-size: 28px; }
+  h5 { font-size: 24px; }
+  
+  .text-p1 { font-size: 20px; }
+  .text-p2 { font-size: 14px; }
+  .text-p3 { font-size: 12px; }
+}
+
+@media (min-width: 640px) {
+  .tooltip-position {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 16px;
+    left: auto !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .tooltip-mobile {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    transform: none;
+    margin: 0;
+    z-index: 9999;
+  }
+}
 /* Custom select styles */
 select {
   -webkit-appearance: none;
