@@ -49,7 +49,7 @@ const GoogleMap = forwardRef<HTMLDivElement, GoogleMapProps>(({ mapData }, ref) 
   }, [mapData]);
 
   return (
-    <div className="w-full h-[300px] sm:h-[422px] rounded-[24px] overflow-hidden bg-white">
+    <div className="w-full h-[300px] sm:h-[464px] rounded-[24px] overflow-hidden bg-white">
       <div ref={ref} className="w-full h-full" />
     </div>
   );

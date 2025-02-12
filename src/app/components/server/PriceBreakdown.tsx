@@ -1,7 +1,29 @@
 'use client';
 
 import { DollarSign } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/app/components/ui/Accordion';
 import type { PriceBreakdownProps } from '@/app/types/components.types';
+
+const contentVariants = {
+  hidden: { 
+    opacity: 0,
+    height: 0
+  },
+  visible: { 
+    opacity: 1,
+    height: "auto",
+    transition: {
+      duration: 0.3,
+      ease: "easeOut"
+    }
+  }
+};
 
 export function PriceBreakdown({
   distance,
@@ -10,133 +32,110 @@ export function PriceBreakdown({
   mainMultipliers,
   additionalServices,
   tollCosts,
-  finalPrice,
-  routeInfo,
-  selectedDate
+  finalPrice
 }: PriceBreakdownProps) {
   return (
-    <div className="w-full p-4 sm:p-40 space-y-20 sm:space-y-40 bg-white rounded-[24px] border border-primary/10">
-      {/* Header */}
+    <div className="w-full p-4 sm:p-40 space-y-10 sm:space-y-20 bg-white rounded-[24px] border border-primary/10">
       <div className="flex justify-between items-center">
         <h2 className="font-jost text-[32px] font-bold">Price Breakdown</h2>
       </div>
    
       {/* Base Calculation */}
-      <div className="p-24 space-y-16 bg-[#F6F6FA] rounded-[24px]">
-        <h3 className="font-montserrat text-p2 font-bold">Base Calculation</h3>
-        <div className="space-y-12">
-          <div className="flex justify-between text-p2">
-            <span className="text-gray-600">Rate per mile</span>
-            <span>${basePriceBreakdown.ratePerMile.toFixed(2)}/mile</span>
+      <Accordion type="single" collapsible>
+        <AccordionItem value="base">
+          <div className="bg-[#F6F6FA] rounded-[24px] overflow-hidden">
+            <AccordionTrigger className="w-full p-24 hover:no-underline">
+              <div className="flex justify-between w-full">
+                <span className="font-montserrat text-p2 font-bold">Base Calculation</span>
+                <span className="font-montserrat text-p2 text-gray-600">${basePrice.toFixed(2)}</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="border-t border-primary/20 mx-24"></div>
+              <div className="p-24 space-y-12">
+                <div className="flex justify-between text-p2">
+                  <span className="text-gray-600">Rate per mile</span>
+                  <span>${basePriceBreakdown.ratePerMile.toFixed(2)}/mile</span>
+                </div>
+                <div className="flex justify-between text-p2">
+                  <span className="text-gray-600">Distance</span>
+                  <span>{Math.round(basePriceBreakdown.distance)} miles</span>
+                </div>
+                {basePriceBreakdown.distance < 300 && (
+                  <div className="text-sm text-gray-500">
+                    * Base price is fixed ($600) because the route is shorter than 300 miles.
+                  </div>
+                )}
+              </div>
+            </AccordionContent>
           </div>
-          <div className="flex justify-between text-p2">
-            <span className="text-gray-600">Distance</span>
-            <span>{Math.round(basePriceBreakdown.distance)} miles</span>
-          </div>
-          <div className="flex justify-between text-p2 pt-12 border-t border-gray-200">
-            <span className="font-bold">Base Price:</span>
-            <span className="ml-4 text-gray-600">${basePrice.toFixed(2)}</span>
-          </div>
-        </div>
-        {basePriceBreakdown.distance < 300 && (
-          <div className="text-sm text-gray-500">
-            * Base price is fixed ($600) because the route is shorter than 300 miles.
-          </div>
-        )}
-      </div>
+        </AccordionItem>
+      </Accordion>
    
       {/* Supplemental Price Factors */}
-      <div className="p-24 space-y-16 bg-primary/10 rounded-[24px]">
-        <h3 className="font-montserrat text-p2 font-bold">Supplemental Price Factors</h3>
-        <div className="space-y-12">
-          <div className="flex justify-between text-p2">
-            <span className="text-gray-600">Vehicle Impact</span>
-            <div className="flex items-center gap-8">
-              <span className="text-primary">
-                ${mainMultipliers.vehicleImpact.toFixed(2)}
-              </span>
-              <span className="text-gray-500">
-                ({((mainMultipliers.vehicleMultiplier - 1) * 100).toFixed(1)}%)
-              </span>
-            </div>
+      <Accordion type="single" collapsible>
+        <AccordionItem value="supplemental">
+          <div className="bg-primary/10 rounded-[24px] overflow-hidden">
+            <AccordionTrigger className="w-full p-24 hover:no-underline">
+              <div className="flex justify-between w-full">
+                <span className="font-montserrat text-p2 font-bold">Supplemental Price Factors</span>
+                <span className="font-montserrat text-p2 text-[#1356BE]">${mainMultipliers.totalImpact.toFixed(2)}</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="border-t border-primary/20 mx-24"></div>
+              <div className="p-24 space-y-12">
+                <div className="flex justify-between text-p2">
+                  <span className="text-gray-600">Vehicle Impact</span>
+                  <span className="text-primary">${mainMultipliers.vehicleImpact.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-p2">
+                  <span className="text-gray-600">Weather Impact</span>
+                  <span className="text-primary">${mainMultipliers.weatherImpact.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-p2">
+                  <span className="text-gray-600">Traffic Impact</span>
+                  <span className="text-primary">${mainMultipliers.trafficImpact.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-p2">
+                  <span className="text-gray-600">Auto Show Impact</span>
+                  <span className="text-primary">${mainMultipliers.autoShowImpact.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-p2">
+                  <span className="text-gray-600">Fuel Impact</span>
+                  <span className="text-primary">${mainMultipliers.fuelImpact.toFixed(2)}</span>
+                </div>
+              </div>
+            </AccordionContent>
           </div>
-          
-          <div className="flex justify-between text-p2">
-            <span className="text-gray-600">Weather Impact</span>
-            <div className="flex items-center gap-8">
-              <span className="text-primary">
-                ${mainMultipliers.weatherImpact.toFixed(2)}
-              </span>
-              <span className="text-gray-500">
-                ({((mainMultipliers.weatherMultiplier - 1) * 100).toFixed(1)}%)
-              </span>
-            </div>
-          </div>
-          
-          <div className="flex justify-between text-p2">
-            <span className="text-gray-600">Traffic Impact</span>
-            <div className="flex items-center gap-8">
-              <span className="text-primary">
-                ${mainMultipliers.trafficImpact.toFixed(2)}
-              </span>
-              <span className="text-gray-500">
-                ({((mainMultipliers.trafficMultiplier - 1) * 100).toFixed(1)}%)
-              </span>
-            </div>
-          </div>
-          
-          <div className="flex justify-between text-p2">
-            <span className="text-gray-600">Auto Show Impact</span>
-            <div className="flex items-center gap-8">
-              <span className="text-primary">
-                ${mainMultipliers.autoShowImpact.toFixed(2)}
-              </span>
-              <span className="text-gray-500">
-                ({((mainMultipliers.autoShowMultiplier - 1) * 100).toFixed(1)}%)
-              </span>
-            </div>
-          </div>
-   
-          <div className="flex justify-between text-p2">
-            <span className="text-gray-600">Fuel Impact</span>
-            <div className="flex items-center gap-8">
-              <span className="text-primary">
-                ${mainMultipliers.fuelImpact.toFixed(2)}
-              </span>
-              <span className="text-gray-500">
-                ({((mainMultipliers.fuelMultiplier - 1) * 100).toFixed(1)}%)
-              </span>
-            </div>
-          </div>
-   
-          <div className="flex justify-between text-p2 pt-12 border-t border-gray-200">
-            <span className="font-bold">Total Factors Impact</span>
-            <span className="text-[#1356BE] font-bold">
-              ${mainMultipliers.totalImpact.toFixed(2)}
-            </span>
-          </div>
-        </div>
-      </div>
+        </AccordionItem>
+      </Accordion>
    
       {/* Toll Charges */}
       {tollCosts && (
-        <div className="p-24 space-y-16 bg-primary/20 rounded-[24px]">
-          <h3 className="font-montserrat text-p2 font-bold">Toll Charges</h3>
-          <div className="space-y-12">
-            {tollCosts.segments.map((segment, index) => (
-              <div key={index} className="flex justify-between text-p2">
-                <span className="text-gray-600">{segment.location}</span>
-                <span className="text-[#1356BE]">${segment.cost.toFixed(2)}</span>
-              </div>
-            ))}
-            <div className="flex justify-between text-p2 pt-12 border-t border-gray-200">
-              <span className="font-bold">Total Toll Costs</span>
-              <span className="text-[#1356BE] font-bold">
-                ${tollCosts.total.toFixed(2)}
-              </span>
+        <Accordion type="single" collapsible>
+          <AccordionItem value="tolls">
+            <div className="bg-primary/20 rounded-[24px] overflow-hidden">
+              <AccordionTrigger className="w-full p-24 hover:no-underline">
+                <div className="flex justify-between w-full">
+                  <span className="font-montserrat text-p2 font-bold">Toll Charges</span>
+                  <span className="font-montserrat text-p2 text-[#1356BE]">${tollCosts.total.toFixed(2)}</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="border-t border-primary/20 mx-24"></div>
+                <div className="p-24 space-y-12">
+                  {tollCosts.segments.map((segment, index) => (
+                    <div key={index} className="flex justify-between text-p2">
+                      <span className="text-gray-600">{segment.location}</span>
+                      <span className="text-[#1356BE]">${segment.cost.toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </AccordionContent>
             </div>
-          </div>
-        </div>
+          </AccordionItem>
+        </Accordion>
       )}
    
       {/* Final Price */}
@@ -150,5 +149,5 @@ export function PriceBreakdown({
         </span>
       </div>
     </div>
-   );
-  }
+  );
+}

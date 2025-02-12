@@ -64,7 +64,6 @@ const WeatherConditions = memo<WeatherMapProps>(({
 
         setWeatherData(enrichedWeatherData);
 
-        // Рассчитываем и обновляем weather multiplier
         const worstMultiplier = getWorstWeatherMultiplier(enrichedWeatherData);
         if (onWeatherUpdate) {
           onWeatherUpdate(worstMultiplier || 1);
@@ -80,11 +79,9 @@ const WeatherConditions = memo<WeatherMapProps>(({
   }, [routePoints, selectedDate, midPoint, onWeatherUpdate]);
 
   return (
-    <div className="w-full h-auto sm:h-[422px] p-4 sm:p-24 rounded-[24px] bg-white">
-      <div className="flex items-center justify-between mb-8 sm:mb-16">
-        <h2 className="font-jost text-2xl sm:text-[32px] font-bold">
-          Weather Conditions
-        </h2>
+    <div className="w-full p-4 sm:p-40 space-y-10 sm:space-y-20 bg-white rounded-[24px] border border-primary/10">
+      <div className="flex items-center justify-between">
+        <h2 className="font-jost text-[32px] font-bold">Weather Conditions</h2>
         {selectedDate && (
           <span className="text-sm sm:text-base text-gray-600">
             ({format(selectedDate, 'yyyy-MM-dd')})
@@ -107,17 +104,14 @@ const WeatherConditions = memo<WeatherMapProps>(({
             </div>
             <div className="text-right">
               <div className="font-medium text-sm sm:text-base">{point.temperature}°F</div>
-              <div className="text-gray-600 text-xs sm:text-sm">
-                {point.multiplier > 1 ? `+${((point.multiplier - 1) * 100).toFixed(0)}% Impact` : 'No Impact'}
-              </div>
             </div>
           </div>
         ))}
       </div>
   
       {weatherData.length > 0 && (
-        <div className="mt-8 sm:mt-16 text-sm sm:text-base">
-          <span>Weather Impact Summary: </span>
+        <div className="text-sm sm:text-base">
+          <span>Weather Summary: </span>
           <span className="text-primary">
             {getWorstWeatherMultiplier(weatherData) === 1 
               ? 'Good weather conditions throughout the route'

@@ -55,6 +55,14 @@ export default {
             transform: 'translateY(0)',
           },
         },
+        "accordion-down": {
+          "0%": { transform: "translateY(-5%)", maxHeight: "0", opacity: "0" },
+          "100%": { transform: "translateY(0)", maxHeight: "var(--radix-accordion-content-height)", opacity: "1" }
+        },
+        "accordion-up": {
+          "0%": { transform: "translateY(0)", maxHeight: "var(--radix-accordion-content-height)", opacity: "1" },
+          "100%": { transform: "translateY(-5%)", maxHeight: "0", opacity: "0" }
+        },
       },
     },
   },
