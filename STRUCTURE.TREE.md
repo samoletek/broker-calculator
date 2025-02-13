@@ -4,7 +4,6 @@ broker-calculator/
 │── public/
 │── src/
 │   ├── app/
-│   │   ├── api/
 │   │   ├── components/
 │   │   │   ├── client/
 │   │   │   │   ├── DatePicker.tsx
@@ -15,6 +14,7 @@ broker-calculator/
 │   │   │   │   ├── PriceSummary.tsx
 │   │   │   │   ├── RouteInfo.tsx
 │   │   │   ├── ui/
+│   │   │   │   ├── Accordion.tsx
 │   │   │   │   ├── Button.tsx
 │   │   │   │   ├── Select.tsx
 │   │   ├── fonts/
@@ -27,13 +27,13 @@ broker-calculator/
 │   │   │   │   ├── useWeather.ts
 │   │   │   ├── utils/
 │   │   │   │   ├── client/
-│   │   │   │   │   ├── addressUtils.ts
 │   │   │   │   │   ├── autoShowUtils.ts
 │   │   │   │   │   ├── fuelUtils.ts
 │   │   │   │   │   ├── maps.ts
 │   │   │   │   │   ├── navigation.ts
 │   │   │   │   │   ├── tollUtils.ts
 │   │   │   │   │   ├── transportUtils.ts
+│   │   │   │   │   ├── utils.ts
 │   │   │   │   │   ├── validation.ts
 │   │   │   │   │   ├── weather.ts
 │   │   │   │   ├── server/
@@ -42,7 +42,7 @@ broker-calculator/
 │   │   │   ├── components.css
 │   │   │   ├── globals.css
 │   │   ├── types/
-│   │   │   ├── apiTypes.ts
+│   │   │   ├── api.types.ts
 │   │   │   ├── booking.types.ts
 │   │   │   ├── common.types.ts
 │   │   │   ├── components.types.ts
@@ -62,5 +62,6 @@ broker-calculator/
 │── package.json
 │── postcss.config.mjs
 │── README.md
+│── STRUCTURE.TREE.md
 │── tailwind.config.ts
 │── tsconfig.json
