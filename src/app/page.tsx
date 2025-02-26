@@ -73,8 +73,6 @@ export default function BrokerCalculator() {
     selectedDate: '',
     general: ''
   });
-  
-  
 
   const [premiumEnhancements, setPremiumEnhancements] = useState(false);
   const [specialLoad, setSpecialLoad] = useState(false);
@@ -100,6 +98,8 @@ export default function BrokerCalculator() {
   const pickupInputRef = useRef<HTMLInputElement>(null);
   const deliveryInputRef = useRef<HTMLInputElement>(null);
 
+  const WIX_CALLBACK_FORM_URL = "https://your-wix-site.com/callback-form";
+  
   // Effects
   useEffect(() => {
     const initAutocomplete = () => {
@@ -726,26 +726,43 @@ export default function BrokerCalculator() {
               </div>
             </div>
 
-            <button
-              onClick={calculatePrice}
-              disabled={loading}
-              className="mt-12 sm:mt-24 w-full bg-primary hover:bg-primary/90
-                text-white py-8 sm:py-12 px-8 sm:px-16 rounded-[24px]
-                disabled:bg-primary/50
-                disabled:cursor-not-allowed
-                transition-colors duration-200
-                flex items-center justify-center
-                font-montserrat text-sm sm:text-p2 font-medium"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-16 h-16 sm:w-20 sm:h-20 mr-4 sm:mr-8 animate-spin" />
-                  Calculating...
-                </>
-              ) : (
-                'Calculate Route and Price'
-              )}
-            </button>
+            <div className="flex flex-col sm:flex-row gap-4 mt-12 sm:mt-24">
+              <button
+                onClick={calculatePrice}
+                disabled={loading}
+                className="w-full sm:flex-1 bg-primary hover:bg-primary/90
+                  text-white py-8 sm:py-12 px-8 sm:px-16 rounded-[24px]
+                  disabled:bg-primary/50
+                  disabled:cursor-not-allowed
+                  transition-colors duration-200
+                  flex items-center justify-center
+                  font-montserrat text-sm sm:text-p2 font-medium"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-16 h-16 sm:w-20 sm:h-20 mr-4 sm:mr-8 animate-spin" />
+                    Calculating...
+                  </>
+                ) : (
+                  'Calculate Route and Price'
+                )}
+              </button>
+
+              <button
+                onClick={() => {
+                  // Отправляем сообщение виксу для открытия поп-апа
+                  window.parent.postMessage({ action: 'openPopup' }, '*');
+                }}
+                className="w-full sm:w-1/3 bg-white border border-primary
+                  text-primary py-8 sm:py-12 px-8 sm:px-16 rounded-[24px]
+                  hover:bg-primary/10
+                  transition-colors duration-200
+                  flex items-center justify-center
+                  font-montserrat text-sm sm:text-p2 font-medium"
+              >
+                or just Request a Call
+              </button>
+            </div>
   
             {error && (
               <div className="mt-8 sm:mt-16 p-8 sm:p-16 bg-red-50 text-red-700 rounded-[24px] font-montserrat text-sm sm:text-p2">

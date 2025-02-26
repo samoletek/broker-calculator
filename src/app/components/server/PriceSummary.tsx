@@ -149,7 +149,7 @@ export function PriceSummary({
               hover:bg-primary/90 transition-colors duration-200"
           >
             <Save className="w-12 h-12 sm:w-16 sm:h-16 mr-4 sm:mr-8" />
-            Save price for me!
+            Send me the price!
           </Button>
           
           <Button
