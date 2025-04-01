@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { Truck, Loader2 } from 'lucide-react';
+import { Truck, Loader2, AlertCircle } from 'lucide-react';
 import Select from '@/app/components/ui/Select';
 import Button from '@/app/components/ui/Button';
 import { DatePicker } from '@/app/components/client/DatePicker';
@@ -19,13 +19,19 @@ import {
 import { validateName, validateEmail, validatePhoneNumber } from '@/app/lib/utils/client/validation';
 import { useGoogleMaps } from '@/app/lib/hooks/useGoogleMaps';
 import { usePricing } from '@/app/lib/hooks/usePricing';
-import { validateAddress, isSameLocation, formatAddress, calculateDistance } from '@/app/lib/utils/client/maps';import { calculateTollCost, getRouteSegments } from '@/app/lib/utils/client/tollUtils';
+import { useRateLimiter } from '@/app/lib/hooks/useRateLimiter';
+import { validateAddress, isSameLocation, formatAddress, calculateDistance } from '@/app/lib/utils/client/maps';
+import { calculateTollCost, getRouteSegments } from '@/app/lib/utils/client/tollUtils';
 import { checkAutoShows, getAutoShowMultiplier } from '@/app/lib/utils/client/autoShowsUtils';
 import { calculateEstimatedTransitTime, getRoutePoints } from '@/app/lib/utils/client/transportUtils';
 import { getFuelPriceMultiplier } from '@/app/lib/utils/client/fuelUtils';
 import type { SelectOption } from '@/app/types/common.types';
 
-// Динамический импорт компонентов карты и погоды
+// Динамический импорт компонентов
+const SimpleCaptcha = dynamic(() => import('@/app/components/client/SimpleCaptcha'), {
+  ssr: false,
+});
+
 const GoogleMap = dynamic(() => import('@/app/components/client/GoogleMap'), {
   ssr: false,
   loading: () => (
@@ -92,6 +98,13 @@ export default function BrokerCalculator() {
   // Hooks
   const { priceComponents, setPriceComponents, updatePriceComponents } = usePricing();
   const googleMaps = useGoogleMaps();
+  const { 
+    showCaptcha, 
+    generatedNumber, 
+    apiLimitReached,
+    trackCalculationRequest, 
+    verifyCaptcha 
+  } = useRateLimiter();
   
   // Refs
   const mapRef = useRef<HTMLDivElement>(null);
@@ -230,6 +243,20 @@ export default function BrokerCalculator() {
     if (!validateFields()) return;
     if (typeof window === 'undefined' || !googleMaps) return;
   
+    // Проверяем лимит вычислений и капчу
+    if (!trackCalculationRequest()) {
+      return;
+    }
+    
+    // Проверяем API лимит
+    if (apiLimitReached) {
+      setErrors((prev) => ({ 
+        ...prev, 
+        general: 'API limit reached. Try again later.' 
+      }));
+      return;
+    }
+    
     if (!selectedDate) {
       setErrors((prev) => ({ ...prev, selectedDate: 'Please select a shipping date' }));
       return;
@@ -245,6 +272,16 @@ export default function BrokerCalculator() {
         validateAddress(delivery, googleMaps)
       ]);
   
+      // Проверяем ошибки API лимитов
+      if (pickupValidation.error?.includes('API limit') || deliveryValidation.error?.includes('API limit')) {
+        setErrors(prev => ({
+          ...prev,
+          general: 'API limit reached. Try again later.'
+        }));
+        setLoading(false);
+        return;
+      }
+      
       // Обрабатываем ошибки адресов
       if (!pickupValidation.isValid || !deliveryValidation.isValid) {
         setErrors(prev => ({
@@ -281,128 +318,156 @@ export default function BrokerCalculator() {
       setDelivery(deliveryValidation.formattedAddress!);
   
       const service = new googleMaps.DirectionsService();
-      const response = await service.route({
-        origin: pickupValidation.formattedAddress!,
-        destination: deliveryValidation.formattedAddress!,
-        travelMode: googleMaps.TravelMode.DRIVING
-      });
-  
-      setMapData(response);
-      const distanceInMiles = (response.routes[0].legs[0].distance?.value || 0) / 1609.34;
-      setDistance(Math.round(distanceInMiles));
-  
-      setRouteInfo((prev) => ({
-        ...prev,
-        estimatedTime: calculateEstimatedTransitTime(distanceInMiles)
-      }));
-  
-      // Проверяем наличие автошоу
-      const pickupAutoShows = await checkAutoShows(
-        { lat: response.routes[0].legs[0].start_location.lat(), lng: response.routes[0].legs[0].start_location.lng() },
-        selectedDate,
-        window.google
-      );
-  
-      const deliveryAutoShows = await checkAutoShows(
-        { lat: response.routes[0].legs[0].end_location.lat(), lng: response.routes[0].legs[0].end_location.lng() },
-        selectedDate,
-        window.google
-      );
-  
-      // Определяем базовую цену
-      const basePrice = distanceInMiles <= 300 ? 
-        600 : 
-        getBaseRate(distanceInMiles, transportType);
-  
-      // Данные для разбивки базовой цены
-      const basePriceBreakdown = {
-        ratePerMile: distanceInMiles <= 300 ? 0 : TRANSPORT_TYPES[transportType].baseRatePerMile.max,
-        distance: distanceInMiles,
-        total: basePrice
-      };
-  
-      // Получаем множители
-      const vehicleMultiplier = VEHICLE_VALUE_TYPES[vehicleValue].multiplier;
-      const autoShowMultiplier = Math.max(
-        getAutoShowMultiplier(pickupAutoShows, selectedDate),
-        getAutoShowMultiplier(deliveryAutoShows, selectedDate)
-      );
-      const routePoints = getRoutePoints(response);
-      const fuelPriceMultiplier = await getFuelPriceMultiplier(routePoints, window.google);
-      const weatherMultiplier = 1.0;
-      const trafficMultiplier = 1.0;
-  
-      // Рассчитываем денежный impact для каждого фактора
-      const vehicleImpact = basePrice * (vehicleMultiplier - 1);
-      const weatherImpact = basePrice * (weatherMultiplier - 1);
-      const trafficImpact = basePrice * (trafficMultiplier - 1);
-      const autoShowImpact = basePrice * (autoShowMultiplier - 1);
-      const fuelImpact = basePrice * (fuelPriceMultiplier - 1);
-  
-      // Суммируем все impact-ы
-      const totalImpact = 
-        vehicleImpact + 
-        weatherImpact + 
-        trafficImpact + 
-        autoShowImpact + 
-        fuelImpact;
-  
-      // Дополнительные услуги
-      const additionalServices = {
-        premium: premiumEnhancements ? 0.3 : 0,
-        special: specialLoad ? 0.3 : 0,
-        inoperable: inoperable ? 0.3 : 0
-      };
-  
-      const additionalServicesSum = 
-        (additionalServices.premium + 
-        additionalServices.special + 
-        additionalServices.inoperable);
-  
-      const additionalServicesImpact = basePrice * additionalServicesSum;
-  
-      // Расчет платных дорог
-      const totalTollCost = calculateTollCost(distanceInMiles, response.routes[0]);
-      const tollSegments = getRouteSegments(response, totalTollCost);
-      const tollCosts = {
-        segments: tollSegments,
-        total: totalTollCost
-      };
-  
-      // Устанавливаем компоненты цены
-      setPriceComponents({
-        selectedDate,
-        basePrice,
-        basePriceBreakdown,
-        mainMultipliers: {
-          // Множители для процентов
-          vehicleMultiplier,
-          weatherMultiplier,
-          trafficMultiplier,
-          autoShowMultiplier,
-          fuelMultiplier: fuelPriceMultiplier,
-          // Импакты в долларах
-          vehicleImpact,
-          weatherImpact,
-          trafficImpact,
-          autoShowImpact,
-          fuelImpact,
-          totalImpact
-        },
-        additionalServices: {
-          ...additionalServices,
-          totalAdditional: additionalServicesSum
-        },
-        tollCosts,
-        finalPrice: basePrice + totalImpact + additionalServicesImpact + tollCosts.total
-      });
-  
+      
+      try {
+        const response = await service.route({
+          origin: pickupValidation.formattedAddress!,
+          destination: deliveryValidation.formattedAddress!,
+          travelMode: googleMaps.TravelMode.DRIVING
+        });
+    
+        setMapData(response);
+        const distanceInMiles = (response.routes[0].legs[0].distance?.value || 0) / 1609.34;
+        setDistance(Math.round(distanceInMiles));
+    
+        setRouteInfo((prev) => ({
+          ...prev,
+          estimatedTime: calculateEstimatedTransitTime(distanceInMiles)
+        }));
+    
+        // Проверяем наличие автошоу
+        const pickupAutoShows = await checkAutoShows(
+          { lat: response.routes[0].legs[0].start_location.lat(), lng: response.routes[0].legs[0].start_location.lng() },
+          selectedDate,
+          window.google
+        );
+    
+        const deliveryAutoShows = await checkAutoShows(
+          { lat: response.routes[0].legs[0].end_location.lat(), lng: response.routes[0].legs[0].end_location.lng() },
+          selectedDate,
+          window.google
+        );
+    
+        // Определяем базовую цену
+        const basePrice = distanceInMiles <= 300 ? 
+          600 : 
+          getBaseRate(distanceInMiles, transportType);
+    
+        // Данные для разбивки базовой цены
+        const basePriceBreakdown = {
+          ratePerMile: distanceInMiles <= 300 ? 0 : TRANSPORT_TYPES[transportType].baseRatePerMile.max,
+          distance: distanceInMiles,
+          total: basePrice
+        };
+    
+        // Получаем множители
+        const vehicleMultiplier = VEHICLE_VALUE_TYPES[vehicleValue].multiplier;
+        const autoShowMultiplier = Math.max(
+          getAutoShowMultiplier(pickupAutoShows, selectedDate),
+          getAutoShowMultiplier(deliveryAutoShows, selectedDate)
+        );
+        const routePoints = getRoutePoints(response);
+        const fuelPriceMultiplier = await getFuelPriceMultiplier(routePoints, window.google);
+        const weatherMultiplier = 1.0;
+        const trafficMultiplier = 1.0;
+    
+        // Рассчитываем денежный impact для каждого фактора
+        const vehicleImpact = basePrice * (vehicleMultiplier - 1);
+        const weatherImpact = basePrice * (weatherMultiplier - 1);
+        const trafficImpact = basePrice * (trafficMultiplier - 1);
+        const autoShowImpact = basePrice * (autoShowMultiplier - 1);
+        const fuelImpact = basePrice * (fuelPriceMultiplier - 1);
+    
+        // Суммируем все impact-ы
+        const totalImpact = 
+          vehicleImpact + 
+          weatherImpact + 
+          trafficImpact + 
+          autoShowImpact + 
+          fuelImpact;
+    
+        // Дополнительные услуги
+        const additionalServices = {
+          premium: premiumEnhancements ? 0.3 : 0,
+          special: specialLoad ? 0.3 : 0,
+          inoperable: inoperable ? 0.3 : 0
+        };
+    
+        const additionalServicesSum = 
+          (additionalServices.premium + 
+          additionalServices.special + 
+          additionalServices.inoperable);
+    
+        const additionalServicesImpact = basePrice * additionalServicesSum;
+    
+        // Расчет платных дорог
+        const totalTollCost = calculateTollCost(distanceInMiles, response.routes[0]);
+        const tollSegments = getRouteSegments(response, totalTollCost);
+        const tollCosts = {
+          segments: tollSegments,
+          total: totalTollCost
+        };
+    
+        // Устанавливаем компоненты цены
+        setPriceComponents({
+          selectedDate,
+          basePrice,
+          basePriceBreakdown,
+          mainMultipliers: {
+            // Множители для процентов
+            vehicleMultiplier,
+            weatherMultiplier,
+            trafficMultiplier,
+            autoShowMultiplier,
+            fuelMultiplier: fuelPriceMultiplier,
+            // Импакты в долларах
+            vehicleImpact,
+            weatherImpact,
+            trafficImpact,
+            autoShowImpact,
+            fuelImpact,
+            totalImpact
+          },
+          additionalServices: {
+            ...additionalServices,
+            totalAdditional: additionalServicesSum
+          },
+          tollCosts,
+          finalPrice: basePrice + totalImpact + additionalServicesImpact + tollCosts.total
+        });
+      } catch (error) {
+        // Проверяем, не связана ли ошибка с API лимитом
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        
+        if (errorMessage.includes('API limit')) {
+          setErrors((prev) => ({ 
+            ...prev, 
+            general: 'API limit reached. Try again later.' 
+          }));
+        } else {
+          setErrors((prev) => ({ 
+            ...prev, 
+            general: 'Error calculating route. Please check the addresses and try again.' 
+          }));
+        }
+      }
     } catch (err) {
       console.error('Calculation error:', err);
-      setErrors((prev) => ({ 
-        ...prev, 
-        general: 'Error calculating route. Please check the addresses and try again.' 
-      }));
+      
+      // Проверяем, не связана ли ошибка с API лимитом
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      
+      if (errorMessage.includes('API limit')) {
+        setErrors((prev) => ({ 
+          ...prev, 
+          general: 'API limit reached. Try again later.' 
+        }));
+      } else {
+        setErrors((prev) => ({ 
+          ...prev, 
+          general: 'Error calculating route. Please check the addresses and try again.' 
+        }));
+      }
     } finally {
       setLoading(false);
     }
@@ -726,10 +791,18 @@ export default function BrokerCalculator() {
               </div>
             </div>
 
+            {/* Показываем капчу, если нужно */}
+            {showCaptcha && (
+              <SimpleCaptcha 
+                generatedNumber={generatedNumber} 
+                onVerify={verifyCaptcha} 
+              />
+            )}
+
             <div className="flex flex-col sm:flex-row gap-4 mt-12 sm:mt-24">
               <button
                 onClick={calculatePrice}
-                disabled={loading}
+                disabled={loading || showCaptcha || apiLimitReached}
                 className="w-full sm:flex-1 bg-primary hover:bg-primary/90
                   text-white py-8 sm:py-12 px-8 sm:px-16 rounded-[24px]
                   disabled:bg-primary/50
@@ -743,6 +816,10 @@ export default function BrokerCalculator() {
                     <Loader2 className="w-16 h-16 sm:w-20 sm:h-20 mr-4 sm:mr-8 animate-spin" />
                     Calculating...
                   </>
+                ) : showCaptcha ? (
+                  'Please complete verification'
+                ) : apiLimitReached ? (
+                  'API limit reached'
                 ) : (
                   'Calculate Route and Price'
                 )}
@@ -764,9 +841,10 @@ export default function BrokerCalculator() {
               </button>
             </div>
   
-            {error && (
-              <div className="mt-8 sm:mt-16 p-8 sm:p-16 bg-red-50 text-red-700 rounded-[24px] font-montserrat text-sm sm:text-p2">
-                {error}
+            {errors.general && (
+              <div className="mt-8 sm:mt-16 p-8 sm:p-16 bg-red-50 text-red-700 rounded-[24px] font-montserrat text-sm sm:text-p2 flex items-start gap-4">
+                <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <span>{errors.general}</span>
               </div>
             )}
           </div>

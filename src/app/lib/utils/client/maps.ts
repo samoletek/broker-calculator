@@ -1,5 +1,18 @@
 import { Loader } from '@googlemaps/js-api-loader';
 import type { GeoPoint } from '@/app/types/common.types';
+import useRateLimiter from '@/app/lib/hooks/useRateLimiter';
+
+// Создаем экземпляр ограничителя API запросов
+let rateLimiterInstance: ReturnType<typeof useRateLimiter> | null = null;
+
+function getRateLimiter() {
+  if (typeof window === 'undefined') return null;
+  
+  if (!rateLimiterInstance) {
+    rateLimiterInstance = useRateLimiter();
+  }
+  return rateLimiterInstance;
+}
 
 export const initializeGoogleMaps = async (): Promise<typeof google.maps> => {
   try {
@@ -30,6 +43,13 @@ export const isSameLocation = async (
   googleMaps: typeof google.maps
 ): Promise<boolean> => {
   try {
+    // Проверяем лимит API запросов
+    const rateLimiter = getRateLimiter();
+    
+    if (rateLimiter && !rateLimiter.trackApiRequest()) {
+      throw new Error('API limit reached. Try again later.');
+    }
+    
     const geocoder = new googleMaps.Geocoder();
     const [response1, response2] = await Promise.all([
       geocoder.geocode({ address: address1 }),
@@ -66,6 +86,17 @@ export const validateAddress = async (
   location?: google.maps.LatLng;
 }> => {
   try {
+    // Проверяем лимит API запросов
+    const rateLimiter = getRateLimiter();
+    
+    if (rateLimiter && !rateLimiter.trackApiRequest()) {
+      return { 
+        isValid: false, 
+        hasZip: false,
+        error: 'API limit reached. Try again later.' 
+      };
+    }
+    
     const geocoder = new googleMaps.Geocoder();
     const response = await geocoder.geocode({ address });
 
