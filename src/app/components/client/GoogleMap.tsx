@@ -40,7 +40,7 @@ const GoogleMap = forwardRef<HTMLDivElement, GoogleMapProps>(({ mapData }, ref) 
     if (mapData) {
       directionsRendererRef.current.setDirections(mapData);
     }
-  }, [googleMaps, ref]);
+  }, [googleMaps, ref, mapData]);
 
   useEffect(() => {
     if (mapData && directionsRendererRef.current) {

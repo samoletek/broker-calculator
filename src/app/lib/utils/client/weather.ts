@@ -2,19 +2,7 @@ import axios from 'axios';
 import { format } from 'date-fns';
 import type { WeatherResponse } from '@/app/types/api.types';
 import type { GeoPoint } from '@/app/types/common.types';
-import useRateLimiter from '@/app/lib/hooks/useRateLimiter';
-
-// Создаем экземпляр ограничителя API запросов
-let rateLimiterInstance: ReturnType<typeof useRateLimiter> | null = null;
-
-function getRateLimiter() {
-  if (typeof window === 'undefined') return null;
-  
-  if (!rateLimiterInstance) {
-    rateLimiterInstance = useRateLimiter();
-  }
-  return rateLimiterInstance;
-}
+import { trackApiRequest } from '@/app/lib/hooks/useRateLimiter';
 
 // Общие типы для погодных условий
 export interface WeatherData {
@@ -51,9 +39,7 @@ export const getWeatherData = async (
 ): Promise<WeatherResponse> => {
   try {
     // Проверяем лимит API запросов
-    const rateLimiter = getRateLimiter();
-    
-    if (rateLimiter && !rateLimiter.trackApiRequest()) {
+    if (!trackApiRequest()) {
       throw new Error('API limit reached. Try again later.');
     }
     

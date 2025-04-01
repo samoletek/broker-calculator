@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Truck, Loader2, AlertCircle } from 'lucide-react';
 import Select from '@/app/components/ui/Select';
-import Button from '@/app/components/ui/Button';
 import { DatePicker } from '@/app/components/client/DatePicker';
 import { PriceBreakdown }  from '@/app/components/server/PriceBreakdown';
 import PriceSummary from '@/app/components/server/PriceSummary';
@@ -140,9 +139,9 @@ export default function BrokerCalculator() {
         clearResults();
       });
     };
-
+  
     initAutocomplete();
-  }, [googleMaps]);
+  }, [googleMaps]); 
 
   useEffect(() => {
     const isExpensiveVehicle = vehicleValue === 'under500k' || vehicleValue === 'over500k';
@@ -152,7 +151,7 @@ export default function BrokerCalculator() {
   }, [vehicleValue]);
 
   // Utility functions
-  const clearResults = () => {
+  const clearResults = useCallback(() => {
     setDistance(null);
     setPriceComponents(null);
     setMapData(null);
@@ -179,7 +178,7 @@ export default function BrokerCalculator() {
       selectedDate: '',
       general: ''
     });
-  };
+  }, []);
 
   // Validations
   const validateFields = () => {
