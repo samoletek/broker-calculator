@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-type RequestType = 'calculator' | 'api';
+type RequestType = 'calculator';
 
 interface RequestLog {
   timestamp: number;
@@ -13,7 +13,6 @@ interface RequestLog {
 const rateLimiterState = {
   showCaptcha: false,
   captchaVerified: false,
-  apiLimitReached: false,
   generatedNumber: Math.floor(1000 + Math.random() * 9000),
   initialized: false
 };
@@ -23,13 +22,7 @@ const getRequestsByType = (type: RequestType): RequestLog[] => {
   if (typeof window === 'undefined') return [];
   
   const now = Date.now();
-  let timeFrame = 0;
-  
-  if (type === 'calculator') {
-    timeFrame = 60 * 1000; // 1 минута для калькулятора
-  } else if (type === 'api') {
-    timeFrame = 60 * 60 * 1000; // 1 час для API
-  }
+  const timeFrame = 60 * 1000; // 1 минута для калькулятора
   
   const cutoff = now - timeFrame;
   
@@ -68,25 +61,6 @@ const logRequest = (type: RequestType) => {
   }
 };
 
-const checkApiLimit = (): boolean => {
-  if (typeof window === 'undefined') return true;
-  
-  try {
-    const apiRequests = getRequestsByType('api');
-    
-    // Если больше 50 запросов за последний час
-    if (apiRequests.length >= 50) {
-      rateLimiterState.apiLimitReached = true;
-      return false;
-    }
-    
-    rateLimiterState.apiLimitReached = false;
-    return true;
-  } catch (e) {
-    return true;
-  }
-};
-
 // Инициализация состояния
 const initializeRateLimiter = () => {
   if (typeof window === 'undefined' || rateLimiterState.initialized) return;
@@ -106,15 +80,12 @@ const initializeRateLimiter = () => {
     }
   }
   
-  // Проверяем API лимит
-  checkApiLimit();
-  
   // Генерируем новое число для капчи
   rateLimiterState.generatedNumber = Math.floor(1000 + Math.random() * 9000);
   rateLimiterState.initialized = true;
 };
 
-// Функции-утилиты для внешнего использования
+// Функции для внешнего использования
 export const trackCalculationRequest = (): boolean => {
   if (typeof window === 'undefined') return true;
   
@@ -130,8 +101,8 @@ export const trackCalculationRequest = (): boolean => {
   // Регистрируем новый запрос
   logRequest('calculator');
   
-  // Если это 5-й запрос за минуту, включаем капчу
-  if (calculatorRequests.length >= 4) { // 4 предыдущих + текущий = 5
+  // Если это 15-й запрос за минуту, включаем капчу
+  if (calculatorRequests.length >= 14) { // 14 предыдущих + текущий = 15
     const now = Date.now();
     const blockUntil = now + 5 * 60 * 1000; // Блокировка на 5 минут
     
@@ -150,22 +121,9 @@ export const trackCalculationRequest = (): boolean => {
   return true;
 };
 
-export const trackApiRequest = (): boolean => {
-  if (typeof window === 'undefined') return true;
-  
-  initializeRateLimiter();
-  
-  // Проверяем текущий лимит API
-  if (!checkApiLimit()) {
-    return false;
-  }
-  
-  // Регистрируем новый API запрос
-  logRequest('api');
-  
-  // После регистрации перепроверяем лимит
-  return checkApiLimit();
-};
+// Просто заглушки для совместимости с существующим кодом
+export const trackApiRequest = (): boolean => true;
+export const trackAutocompleteRequest = (): boolean => true;
 
 export const verifyCaptcha = (userInput: string): boolean => {
   if (typeof window === 'undefined') return false;
@@ -174,6 +132,10 @@ export const verifyCaptcha = (userInput: string): boolean => {
     rateLimiterState.captchaVerified = true;
     rateLimiterState.showCaptcha = false;
     localStorage.removeItem('calculator_blocked');
+    
+    // Очистим журнал запросов при успешной верификации
+    localStorage.setItem('request_logs', JSON.stringify([]));
+    
     return true;
   }
   // Генерируем новое число при неудачной попытке
@@ -185,7 +147,6 @@ export const verifyCaptcha = (userInput: string): boolean => {
 export function useRateLimiter() {
   const [showCaptcha, setShowCaptcha] = useState<boolean>(false);
   const [captchaVerified, setCaptchaVerified] = useState<boolean>(false);
-  const [apiLimitReached, setApiLimitReached] = useState<boolean>(false);
   const [generatedNumber, setGeneratedNumber] = useState<number>(0);
   
   useEffect(() => {
@@ -197,35 +158,33 @@ export function useRateLimiter() {
     // Синхронизируем состояние React с глобальным состоянием
     setShowCaptcha(rateLimiterState.showCaptcha);
     setCaptchaVerified(rateLimiterState.captchaVerified);
-    setApiLimitReached(rateLimiterState.apiLimitReached);
     setGeneratedNumber(rateLimiterState.generatedNumber);
     
-    // Переодическая проверка состояния (каждую секунду)
+    // Периодическая проверка состояния (каждую секунду)
     const intervalId = setInterval(() => {
       if (
         showCaptcha !== rateLimiterState.showCaptcha || 
         captchaVerified !== rateLimiterState.captchaVerified || 
-        apiLimitReached !== rateLimiterState.apiLimitReached || 
         generatedNumber !== rateLimiterState.generatedNumber
       ) {
         setShowCaptcha(rateLimiterState.showCaptcha);
         setCaptchaVerified(rateLimiterState.captchaVerified);
-        setApiLimitReached(rateLimiterState.apiLimitReached);
         setGeneratedNumber(rateLimiterState.generatedNumber);
       }
     }, 1000);
     
     return () => clearInterval(intervalId);
-  }, [showCaptcha, captchaVerified, apiLimitReached, generatedNumber]);
+  }, [showCaptcha, captchaVerified, generatedNumber]);
   
   return {
     showCaptcha,
     captchaVerified,
-    apiLimitReached,
+    apiLimitReached: false, // Всегда false, так как мы удалили эту функциональность
     generatedNumber,
     trackCalculationRequest,
     trackApiRequest,
-    verifyCaptcha
+    verifyCaptcha,
+    trackAutocompleteRequest
   };
 }
 

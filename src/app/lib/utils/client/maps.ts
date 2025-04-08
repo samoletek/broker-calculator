@@ -31,11 +31,6 @@ export const isSameLocation = async (
   googleMaps: typeof google.maps
 ): Promise<boolean> => {
   try {
-    // Проверяем лимит API запросов
-    if (!trackApiRequest()) {
-      throw new Error('API limit reached. Try again later.');
-    }
-    
     const geocoder = new googleMaps.Geocoder();
     const [response1, response2] = await Promise.all([
       geocoder.geocode({ address: address1 }),
@@ -72,15 +67,6 @@ export const validateAddress = async (
   location?: google.maps.LatLng;
 }> => {
   try {
-    // Проверяем лимит API запросов
-    if (!trackApiRequest()) {
-      return { 
-        isValid: false, 
-        hasZip: false,
-        error: 'API limit reached. Try again later.' 
-      };
-    }
-    
     const geocoder = new googleMaps.Geocoder();
     const response = await geocoder.geocode({ address });
 

@@ -38,11 +38,6 @@ export const getWeatherData = async (
   date?: Date
 ): Promise<WeatherResponse> => {
   try {
-    // Проверяем лимит API запросов
-    if (!trackApiRequest()) {
-      throw new Error('API limit reached. Try again later.');
-    }
-    
     const response = await axios.get<WeatherResponse>(
       'https://api.weatherapi.com/v1/forecast.json',
       {

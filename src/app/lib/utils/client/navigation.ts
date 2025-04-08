@@ -1,28 +1,30 @@
-// navigation.ts
+// src/app/lib/utils/client/navigation.ts
 import type { BookingFormData } from '@/app/types/booking.types';
 
 export const navigateToBooking = (data: BookingFormData) => {
+    const wixBookingPage = "https://www.carhauldirect.com/booking";
+    
+    // Сохраняем полные данные в sessionStorage для доступа на странице букинга
+    sessionStorage.setItem('booking_data', JSON.stringify(data));
+    
+    // Сокращаем длинные строки для URL
     const queryParams = new URLSearchParams({
-      // Contact Info
       name: data.name,
-      phone: data.phone,
       email: data.email,
-      
-      // Route
-      pickup: data.pickup,
-      delivery: data.delivery,
+      phone: data.phone,
+      pickup: data.pickup.substring(0, 100), // Ограничиваем длину для URL
+      delivery: data.delivery.substring(0, 100),
       date: data.selectedDate,
-      
-      // Vehicle Details
       transport: data.transportType,
       vehicle: data.vehicleType,
       value: data.vehicleValue,
-      
-      // Additional Services
       premium: data.premiumEnhancements.toString(),
       special: data.specialLoad.toString(),
-      inoperable: data.inoperable.toString()
+      inoperable: data.inoperable.toString(),
+      // Добавляем метку, чтобы распознать, что запрос пришел из калькулятора
+      fromCalculator: 'true'
     }).toString();
   
-    window.location.href = `${window.location.origin}/booking?${queryParams}`;
+    // Переход на страницу букинга Wix
+    window.location.href = `${wixBookingPage}?${queryParams}`;
 };

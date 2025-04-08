@@ -1,11 +1,13 @@
+// src/app/components/server/PriceSummary.tsx
 'use client';
 
 import React, { useState } from 'react';
-import { DollarSign, Save, ArrowRight } from 'lucide-react';
+import { Save, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import Button from '@/app/components/ui/Button';
 import type { SavedToast } from '@/app/types/common.types';
 import { navigateToBooking } from '@/app/lib/utils/client/navigation';
+import { sendPriceEmail } from '@/app/lib/utils/client/emailUtils';
 import type { BookingFormData } from '@/app/types/booking.types';
 
 interface ContactInfo {
@@ -50,8 +52,23 @@ export function PriceSummary({
   onSavePrice 
 }: PriceSummaryProps) {
   const [toast, setToast] = useState<SavedToast>({ show: false, message: '', type: 'success' });
+  const [isSending, setIsSending] = useState(false);
 
-  const handleSavePrice = () => {
+  const handleSavePrice = async () => {
+    // Проверяем, есть ли email
+    if (!contactInfo?.email) {
+      setToast({
+        show: true,
+        message: 'Email address is required to send the price quote',
+        type: 'error'
+      });
+      setTimeout(() => setToast({ show: false, message: '' }), 3000);
+      return;
+    }
+
+    setIsSending(true);
+
+    // Сохраняем расчет локально
     const savedCalculation = {
       finalPrice,
       basePrice,
@@ -64,15 +81,46 @@ export function PriceSummary({
       savedCalculations.push(savedCalculation);
       localStorage.setItem('savedCalculations', JSON.stringify(savedCalculations));
       
-      setToast({ show: true, message: 'Price calculation saved!', type: 'success' });
-      setTimeout(() => setToast({ show: false, message: '' }), 3000);
+      // Отправляем email с расчетом
+      const emailData = {
+        name: contactInfo.name || 'Customer',
+        email: contactInfo.email,
+        phone: contactInfo.phone || '',
+        calculationData: {
+          pickup: pickup || '',
+          delivery: delivery || '',
+          finalPrice: finalPrice,
+          transportType: transportType || '',
+          vehicleType: vehicleType || '',
+          vehicleValue: vehicleValue || '',
+          selectedDate: selectedDate?.toISOString(),
+          distance: distance
+        }
+      };
+
+      const emailResult = await sendPriceEmail(emailData);
+      
+      // Показываем результат отправки
+      setToast({ 
+        show: true, 
+        message: emailResult.success 
+          ? 'Price calculation saved and sent to your email!'
+          : emailResult.message,
+        type: emailResult.success ? 'success' : 'error'
+      });
       
       if (onSavePrice) {
         onSavePrice();
       }
     } catch (error) {
-      console.error('Error saving calculation:', error);
-      setToast({ show: true, message: 'Failed to save calculation', type: 'error' });
+      console.error('Error saving calculation or sending email:', error);
+      setToast({ 
+        show: true, 
+        message: 'Failed to process your request', 
+        type: 'error' 
+      });
+    } finally {
+      setIsSending(false);
       setTimeout(() => setToast({ show: false, message: '' }), 3000);
     }
   };
@@ -142,6 +190,8 @@ export function PriceSummary({
           <Button
             onClick={handleSavePrice}
             variant="primary"
+            loading={isSending}
+            disabled={isSending}
             className="w-full sm:w-auto whitespace-nowrap flex items-center justify-center 
               px-12 sm:px-24 py-8 sm:py-12 
               bg-primary text-white rounded-[24px] 

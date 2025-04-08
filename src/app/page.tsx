@@ -99,9 +99,10 @@ export default function BrokerCalculator() {
   const googleMaps = useGoogleMaps();
   const { 
     showCaptcha, 
-    generatedNumber, 
-    apiLimitReached,
+    generatedNumber,
     trackCalculationRequest, 
+    trackApiRequest,
+    trackAutocompleteRequest,
     verifyCaptcha 
   } = useRateLimiter();
   
@@ -117,23 +118,32 @@ export default function BrokerCalculator() {
     const initAutocomplete = () => {
       if (!googleMaps || !pickupInputRef.current || !deliveryInputRef.current) return;
     
+      // Проверяем доступность API перед созданием автоподсказок
+      trackAutocompleteRequest();
+      
+      // Инициализация автоподсказки для точки отправления
       const pickupAutocomplete = new googleMaps.places.Autocomplete(pickupInputRef.current, {
         types: ['geocode'],
         componentRestrictions: { country: 'us' },
       });
       
-      const deliveryAutocomplete = new googleMaps.places.Autocomplete(deliveryInputRef.current, {
-        types: ['geocode'],
-        componentRestrictions: { country: 'us' },
-      });
-    
       pickupAutocomplete.addListener('place_changed', () => {
+        // При выборе места отслеживаем API использование
+        trackApiRequest();
+        
         const place = pickupAutocomplete.getPlace();
         setPickup(place.formatted_address || '');
         clearResults();
       });
-    
+      
+      // Инициализация автоподсказки для точки доставки
+      const deliveryAutocomplete = new googleMaps.places.Autocomplete(deliveryInputRef.current, {
+        types: ['geocode'],
+        componentRestrictions: { country: 'us' },
+      });
+      
       deliveryAutocomplete.addListener('place_changed', () => {
+        trackApiRequest();
         const place = deliveryAutocomplete.getPlace();
         setDelivery(place.formatted_address || '');
         clearResults();
@@ -141,7 +151,7 @@ export default function BrokerCalculator() {
     };
   
     initAutocomplete();
-  }, [googleMaps]); 
+  }, [googleMaps, trackAutocompleteRequest, trackApiRequest]); 
 
   useEffect(() => {
     const isExpensiveVehicle = vehicleValue === 'under500k' || vehicleValue === 'over500k';
@@ -178,7 +188,7 @@ export default function BrokerCalculator() {
       selectedDate: '',
       general: ''
     });
-  }, []);
+  }, [setPriceComponents]);
 
   // Validations
   const validateFields = () => {
@@ -244,15 +254,6 @@ export default function BrokerCalculator() {
   
     // Проверяем лимит вычислений и капчу
     if (!trackCalculationRequest()) {
-      return;
-    }
-    
-    // Проверяем API лимит
-    if (apiLimitReached) {
-      setErrors((prev) => ({ 
-        ...prev, 
-        general: 'API limit reached. Try again later.' 
-      }));
       return;
     }
     
@@ -801,7 +802,7 @@ export default function BrokerCalculator() {
             <div className="flex flex-col sm:flex-row gap-4 mt-12 sm:mt-24">
               <button
                 onClick={calculatePrice}
-                disabled={loading || showCaptcha || apiLimitReached}
+                disabled={loading || showCaptcha }
                 className="w-full sm:flex-1 bg-primary hover:bg-primary/90
                   text-white py-8 sm:py-12 px-8 sm:px-16 rounded-[24px]
                   disabled:bg-primary/50
@@ -817,8 +818,6 @@ export default function BrokerCalculator() {
                   </>
                 ) : showCaptcha ? (
                   'Please complete verification'
-                ) : apiLimitReached ? (
-                  'API limit reached'
                 ) : (
                   'Calculate Route and Price'
                 )}
@@ -850,7 +849,7 @@ export default function BrokerCalculator() {
         </div>
   
         {distance && priceComponents && mapData && (
-          <div className="space-y-12 sm:space-y-24">
+          <div className="space-y-12 sm:space-y-24 calculation-container">
             <PriceSummary 
               finalPrice={priceComponents.finalPrice}
               basePrice={priceComponents.basePrice}
