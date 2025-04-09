@@ -27,7 +27,7 @@ import { getFuelPriceMultiplier } from '@/app/lib/utils/client/fuelUtils';
 import type { SelectOption } from '@/app/types/common.types';
 
 // Динамический импорт компонентов
-const SimpleCaptcha = dynamic(() => import('@/app/components/client/SimpleCaptcha'), {
+const GoogleReCaptcha = dynamic(() => import('@/app/lib/utils/client/GoogleReCaptcha'), {
   ssr: false,
 });
 
@@ -99,11 +99,10 @@ export default function BrokerCalculator() {
   const googleMaps = useGoogleMaps();
   const { 
     showCaptcha, 
-    generatedNumber,
     trackCalculationRequest, 
     trackApiRequest,
     trackAutocompleteRequest,
-    verifyCaptcha 
+    verifyRecaptcha 
   } = useRateLimiter();
   
   // Refs
@@ -119,7 +118,9 @@ export default function BrokerCalculator() {
       if (!googleMaps || !pickupInputRef.current || !deliveryInputRef.current) return;
     
       // Проверяем доступность API перед созданием автоподсказок
-      trackAutocompleteRequest();
+      if (!trackAutocompleteRequest()) {
+        return;
+      }
       
       // Инициализация автоподсказки для точки отправления
       const pickupAutocomplete = new googleMaps.places.Autocomplete(pickupInputRef.current, {
@@ -129,7 +130,9 @@ export default function BrokerCalculator() {
       
       pickupAutocomplete.addListener('place_changed', () => {
         // При выборе места отслеживаем API использование
-        trackApiRequest();
+        if (!trackApiRequest()) {
+          return;
+        }
         
         const place = pickupAutocomplete.getPlace();
         setPickup(place.formatted_address || '');
@@ -143,7 +146,9 @@ export default function BrokerCalculator() {
       });
       
       deliveryAutocomplete.addListener('place_changed', () => {
-        trackApiRequest();
+        if (!trackApiRequest()) {
+          return;
+        }
         const place = deliveryAutocomplete.getPlace();
         setDelivery(place.formatted_address || '');
         clearResults();
@@ -189,6 +194,14 @@ export default function BrokerCalculator() {
       general: ''
     });
   }, [setPriceComponents]);
+
+  // Handling reCAPTCHA verification
+  const handleRecaptchaVerify = async (token: string | null) => {
+    if (await verifyRecaptcha(token)) {
+      // Если верификация успешна, сбрасываем состояние ошибки
+      setErrors((prev) => ({ ...prev, general: '' }));
+    }
+  };
 
   // Validations
   const validateFields = () => {
@@ -791,18 +804,17 @@ export default function BrokerCalculator() {
               </div>
             </div>
 
-            {/* Показываем капчу, если нужно */}
+            {/* Показываем reCAPTCHA, если нужно */}
             {showCaptcha && (
-              <SimpleCaptcha 
-                generatedNumber={generatedNumber} 
-                onVerify={verifyCaptcha} 
+              <GoogleReCaptcha 
+                onVerify={handleRecaptchaVerify}
               />
             )}
 
             <div className="flex flex-col sm:flex-row gap-4 mt-12 sm:mt-24">
               <button
                 onClick={calculatePrice}
-                disabled={loading || showCaptcha }
+                disabled={loading || showCaptcha}
                 className="w-full sm:flex-1 bg-primary hover:bg-primary/90
                   text-white py-8 sm:py-12 px-8 sm:px-16 rounded-[24px]
                   disabled:bg-primary/50

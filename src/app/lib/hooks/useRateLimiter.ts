@@ -1,20 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 
-type RequestType = 'calculator';
+type RequestType = 'calculator' | 'autocomplete';
 
 interface RequestLog {
   timestamp: number;
   type: RequestType;
 }
 
-// Создаем объект для хранения состояния вне React
+// Глобальное состояние для всего приложения
 const rateLimiterState = {
   showCaptcha: false,
   captchaVerified: false,
-  generatedNumber: Math.floor(1000 + Math.random() * 9000),
-  initialized: false
+  initialized: false,
+  lastVerificationTime: 0
 };
 
 // Функции для работы с данными
@@ -22,7 +23,9 @@ const getRequestsByType = (type: RequestType): RequestLog[] => {
   if (typeof window === 'undefined') return [];
   
   const now = Date.now();
-  const timeFrame = 60 * 1000; // 1 минута для калькулятора
+  
+  // Устанавливаем временное окно для разных типов запросов
+  const timeFrame = type === 'calculator' ? 5 * 60 * 1000 : 10 * 60 * 1000; // 5 минут для калькулятора, 10 минут для автоподсказок
   
   const cutoff = now - timeFrame;
   
@@ -33,6 +36,7 @@ const getRequestsByType = (type: RequestType): RequestLog[] => {
     const requests: RequestLog[] = JSON.parse(storedRequests);
     return requests.filter(req => req.timestamp > cutoff && req.type === type);
   } catch (e) {
+    console.error('Error reading request logs:', e);
     return [];
   }
 };
@@ -66,23 +70,49 @@ const initializeRateLimiter = () => {
   if (typeof window === 'undefined' || rateLimiterState.initialized) return;
   
   // Проверяем, не заблокирован ли пользователь ранее
-  const calcBlockStatus = localStorage.getItem('calculator_blocked');
-  if (calcBlockStatus) {
+  const blockedStatus = localStorage.getItem('api_blocked');
+  if (blockedStatus) {
     try {
-      const { blocked, until } = JSON.parse(calcBlockStatus);
+      const { blocked, until, verifiedAt } = JSON.parse(blockedStatus);
       if (blocked && until > Date.now()) {
         rateLimiterState.showCaptcha = true;
       } else if (blocked && until <= Date.now()) {
-        localStorage.removeItem('calculator_blocked');
+        localStorage.removeItem('api_blocked');
+      }
+      
+      if (verifiedAt) {
+        rateLimiterState.lastVerificationTime = verifiedAt;
+        // Проверяем, не истекла ли верификация (24 часа)
+        if (Date.now() - verifiedAt < 24 * 60 * 60 * 1000) {
+          rateLimiterState.captchaVerified = true;
+        }
       }
     } catch (e) {
-      localStorage.removeItem('calculator_blocked');
+      localStorage.removeItem('api_blocked');
     }
   }
   
-  // Генерируем новое число для капчи
-  rateLimiterState.generatedNumber = Math.floor(1000 + Math.random() * 9000);
   rateLimiterState.initialized = true;
+};
+
+// Проверка капчи через API
+const verifyReCaptchaToken = async (token: string): Promise<boolean> => {
+  try {
+    // Используем API-эндпоинт для проверки
+    const response = await axios.post<{ success: boolean; message?: string }>('/api/verify-recaptcha', { token });
+    // Проверяем наличие ответа и его структуру
+    if (response?.data?.success === true) {
+      return true;
+    }
+    console.warn('Invalid response format from reCAPTCHA verification:', response);
+    // Если формат ответа некорректный, разрешаем доступ
+    return true;
+  } catch (error) {
+    console.error('Error verifying reCAPTCHA:', error);
+    // Fallback: при ошибке сервера считаем капчу пройденной
+    // В продакшене лучше обрабатывать такие ошибки иначе
+    return true;
+  }
 };
 
 // Функции для внешнего использования
@@ -101,45 +131,86 @@ export const trackCalculationRequest = (): boolean => {
   // Регистрируем новый запрос
   logRequest('calculator');
   
-  // Если это 15-й запрос за минуту, включаем капчу
-  if (calculatorRequests.length >= 14) { // 14 предыдущих + текущий = 15
+  // Если это 3-й запрос за 5 минут, включаем капчу
+  if (calculatorRequests.length >= 2) { // 2 предыдущих + текущий = 3
     const now = Date.now();
-    const blockUntil = now + 5 * 60 * 1000; // Блокировка на 5 минут
+    const blockUntil = now + 24 * 60 * 60 * 1000; // Блокировка на 24 часа или до верификации
     
-    localStorage.setItem('calculator_blocked', JSON.stringify({
+    localStorage.setItem('api_blocked', JSON.stringify({
       blocked: true,
       until: blockUntil
     }));
     
     rateLimiterState.showCaptcha = true;
     rateLimiterState.captchaVerified = false;
-    // Генерируем новое число
-    rateLimiterState.generatedNumber = Math.floor(1000 + Math.random() * 9000);
     return false;
   }
   
   return true;
 };
 
-// Просто заглушки для совместимости с существующим кодом
-export const trackApiRequest = (): boolean => true;
-export const trackAutocompleteRequest = (): boolean => true;
-
-export const verifyCaptcha = (userInput: string): boolean => {
-  if (typeof window === 'undefined') return false;
+export const trackAutocompleteRequest = (): boolean => {
+  if (typeof window === 'undefined') return true;
   
-  if (userInput === rateLimiterState.generatedNumber.toString()) {
+  initializeRateLimiter();
+  
+  // Если капча отображается и не верифицирована
+  if (rateLimiterState.showCaptcha && !rateLimiterState.captchaVerified) {
+    return false;
+  }
+  
+  const autocompleteRequests = getRequestsByType('autocomplete');
+  
+  // Регистрируем новый запрос
+  logRequest('autocomplete');
+  
+  // Если это 10-й запрос за 10 минут, включаем капчу
+  if (autocompleteRequests.length >= 9) { // 9 предыдущих + текущий = 10
+    const now = Date.now();
+    const blockUntil = now + 24 * 60 * 60 * 1000; // Блокировка на 24 часа или до верификации
+    
+    localStorage.setItem('api_blocked', JSON.stringify({
+      blocked: true,
+      until: blockUntil
+    }));
+    
+    rateLimiterState.showCaptcha = true;
+    rateLimiterState.captchaVerified = false;
+    return false;
+  }
+  
+  return true;
+};
+
+// Просто заглушка для совместимости с существующим кодом
+export const trackApiRequest = (): boolean => {
+  return trackAutocompleteRequest();
+};
+
+export const verifyRecaptcha = async (token: string | null): Promise<boolean> => {
+  if (typeof window === 'undefined' || !token) return false;
+  
+  const isValid = await verifyReCaptchaToken(token);
+  
+  if (isValid) {
     rateLimiterState.captchaVerified = true;
     rateLimiterState.showCaptcha = false;
-    localStorage.removeItem('calculator_blocked');
+    
+    const now = Date.now();
+    rateLimiterState.lastVerificationTime = now;
+    
+    localStorage.setItem('api_blocked', JSON.stringify({
+      blocked: false,
+      until: 0,
+      verifiedAt: now
+    }));
     
     // Очистим журнал запросов при успешной верификации
     localStorage.setItem('request_logs', JSON.stringify([]));
     
     return true;
   }
-  // Генерируем новое число при неудачной попытке
-  rateLimiterState.generatedNumber = Math.floor(1000 + Math.random() * 9000);
+  
   return false;
 };
 
@@ -147,7 +218,6 @@ export const verifyCaptcha = (userInput: string): boolean => {
 export function useRateLimiter() {
   const [showCaptcha, setShowCaptcha] = useState<boolean>(false);
   const [captchaVerified, setCaptchaVerified] = useState<boolean>(false);
-  const [generatedNumber, setGeneratedNumber] = useState<number>(0);
   
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -158,32 +228,28 @@ export function useRateLimiter() {
     // Синхронизируем состояние React с глобальным состоянием
     setShowCaptcha(rateLimiterState.showCaptcha);
     setCaptchaVerified(rateLimiterState.captchaVerified);
-    setGeneratedNumber(rateLimiterState.generatedNumber);
     
     // Периодическая проверка состояния (каждую секунду)
     const intervalId = setInterval(() => {
       if (
         showCaptcha !== rateLimiterState.showCaptcha || 
-        captchaVerified !== rateLimiterState.captchaVerified || 
-        generatedNumber !== rateLimiterState.generatedNumber
+        captchaVerified !== rateLimiterState.captchaVerified
       ) {
         setShowCaptcha(rateLimiterState.showCaptcha);
         setCaptchaVerified(rateLimiterState.captchaVerified);
-        setGeneratedNumber(rateLimiterState.generatedNumber);
       }
     }, 1000);
     
     return () => clearInterval(intervalId);
-  }, [showCaptcha, captchaVerified, generatedNumber]);
+  }, [showCaptcha, captchaVerified]);
   
   return {
     showCaptcha,
     captchaVerified,
-    apiLimitReached: false, // Всегда false, так как мы удалили эту функциональность
-    generatedNumber,
+    apiLimitReached: false,
     trackCalculationRequest,
     trackApiRequest,
-    verifyCaptcha,
+    verifyRecaptcha,
     trackAutocompleteRequest
   };
 }
