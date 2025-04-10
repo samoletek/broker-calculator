@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server';
+import { getIronSession } from 'iron-session';
+import { validateCSRFToken } from '@/app/lib/csrf';
+import { sessionOptions } from '@/app/lib/session';
 import emailjs from '@emailjs/browser';
 
 interface EmailRequestBody {
@@ -23,11 +26,32 @@ const generateCalculationId = () => {
 };
 
 export async function POST(request: Request) {
+  console.log('Email API endpoint called');
+  
   try {
+    // Сначала убедимся, что все нужные переменные окружения доступны
+    if (!process.env.EMAILJS_SERVICE_ID || !process.env.EMAILJS_TEMPLATE_ID || !process.env.EMAILJS_PUBLIC_KEY) {
+      console.error('Missing EmailJS environment variables');
+      return NextResponse.json({
+        success: false,
+        message: 'Email service is not properly configured.'
+      }, { status: 500 });
+    }
+    
+    // Создаем объект response для сессии
+    const response = NextResponse.json({ success: false, message: 'Initializing' });
+    
+    // Проверка CSRF не нужна для этого маршрута, так как проверка уже выполнена в middleware
+    // Но мы все равно логируем заголовок для отладки
+    const csrfToken = request.headers.get('csrf-token');
+    console.log('CSRF Token received:', csrfToken ? 'Present' : 'Missing');
+    
     const body = await request.json() as EmailRequestBody;
+    console.log('Received email request for:', body.email);
     
     // Базовая валидация
     if (!body.email || !body.calculationData?.finalPrice) {
+      console.error('Missing required email data');
       return NextResponse.json(
         { success: false, message: 'Missing required data' },
         { status: 400 }
@@ -58,29 +82,37 @@ export async function POST(request: Request) {
       phone_number: body.phone || ''
     };
     
-    // Отправляем через EmailJS - важно добавить проверки на наличие переменных окружения
-    if (!process.env.EMAILJS_SERVICE_ID || !process.env.EMAILJS_TEMPLATE_ID || !process.env.EMAILJS_PUBLIC_KEY) {
-      console.error('Missing EmailJS environment variables');
+    console.log('Sending email via EmailJS with service ID:', process.env.EMAILJS_SERVICE_ID);
+    
+    try {
+      const result = await emailjs.send(
+        process.env.EMAILJS_SERVICE_ID,
+        process.env.EMAILJS_TEMPLATE_ID,
+        templateParams,
+        {
+          publicKey: process.env.EMAILJS_PUBLIC_KEY,
+        }
+      );
+      
+      console.log('Email sent successfully:', result);
+      
+      // Обязательно возвращаем объект с полем message
       return NextResponse.json({
-        success: false,
-        message: 'Email service is not properly configured.'
-      }, { status: 500 });
+        success: true,
+        message: `Price quote has been sent to your email! Quote ID: ${calculationId}`
+      });
+    } catch (emailError) {
+      console.error('EmailJS send error:', emailError);
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Failed to send email. Please check your email address and try again.'
+        },
+        { status: 500 }
+      );
     }
-    
-    const result = await emailjs.send(
-      process.env.EMAILJS_SERVICE_ID,
-      process.env.EMAILJS_TEMPLATE_ID,
-      templateParams,
-      process.env.EMAILJS_PUBLIC_KEY
-    );
-    
-    // Обязательно возвращаем объект с полем message
-    return NextResponse.json({
-      success: true,
-      message: `Price quote has been sent to your email! Quote ID: ${calculationId}`
-    });
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('Error in email route:', error);
     return NextResponse.json(
       {
         success: false,

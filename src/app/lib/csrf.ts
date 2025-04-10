@@ -21,7 +21,13 @@ export function verifyToken(token: string, expectedToken: string): boolean {
   }
   
   try {
-    // Используем константное время для сравнения, чтобы предотвратить timing-атаки
+    // Для безопасного сравнения в браузере просто сравниваем строки
+    // (crypto.timingSafeEqual доступен только на сервере)
+    if (typeof window !== 'undefined') {
+      return token === expectedToken;
+    }
+    
+    // На сервере используем константное время для сравнения
     return crypto.timingSafeEqual(
       Buffer.from(token),
       Buffer.from(expectedToken)
