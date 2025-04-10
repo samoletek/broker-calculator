@@ -99,8 +99,7 @@ export default function BrokerCalculator() {
   const googleMaps = useGoogleMaps();
   const { 
     showCaptcha, 
-    trackCalculationRequest, 
-    trackApiRequest,
+    trackCalculationRequest,
     trackAutocompleteRequest,
     verifyRecaptcha 
   } = useRateLimiter();
@@ -114,49 +113,59 @@ export default function BrokerCalculator() {
   
   // Effects
   useEffect(() => {
-    const initAutocomplete = () => {
+    const initAutocomplete = async () => {
       if (!googleMaps || !pickupInputRef.current || !deliveryInputRef.current) return;
     
-      // Проверяем доступность API перед созданием автоподсказок
-      if (!trackAutocompleteRequest()) {
-        return;
+      // Очистим предыдущие автозаполнения, если они есть
+      if (window.google && window.google.maps && window.google.maps.event) {
+        const pickupInput = pickupInputRef.current;
+        const deliveryInput = deliveryInputRef.current;
+        google.maps.event.clearInstanceListeners(pickupInput);
+        google.maps.event.clearInstanceListeners(deliveryInput);
       }
       
-      // Инициализация автоподсказки для точки отправления
-      const pickupAutocomplete = new googleMaps.places.Autocomplete(pickupInputRef.current, {
-        types: ['geocode'],
-        componentRestrictions: { country: 'us' },
-      });
+      console.log("Initializing autocomplete with Google Maps:", googleMaps);
       
-      pickupAutocomplete.addListener('place_changed', () => {
-        // При выборе места отслеживаем API использование
-        if (!trackApiRequest()) {
-          return;
-        }
+      // Проверяем доступность API перед созданием автоподсказок
+      try {
+        // Инициализация автоподсказки для точки отправления
+        const pickupAutocomplete = new googleMaps.places.Autocomplete(pickupInputRef.current, {
+          types: ['address'],
+          componentRestrictions: { country: 'us' },
+        });
         
-        const place = pickupAutocomplete.getPlace();
-        setPickup(place.formatted_address || '');
-        clearResults();
-      });
-      
-      // Инициализация автоподсказки для точки доставки
-      const deliveryAutocomplete = new googleMaps.places.Autocomplete(deliveryInputRef.current, {
-        types: ['geocode'],
-        componentRestrictions: { country: 'us' },
-      });
-      
-      deliveryAutocomplete.addListener('place_changed', () => {
-        if (!trackApiRequest()) {
-          return;
-        }
-        const place = deliveryAutocomplete.getPlace();
-        setDelivery(place.formatted_address || '');
-        clearResults();
-      });
+        pickupAutocomplete.addListener('place_changed', () => {
+          const place = pickupAutocomplete.getPlace();
+          if (place.formatted_address) {
+            setPickup(place.formatted_address);
+            clearResults();
+          }
+        });
+        
+        // Инициализация автоподсказки для точки доставки
+        const deliveryAutocomplete = new googleMaps.places.Autocomplete(deliveryInputRef.current, {
+          types: ['address'],
+          componentRestrictions: { country: 'us' },
+        });
+        
+        deliveryAutocomplete.addListener('place_changed', () => {
+          const place = deliveryAutocomplete.getPlace();
+          if (place.formatted_address) {
+            setDelivery(place.formatted_address);
+            clearResults();
+          }
+        });
+        
+        console.log("Autocomplete initialized successfully");
+      } catch (error) {
+        console.error("Error initializing autocomplete:", error);
+      }
     };
   
-    initAutocomplete();
-  }, [googleMaps, trackAutocompleteRequest, trackApiRequest]); 
+    if (googleMaps) {
+      initAutocomplete();
+    }
+  }, [googleMaps]);
 
   useEffect(() => {
     const isExpensiveVehicle = vehicleValue === 'under500k' || vehicleValue === 'over500k';

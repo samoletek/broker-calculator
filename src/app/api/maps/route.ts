@@ -36,16 +36,17 @@ export async function POST(request: Request) {
 
 // GET метод обязательно должен возвращать объект с apiKey
 export async function GET() {
-  // Проверяем, есть ли ключ API
-  if (!process.env.GOOGLE_MAPS_API_KEY) {
-    console.error('GOOGLE_MAPS_API_KEY is not defined');
-    return NextResponse.json(
-      { error: 'API key is not configured' },
-      { status: 500 }
-    );
+    // Проверяем наличие API-ключа
+    if (!process.env.GOOGLE_MAPS_API_KEY) {
+      console.error('GOOGLE_MAPS_API_KEY is not defined');
+      return NextResponse.json(
+        { error: 'API key is not configured' },
+        { status: 500 }
+      );
+    }
+    
+    // Возвращаем API ключ в правильной структуре
+    return NextResponse.json({
+      apiKey: process.env.GOOGLE_MAPS_API_KEY,
+    });
   }
-  
-  return NextResponse.json({
-    apiKey: process.env.GOOGLE_MAPS_API_KEY,
-  });
-}
