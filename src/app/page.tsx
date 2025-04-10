@@ -19,7 +19,7 @@ import { validateName, validateEmail, validatePhoneNumber } from '@/app/lib/util
 import { useGoogleMaps } from '@/app/lib/hooks/useGoogleMaps';
 import { usePricing } from '@/app/lib/hooks/usePricing';
 import { useRateLimiter } from '@/app/lib/hooks/useRateLimiter';
-import { validateAddress, isSameLocation, formatAddress, calculateDistance } from '@/app/lib/utils/client/maps';
+import { validateAddress, isSameLocation } from '@/app/lib/utils/client/maps';
 import { calculateTollCost, getRouteSegments } from '@/app/lib/utils/client/tollUtils';
 import { checkAutoShows, getAutoShowMultiplier } from '@/app/lib/utils/client/autoShowsUtils';
 import { calculateEstimatedTransitTime, getRoutePoints } from '@/app/lib/utils/client/transportUtils';

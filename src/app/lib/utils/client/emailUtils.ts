@@ -1,4 +1,3 @@
-
 interface EmailData {
   name: string;
   email: string;
@@ -14,6 +13,24 @@ interface EmailData {
     distance?: number;
   };
 }
+
+/**
+ * Получает CSRF токен с сервера
+ */
+export const getCSRFToken = async (): Promise<string> => {
+  try {
+    // При первом запросе выполняем обычный fetch без CSRF токена
+    const response = await fetch('/api/csrf');
+    if (!response.ok) {
+      throw new Error(`Failed to get CSRF token: ${response.statusText}`);
+    }
+    const data = await response.json();
+    return data.csrfToken;
+  } catch (error) {
+    console.error('Error getting CSRF token:', error);
+    throw error;
+  }
+};
 
 /**
  * Отправляет электронное письмо с ценовым расчетом через наш серверный API
@@ -37,11 +54,15 @@ export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean
       console.error('Error saving calculation:', e);
     }
     
-    // Вместо прямого вызова EmailJS отправляем запрос на наш серверный API
+    // Получаем CSRF токен
+    const csrfToken = await getCSRFToken();
+    
+    // Отправляем с CSRF токеном в заголовке
     const response = await fetch('/api/email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'csrf-token': csrfToken
       },
       body: JSON.stringify(data),
     });
