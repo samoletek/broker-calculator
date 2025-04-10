@@ -16,8 +16,22 @@ export function useGoogleMaps() {
       }
 
       try {
+        // Получаем API ключ с сервера
+        const response = await fetch('/api/maps');
+        
+        if (!response.ok) {
+          throw new Error(`Failed to get Google Maps API key: ${response.statusText}`);
+        }
+        
+        const json = await response.json();
+        
+        if (!json || !json.apiKey) {
+          console.error('API key not found in response:', json);
+          throw new Error('API key not found in response');
+        }
+        
         const loader = new Loader({
-          apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+          apiKey: json.apiKey,
           version: "weekly",
           libraries: ["places", "geometry", "routes"],
           channel: 'broker-calculator'

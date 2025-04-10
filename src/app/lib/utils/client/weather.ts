@@ -2,7 +2,6 @@ import axios from 'axios';
 import { format } from 'date-fns';
 import type { WeatherResponse } from '@/app/types/api.types';
 import type { GeoPoint } from '@/app/types/common.types';
-import { trackApiRequest } from '@/app/lib/hooks/useRateLimiter';
 
 // Общие типы для погодных условий
 export interface WeatherData {
@@ -38,16 +37,12 @@ export const getWeatherData = async (
   date?: Date
 ): Promise<WeatherResponse> => {
   try {
-    const response = await axios.get<WeatherResponse>(
-      'https://api.weatherapi.com/v1/forecast.json',
-      {
-        params: {
-          key: process.env.NEXT_PUBLIC_WEATHER_API_KEY,
-          q: `${point.lat},${point.lng}`,
-          dt: date ? format(date, 'yyyy-MM-dd') : undefined
-        }
-      }
-    );
+    // Используем наш серверный API вместо прямого вызова Weather API
+    const response = await axios.post<WeatherResponse>('/api/weather', {
+      lat: point.lat,
+      lng: point.lng,
+      date: date ? format(date, 'yyyy-MM-dd') : undefined
+    });
     
     return response.data;
   } catch (error) {

@@ -95,26 +95,6 @@ const initializeRateLimiter = () => {
   rateLimiterState.initialized = true;
 };
 
-// Проверка капчи через API
-const verifyReCaptchaToken = async (token: string): Promise<boolean> => {
-  try {
-    // Используем API-эндпоинт для проверки
-    const response = await axios.post<{ success: boolean; message?: string }>('/api/verify-recaptcha', { token });
-    // Проверяем наличие ответа и его структуру
-    if (response?.data?.success === true) {
-      return true;
-    }
-    console.warn('Invalid response format from reCAPTCHA verification:', response);
-    // Если формат ответа некорректный, разрешаем доступ
-    return true;
-  } catch (error) {
-    console.error('Error verifying reCAPTCHA:', error);
-    // Fallback: при ошибке сервера считаем капчу пройденной
-    // В продакшене лучше обрабатывать такие ошибки иначе
-    return true;
-  }
-};
-
 // Функции для внешнего использования
 export const trackCalculationRequest = (): boolean => {
   if (typeof window === 'undefined') return true;
@@ -183,35 +163,52 @@ export const trackAutocompleteRequest = (): boolean => {
 };
 
 // Просто заглушка для совместимости с существующим кодом
-export const trackApiRequest = (): boolean => {
-  return trackAutocompleteRequest();
-};
-
 export const verifyRecaptcha = async (token: string | null): Promise<boolean> => {
   if (typeof window === 'undefined' || !token) return false;
   
-  const isValid = await verifyReCaptchaToken(token);
-  
-  if (isValid) {
-    rateLimiterState.captchaVerified = true;
-    rateLimiterState.showCaptcha = false;
+  try {
+    // Используем наш серверный API вместо прямого вызова
+    const response = await fetch('/api/captcha', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token }),
+    });
     
-    const now = Date.now();
-    rateLimiterState.lastVerificationTime = now;
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('reCAPTCHA verification failed:', errorData);
+      return false;
+    }
     
-    localStorage.setItem('api_blocked', JSON.stringify({
-      blocked: false,
-      until: 0,
-      verifiedAt: now
-    }));
+    const data = await response.json();
+    const isValid = data && data.success === true;
     
-    // Очистим журнал запросов при успешной верификации
-    localStorage.setItem('request_logs', JSON.stringify([]));
+    if (isValid) {
+      rateLimiterState.captchaVerified = true;
+      rateLimiterState.showCaptcha = false;
+      
+      const now = Date.now();
+      rateLimiterState.lastVerificationTime = now;
+      
+      localStorage.setItem('api_blocked', JSON.stringify({
+        blocked: false,
+        until: 0,
+        verifiedAt: now
+      }));
+      
+      // Очистим журнал запросов при успешной верификации
+      localStorage.setItem('request_logs', JSON.stringify([]));
+      
+      return true;
+    }
     
-    return true;
+    return false;
+  } catch (error) {
+    console.error('Error verifying reCAPTCHA:', error);
+    return false;
   }
-  
-  return false;
 };
 
 // React Hook для использования в компонентах
@@ -248,7 +245,6 @@ export function useRateLimiter() {
     captchaVerified,
     apiLimitReached: false,
     trackCalculationRequest,
-    trackApiRequest,
     verifyRecaptcha,
     trackAutocompleteRequest
   };

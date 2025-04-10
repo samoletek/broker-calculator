@@ -35,7 +35,7 @@ export default function GoogleReCaptcha({ onVerify, onExpired }: GoogleReCaptcha
     }
   }, [onExpired]);
 
-  // Получаем ключ капчи из переменных окружения
+  // Здесь мы используем публичный ключ, который всё еще доступен в браузере
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '';
 
   return (

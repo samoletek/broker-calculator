@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Проверка reCAPTCHA через Google API
+    // Проверка наличия ключа reCAPTCHA
     const secretKey = process.env.RECAPTCHA_SECRET_KEY;
     if (!secretKey) {
       console.error('RECAPTCHA_SECRET_KEY is not defined');
@@ -32,7 +32,8 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-    
+
+    // Проверка reCAPTCHA через Google API
     const response = await axios.post<ReCaptchaResponse>(
       `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`
     );
