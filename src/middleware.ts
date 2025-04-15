@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // Определяем CSP заголовки
+  // Определяем CSP заголовки с разрешением для iframe
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://maps.googleapis.com https://www.google.com https://www.gstatic.com;
@@ -19,7 +19,7 @@ export function middleware(request: NextRequest) {
   // Добавляем CSP и другие заголовки безопасности
   response.headers.set('Content-Security-Policy', cspHeader);
   response.headers.set('X-XSS-Protection', '1; mode=block');
-  response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+  response.headers.set('Content-Security-Policy-Report-Only', "frame-ancestors 'self' https://*.wix.com https://*.editorx.com");
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   
