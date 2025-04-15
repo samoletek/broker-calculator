@@ -5,12 +5,12 @@ export function middleware(request: NextRequest) {
   // Определяем CSP заголовки
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://maps.googleapis.com;
-    connect-src 'self' https://api.weatherapi.com https://maps.googleapis.com;
+    script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://maps.googleapis.com https://www.google.com https://www.gstatic.com;
+    connect-src 'self' https://api.weatherapi.com https://maps.googleapis.com https://www.google.com;
     img-src 'self' data: https://maps.googleapis.com https://maps.gstatic.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     font-src 'self' https://fonts.gstatic.com;
-    frame-src 'self';
+    frame-src 'self' https://www.google.com;
   `.replace(/\s{2,}/g, ' ').trim();
 
   // Создаем новый ответ клонированием оригинального
