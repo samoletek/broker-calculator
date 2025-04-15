@@ -61,9 +61,30 @@ export function PriceBreakdown({
                   <span className="text-gray-600">Distance</span>
                   <span>{Math.round(basePriceBreakdown.distance)} miles</span>
                 </div>
+                
+                {/* Дополнительные услуги внутри базовой цены */}
+                {additionalServices.premium > 0 && (
+                  <div className="flex justify-between text-p2">
+                    <span className="text-gray-600">Premium Enhancements</span>
+                    <span className="text-primary">${(basePrice * additionalServices.premium).toFixed(2)}</span>
+                  </div>
+                )}
+                {additionalServices.special > 0 && (
+                  <div className="flex justify-between text-p2">
+                    <span className="text-gray-600">Special Load</span>
+                    <span className="text-primary">${(basePrice * additionalServices.special).toFixed(2)}</span>
+                  </div>
+                )}
+                {additionalServices.inoperable > 0 && (
+                  <div className="flex justify-between text-p2">
+                    <span className="text-gray-600">Inoperable Vehicle</span>
+                    <span className="text-primary">${(basePrice * additionalServices.inoperable).toFixed(2)}</span>
+                  </div>
+                )}
+                
                 {basePriceBreakdown.distance < 300 && (
                   <div className="text-sm text-gray-500">
-                    * Base price is fixed ($600) because the route is shorter than 300 miles.
+                    * Base price is fixed because the route is shorter than 300 miles.
                   </div>
                 )}
               </div>
