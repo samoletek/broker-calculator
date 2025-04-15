@@ -47,7 +47,7 @@ export function PriceBreakdown({
             <AccordionTrigger className="w-full p-24 hover:no-underline">
               <div className="flex justify-between w-full">
                 <span className="font-montserrat text-p2 font-bold">Base Calculation</span>
-                <span className="font-montserrat text-p2 text-gray-600">${basePrice.toFixed(2)}</span>
+                <span className="font-montserrat text-p2 text-gray-600">${(basePrice + (basePrice * additionalServices.totalAdditional)).toFixed(2)}</span>
               </div>
             </AccordionTrigger>
             <AccordionContent>
