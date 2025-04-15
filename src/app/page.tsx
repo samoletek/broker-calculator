@@ -839,38 +839,37 @@ useEffect(() => {
             {/* Показываем reCAPTCHA, если нужно */}
             {showCaptcha && (
               <div className="w-full bg-gray-50 p-16 rounded-[24px] border border-primary/20 mt-16">
-                <div className="mb-16 text-center">
-                  <h3 className="font-jost text-xl font-bold text-primary mb-8">Security Verification Required</h3>
+                <div className="mb-8 text-center">
+                  <h3 className="font-jost text-xl font-bold text-primary mb-4">Security Verification Required</h3>
                   <p className="font-montserrat text-gray-600">
                     We have detected multiple requests from your device. Please complete the verification below to continue.
                   </p>
                 </div>
-                <div className="flex justify-center">
-                  <GoogleReCaptcha 
-                    onVerify={(token) => {
-                      console.log('reCAPTCHA verification attempt');
-                      verifyRecaptcha(token).then(success => {
-                        if (success) {
-                          console.log('reCAPTCHA verification successful');
-                          setErrors(prev => ({ ...prev, general: '' }));
-                        } else {
-                          console.log('reCAPTCHA verification failed');
-                          setErrors(prev => ({ 
-                            ...prev, 
-                            general: 'Verification failed. Please try again.' 
-                          }));
-                        }
-                      });
-                    }}
-                    onExpired={() => {
-                      console.log('reCAPTCHA expired');
-                      setErrors(prev => ({ 
-                        ...prev, 
-                        general: 'Verification expired. Please try again.' 
-                      }));
-                    }}
-                  />
-                </div>
+                
+                <GoogleReCaptcha 
+                  onVerify={(token) => {
+                    console.log('reCAPTCHA verification attempt');
+                    verifyRecaptcha(token).then(result => {
+                      if (result) {
+                        console.log('reCAPTCHA verification successful');
+                        setErrors(prev => ({ ...prev, general: '' }));
+                      } else {
+                        console.log('reCAPTCHA verification failed');
+                        setErrors(prev => ({ 
+                          ...prev, 
+                          general: 'Verification failed. Please try again.' 
+                        }));
+                      }
+                    });
+                  }}
+                  onExpired={() => {
+                    console.log('reCAPTCHA expired');
+                    setErrors(prev => ({ 
+                      ...prev, 
+                      general: 'Verification expired. Please try again.' 
+                    }));
+                  }}
+                />
               </div>
             )}
 

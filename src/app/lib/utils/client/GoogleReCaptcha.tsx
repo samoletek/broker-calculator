@@ -1,85 +1,127 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
-import { Lock } from 'lucide-react';
-
-// Используем динамический импорт с обработкой ошибок
-const ReCAPTCHA = dynamic(
-  () => import('react-google-recaptcha').catch(err => {
-    console.error('Failed to load ReCAPTCHA:', err);
-    return function DummyComponent() {
-      return (
-        <div className="p-4 text-red-500 border border-red-300 rounded">
-          ReCAPTCHA could not be loaded. Please refresh the page.
-        </div>
-      );
-    };
-  }),
-  { ssr: false, loading: () => <div className="p-4 text-gray-500">Loading verification...</div> }
-);
+import React, { useEffect, useState, useRef } from 'react';
 
 interface GoogleReCaptchaProps {
   onVerify: (token: string | null) => void;
   onExpired?: () => void;
 }
 
+// Исправляем объявление глобальных типов
+declare global {
+  interface Window {
+    onRecaptchaLoad?: () => void;
+    grecaptcha?: {
+      render: (container: HTMLElement, options: any) => number;
+      reset: (id: number) => void;
+    };
+  }
+}
+
 export default function GoogleReCaptcha({ onVerify, onExpired }: GoogleReCaptchaProps) {
-  const [key, setKey] = useState<number>(Date.now()); // Для принудительного перерендера
-  const [siteKey, setSiteKey] = useState<string>('');
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [scriptError, setScriptError] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const captchaId = useRef<number | null>(null);
   
   useEffect(() => {
-    // Получаем ключ из переменных окружения
-    const envSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-  
-    if (envSiteKey) {
-      setSiteKey(envSiteKey);
-      console.log('reCAPTCHA key successfully loaded');
-    } else {
-      console.error('NEXT_PUBLIC_RECAPTCHA_SITE_KEY not found in environment variables');
+    // Проверяем, не загружен ли скрипт reCAPTCHA уже
+    if (document.querySelector('script[src*="recaptcha/api.js"]')) {
+      setScriptLoaded(true);
+      return;
     }
+    
+    // Определяем функцию обратного вызова для загрузки reCAPTCHA
+    window.onRecaptchaLoad = () => {
+      setScriptLoaded(true);
+    };
+    
+    // Загружаем скрипт
+    const script = document.createElement('script');
+    script.src = `https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit`;
+    script.async = true;
+    script.defer = true;
+    script.onerror = () => {
+      console.error('Error loading reCAPTCHA script');
+      setScriptError(true);
+    };
+    
+    document.head.appendChild(script);
+    
+    // Функция очистки
+    return () => {
+      // Если капча была отрисована и существует grecaptcha, сбрасываем ее
+      if (captchaId.current !== null && window.grecaptcha) {
+        try {
+          window.grecaptcha.reset(captchaId.current);
+        } catch (e) {
+          console.error('Error resetting reCAPTCHA:', e);
+        }
+      }
+      
+      // Удаляем глобальный callback
+      if (window.onRecaptchaLoad) {
+        window.onRecaptchaLoad = undefined; // Вместо delete
+      }
+    };
   }, []);
-
-  const handleChange = useCallback((token: string | null) => {
-    console.log('reCAPTCHA callback fired, token received:', !!token);
-    onVerify(token);
-  }, [onVerify]);
-
-  const handleExpired = useCallback(() => {
-    console.log('reCAPTCHA expired');
-    if (onExpired) {
-      onExpired();
-    }
-    // Принудительно перерендерить капчу
-    setKey(Date.now());
-  }, [onExpired]);
-
-  return (
-    <div className="w-full p-4 sm:p-6 bg-white rounded-[24px] shadow-lg border border-primary/10 my-16">
-      <div className="text-center space-y-4">
-        <h2 className="font-jost text-xl sm:text-2xl font-bold text-primary flex items-center justify-center gap-2">
-          <Lock className="w-6 h-6" />
-          Security Verification
-        </h2>
-        <p className="font-montserrat text-sm sm:text-p2 text-gray-600">
-          We noticed multiple requests from your device. Please complete the verification to continue.
-        </p>
+  
+  // Рендерим капчу после загрузки скрипта
+  useEffect(() => {
+    if (scriptLoaded && containerRef.current && window.grecaptcha) {
+      try {
+        console.log('Attempting to render reCAPTCHA widget');
+        const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
         
-        <div className="my-6 flex justify-center">
-          {siteKey ? (
-            <ReCAPTCHA
-              key={key}
-              sitekey={siteKey}
-              onChange={handleChange}
-              onExpired={handleExpired}
-            />
-          ) : (
-            <div className="p-4 text-red-500 border border-red-300 rounded">
-              ReCAPTCHA site key not found. Please check your configuration.
+        if (!siteKey) {
+          console.error('NEXT_PUBLIC_RECAPTCHA_SITE_KEY not defined in environment');
+          setScriptError(true);
+          return;
+        }
+        
+        // Очищаем контейнер на всякий случай
+        if (containerRef.current.innerHTML !== '') {
+          containerRef.current.innerHTML = '';
+        }
+        
+        captchaId.current = window.grecaptcha.render(containerRef.current, {
+          sitekey: siteKey,
+          callback: (token: string) => {
+            console.log('reCAPTCHA verification callback triggered');
+            onVerify(token);
+          },
+          'expired-callback': () => {
+            console.log('reCAPTCHA expired');
+            if (onExpired) onExpired();
+          }
+        });
+        console.log('reCAPTCHA widget rendered successfully');
+      } catch (error) {
+        console.error('Error rendering reCAPTCHA widget:', error);
+        setScriptError(true);
+      }
+    }
+  }, [scriptLoaded, onVerify, onExpired]);
+  
+  // Упрощаем UI компонента, убираем заголовки и описания
+  return (
+    <div className="w-full flex justify-center my-4">
+      {scriptError ? (
+        <div className="p-4 bg-red-50 text-red-600 rounded-lg">
+          Error loading verification component. Please refresh.
+        </div>
+      ) : (
+        <div
+          ref={containerRef}
+          className="g-recaptcha flex justify-center items-center min-h-[78px]"
+        >
+          {!scriptLoaded && (
+            <div className="text-gray-500 animate-pulse">
+              Loading verification...
             </div>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
