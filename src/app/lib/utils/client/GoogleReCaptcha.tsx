@@ -31,10 +31,12 @@ export default function GoogleReCaptcha({ onVerify, onExpired }: GoogleReCaptcha
   useEffect(() => {
     // Получаем ключ из переменных окружения
     const envSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+  
     if (envSiteKey) {
       setSiteKey(envSiteKey);
+      console.log('reCAPTCHA key successfully loaded');
     } else {
-      console.error('RECAPTCHA_SITE_KEY not found in environment variables');
+      console.error('NEXT_PUBLIC_RECAPTCHA_SITE_KEY not found in environment variables');
     }
   }, []);
 

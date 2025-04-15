@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useCallback } from 'react';
 
 type RequestType = 'calculator' | 'autocomplete';
 
@@ -169,12 +168,21 @@ export const verifyRecaptcha = async (token: string | null): Promise<boolean> =>
   try {
     console.log('Verifying reCAPTCHA token');
     
-    // Можно использовать API эндпоинт для проверки, но для отладки просто проверяем наличие токена
-    const isValid = !!token;
+    // Вызываем API для проверки токена
+    const response = await fetch('/api/verify-recaptcha', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token }),
+    });
     
-    if (isValid) {
+    const result = await response.json();
+    
+    if (result.success) {
       console.log('reCAPTCHA token verified successfully');
       
+      // Обновляем глобальное состояние
       rateLimiterState.captchaVerified = true;
       rateLimiterState.showCaptcha = false;
       
@@ -187,13 +195,13 @@ export const verifyRecaptcha = async (token: string | null): Promise<boolean> =>
         verifiedAt: now
       }));
       
-      // Очистим журнал запросов при успешной верификации
+      // Очищаем журнал запросов при успешной верификации
       localStorage.setItem('request_logs', JSON.stringify([]));
       
       return true;
     }
     
-    console.log('reCAPTCHA token verification failed');
+    console.log('reCAPTCHA verification failed');
     return false;
   } catch (error) {
     console.error('Error verifying reCAPTCHA:', error);
@@ -201,41 +209,50 @@ export const verifyRecaptcha = async (token: string | null): Promise<boolean> =>
   }
 };
 
-// React Hook для использования в компонентах
+// React-хук для использования в компонентах
 export function useRateLimiter() {
   const [showCaptcha, setShowCaptcha] = useState<boolean>(false);
   const [captchaVerified, setCaptchaVerified] = useState<boolean>(false);
   
+  // Инициализация при первом рендере
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    // Инициализируем при первой загрузке
     initializeRateLimiter();
     
-    // Синхронизируем состояние React с глобальным состоянием
+    // Устанавливаем начальное состояние из глобального состояния
     setShowCaptcha(rateLimiterState.showCaptcha);
     setCaptchaVerified(rateLimiterState.captchaVerified);
     
-    // Периодическая проверка состояния (каждую секунду)
+    // Настраиваем периодическую синхронизацию (каждые 500 мс)
     const intervalId = setInterval(() => {
-      if (
-        showCaptcha !== rateLimiterState.showCaptcha || 
-        captchaVerified !== rateLimiterState.captchaVerified
-      ) {
+      if (showCaptcha !== rateLimiterState.showCaptcha) {
         setShowCaptcha(rateLimiterState.showCaptcha);
+      }
+      if (captchaVerified !== rateLimiterState.captchaVerified) {
         setCaptchaVerified(rateLimiterState.captchaVerified);
       }
-    }, 1000);
+    }, 500);
     
     return () => clearInterval(intervalId);
   }, [showCaptcha, captchaVerified]);
   
+  // Улучшенная версия, которая гарантирует немедленное обновление состояния React
+  const verifyRecaptchaWithStateUpdate = useCallback(async (token: string | null): Promise<boolean> => {
+    const result = await verifyRecaptcha(token);
+    if (result) {
+      // Немедленно обновляем состояние React, не дожидаясь интервала
+      setShowCaptcha(false);
+      setCaptchaVerified(true);
+    }
+    return result;
+  }, []);
+  
   return {
     showCaptcha,
     captchaVerified,
-    apiLimitReached: false,
     trackCalculationRequest,
-    verifyRecaptcha,
+    verifyRecaptcha: verifyRecaptchaWithStateUpdate,
     trackAutocompleteRequest
   };
 }

@@ -112,61 +112,83 @@ export default function BrokerCalculator() {
 
   const WIX_CALLBACK_FORM_URL = "https://your-wix-site.com/callback-form";
   
-  // Effects
-  useEffect(() => {
-    const initAutocomplete = async () => {
-      if (!googleMaps || !pickupInputRef.current || !deliveryInputRef.current) return;
+// В useEffect для инициализации автозаполнения
+useEffect(() => {
+  const initAutocomplete = async () => {
+    if (!googleMaps || !pickupInputRef.current || !deliveryInputRef.current) return;
     
-      // Очистим предыдущие автозаполнения, если они есть
-      if (window.google && window.google.maps && window.google.maps.event) {
-        const pickupInput = pickupInputRef.current;
-        const deliveryInput = deliveryInputRef.current;
-        google.maps.event.clearInstanceListeners(pickupInput);
-        google.maps.event.clearInstanceListeners(deliveryInput);
-      }
-      
-      console.log("Initializing autocomplete with Google Maps:", googleMaps);
-      
-      // Проверяем доступность API перед созданием автоподсказок
-      try {
-        // Инициализация автоподсказки для точки отправления
-        const pickupAutocomplete = new googleMaps.places.Autocomplete(pickupInputRef.current, {
-          types: ['address'],
-          componentRestrictions: { country: 'us' },
-        });
-        
-        pickupAutocomplete.addListener('place_changed', () => {
-          const place = pickupAutocomplete.getPlace();
-          if (place.formatted_address) {
-            setPickup(place.formatted_address);
-            clearResults();
-          }
-        });
-        
-        // Инициализация автоподсказки для точки доставки
-        const deliveryAutocomplete = new googleMaps.places.Autocomplete(deliveryInputRef.current, {
-          types: ['address'],
-          componentRestrictions: { country: 'us' },
-        });
-        
-        deliveryAutocomplete.addListener('place_changed', () => {
-          const place = deliveryAutocomplete.getPlace();
-          if (place.formatted_address) {
-            setDelivery(place.formatted_address);
-            clearResults();
-          }
-        });
-        
-        console.log("Autocomplete initialized successfully");
-      } catch (error) {
-        console.error("Error initializing autocomplete:", error);
-      }
-    };
-  
-    if (googleMaps) {
-      initAutocomplete();
+    // Очищаем предыдущие слушатели
+    if (window.google && window.google.maps && window.google.maps.event) {
+      const pickupInput = pickupInputRef.current;
+      const deliveryInput = deliveryInputRef.current;
+      google.maps.event.clearInstanceListeners(pickupInput);
+      google.maps.event.clearInstanceListeners(deliveryInput);
     }
-  }, [googleMaps]);
+    
+    console.log("Initializing autocomplete with Google Maps");
+    
+    // Функция debounce для ограничения запросов
+    const debounce = (func: Function, delay: number) => {
+      let timeout: NodeJS.Timeout;
+      return (...args: any[]) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), delay);
+      };
+    };
+    
+    // Создаем дебаунсед функцию для отслеживания запросов
+    const debouncedTrackAutocomplete = debounce(() => {
+      return trackAutocompleteRequest();
+    }, 300);
+    
+    try {
+      // Инициализация автозаполнения для пикапа
+      const pickupAutocomplete = new googleMaps.places.Autocomplete(pickupInputRef.current, {
+        types: ['address'],
+        componentRestrictions: { country: 'us' },
+      });
+      
+      // Отслеживаем запросы на ввод
+      pickupInputRef.current.addEventListener('input', () => {
+        debouncedTrackAutocomplete();
+      });
+      
+      pickupAutocomplete.addListener('place_changed', () => {
+        const place = pickupAutocomplete.getPlace();
+        if (place.formatted_address) {
+          setPickup(place.formatted_address);
+          clearResults();
+        }
+      });
+      
+      // Инициализация автозаполнения для доставки
+      const deliveryAutocomplete = new googleMaps.places.Autocomplete(deliveryInputRef.current, {
+        types: ['address'],
+        componentRestrictions: { country: 'us' },
+      });
+      
+      deliveryInputRef.current.addEventListener('input', () => {
+        debouncedTrackAutocomplete();
+      });
+      
+      deliveryAutocomplete.addListener('place_changed', () => {
+        const place = deliveryAutocomplete.getPlace();
+        if (place.formatted_address) {
+          setDelivery(place.formatted_address);
+          clearResults();
+        }
+      });
+      
+      console.log("Autocomplete successfully initialized");
+    } catch (error) {
+      console.error("Error initializing autocomplete:", error);
+    }
+  };
+
+  if (googleMaps) {
+    initAutocomplete();
+  }
+}, [googleMaps, trackAutocompleteRequest]);
 
   useEffect(() => {
     const isExpensiveVehicle = vehicleValue === 'under500k' || vehicleValue === 'over500k';
@@ -816,30 +838,40 @@ export default function BrokerCalculator() {
 
             {/* Показываем reCAPTCHA, если нужно */}
             {showCaptcha && (
-              <GoogleReCaptcha 
-                onVerify={(token) => {
-                  console.log('onVerify callback triggered, token received:', !!token);
-                  verifyRecaptcha(token).then(success => {
-                    if (success) {
-                      console.log('reCAPTCHA verification successful');
-                      setErrors(prev => ({ ...prev, general: '' }));
-                    } else {
-                      console.log('reCAPTCHA verification failed');
+              <div className="w-full bg-gray-50 p-16 rounded-[24px] border border-primary/20 mt-16">
+                <div className="mb-16 text-center">
+                  <h3 className="font-jost text-xl font-bold text-primary mb-8">Security Verification Required</h3>
+                  <p className="font-montserrat text-gray-600">
+                    We have detected multiple requests from your device. Please complete the verification below to continue.
+                  </p>
+                </div>
+                <div className="flex justify-center">
+                  <GoogleReCaptcha 
+                    onVerify={(token) => {
+                      console.log('reCAPTCHA verification attempt');
+                      verifyRecaptcha(token).then(success => {
+                        if (success) {
+                          console.log('reCAPTCHA verification successful');
+                          setErrors(prev => ({ ...prev, general: '' }));
+                        } else {
+                          console.log('reCAPTCHA verification failed');
+                          setErrors(prev => ({ 
+                            ...prev, 
+                            general: 'Verification failed. Please try again.' 
+                          }));
+                        }
+                      });
+                    }}
+                    onExpired={() => {
+                      console.log('reCAPTCHA expired');
                       setErrors(prev => ({ 
                         ...prev, 
-                        general: 'Verification failed. Please try again.' 
+                        general: 'Verification expired. Please try again.' 
                       }));
-                    }
-                  });
-                }}
-                onExpired={() => {
-                  console.log('reCAPTCHA expired');
-                  setErrors(prev => ({ 
-                    ...prev, 
-                    general: 'Verification expired. Please try again.' 
-                  }));
-                }}
-              />
+                    }}
+                  />
+                </div>
+              </div>
             )}
 
             <div className="flex flex-col sm:flex-row gap-4 mt-12 sm:mt-24">
@@ -859,7 +891,7 @@ export default function BrokerCalculator() {
                   <Loader2 className="w-16 h-16 sm:w-20 sm:h-20 mr-4 sm:mr-8 animate-spin" />
                   Calculating...
                 </>
-              ) : showCaptcha ? (
+              ) : showCaptcha && !captchaVerified ? (
                 'Please complete verification above'
               ) : (
                 'Calculate Route and Price'

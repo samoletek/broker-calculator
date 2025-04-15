@@ -1,7 +1,7 @@
+// src/app/api/verify-recaptcha/route.ts
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 
-// Определяем интерфейс для ответа Google reCAPTCHA
 interface ReCaptchaResponse {
   success: boolean;
   score?: number;
@@ -22,11 +22,10 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    // Проверка reCAPTCHA через Google API
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    
+    const secretKey = process.env.NEXT_PUBLIC_RECAPTCHA_SECRET_KEY;
     if (!secretKey) {
-      console.error('RECAPTCHA_SECRET_KEY is not defined');
+      console.error('NEXT_PUBLIC_RECAPTCHA_SECRET_KEY is not defined');
       return NextResponse.json(
         { success: false, message: 'reCAPTCHA configuration error' },
         { status: 500 }
@@ -37,7 +36,6 @@ export async function POST(request: Request) {
       `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`
     );
 
-    // Проверяем результат
     if (response.data && response.data.success === true) {
       return NextResponse.json({ success: true });
     } else {
