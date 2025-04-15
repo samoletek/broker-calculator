@@ -162,7 +162,6 @@ export function PriceBreakdown({
       {/* Final Price */}
       <div className="p-24 flex justify-between items-center bg-primary rounded-[24px] text-white">
         <div className="flex items-center gap-8">
-          <DollarSign className="w-20 h-20" />
           <span className="font-montserrat font-bold text-p2">Final Price</span>
         </div>
         <span className="font-montserrat text-p2 font-bold">
