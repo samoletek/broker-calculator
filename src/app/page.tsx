@@ -98,7 +98,8 @@ export default function BrokerCalculator() {
   const { priceComponents, setPriceComponents, updatePriceComponents } = usePricing();
   const googleMaps = useGoogleMaps();
   const { 
-    showCaptcha, 
+    showCaptcha,
+    captchaVerified,
     trackCalculationRequest,
     trackAutocompleteRequest,
     verifyRecaptcha 
@@ -816,33 +817,54 @@ export default function BrokerCalculator() {
             {/* Показываем reCAPTCHA, если нужно */}
             {showCaptcha && (
               <GoogleReCaptcha 
-                onVerify={handleRecaptchaVerify}
+                onVerify={(token) => {
+                  console.log('onVerify callback triggered, token received:', !!token);
+                  verifyRecaptcha(token).then(success => {
+                    if (success) {
+                      console.log('reCAPTCHA verification successful');
+                      setErrors(prev => ({ ...prev, general: '' }));
+                    } else {
+                      console.log('reCAPTCHA verification failed');
+                      setErrors(prev => ({ 
+                        ...prev, 
+                        general: 'Verification failed. Please try again.' 
+                      }));
+                    }
+                  });
+                }}
+                onExpired={() => {
+                  console.log('reCAPTCHA expired');
+                  setErrors(prev => ({ 
+                    ...prev, 
+                    general: 'Verification expired. Please try again.' 
+                  }));
+                }}
               />
             )}
 
             <div className="flex flex-col sm:flex-row gap-4 mt-12 sm:mt-24">
-              <button
-                onClick={calculatePrice}
-                disabled={loading || showCaptcha}
-                className="w-full sm:flex-1 bg-primary hover:bg-primary/90
-                  text-white py-8 sm:py-12 px-8 sm:px-16 rounded-[24px]
-                  disabled:bg-primary/50
-                  disabled:cursor-not-allowed
-                  transition-colors duration-200
-                  flex items-center justify-center
-                  font-montserrat text-sm sm:text-p2 font-medium"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-16 h-16 sm:w-20 sm:h-20 mr-4 sm:mr-8 animate-spin" />
-                    Calculating...
-                  </>
-                ) : showCaptcha ? (
-                  'Please complete verification'
-                ) : (
-                  'Calculate Route and Price'
-                )}
-              </button>
+            <button
+              onClick={calculatePrice}
+              disabled={loading || (showCaptcha && !captchaVerified)}
+              className="w-full sm:flex-1 bg-primary hover:bg-primary/90
+                text-white py-8 sm:py-12 px-8 sm:px-16 rounded-[24px]
+                disabled:bg-primary/50
+                disabled:cursor-not-allowed
+                transition-colors duration-200
+                flex items-center justify-center
+                font-montserrat text-sm sm:text-p2 font-medium"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-16 h-16 sm:w-20 sm:h-20 mr-4 sm:mr-8 animate-spin" />
+                  Calculating...
+                </>
+              ) : showCaptcha ? (
+                'Please complete verification above'
+              ) : (
+                'Calculate Route and Price'
+              )}
+            </button>
 
               <button
                 onClick={() => {
