@@ -81,10 +81,10 @@ export function PriceBreakdown({
                     <span className="text-primary">${(basePrice * additionalServices.inoperable).toFixed(2)}</span>
                   </div>
                 )}
-                {additionalServices.supplementaryInsurance > 0 && (
+                {additionalServices.hasManagerDefined && (
                   <div className="flex justify-between text-p2">
                     <span className="text-gray-600">Supplementary Insurance</span>
-                    <span className="text-primary">${(basePrice * additionalServices.supplementaryInsurance).toFixed(2)}</span>
+                    <span className="text-primary italic">To be quoted by manager</span>
                   </div>
                 )}
                 

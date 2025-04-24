@@ -27,6 +27,7 @@ interface VehicleTypeData {
 interface AdditionalService {
   name: string;
   multiplier: number;
+  managerDefined?: boolean; 
   tooltip?: string[];
 }
 
@@ -185,12 +186,14 @@ export const ADDITIONAL_SERVICES: Record<string, AdditionalService> = {
   },
   supplementaryInsurance: {
     name: 'Supplementary Insurance',
-    multiplier: 1.1,
+    multiplier: 0,
+    managerDefined: true,
     tooltip: [
       'Single-trip insurance for peace of mind when transporting luxury vehicles',
       'Protection against damage from loading/unloading, road hazards, and delays',
       'Swift policy issuance with transparent terms and dedicated claims support',
-      'Complete protection from pickup to delivery for your prized automotive treasures'
+      'Complete protection from pickup to delivery for your prized automotive treasures',
+      'The price of insurance will be quoted by our representative'
     ]
   }
 };

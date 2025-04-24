@@ -25,6 +25,7 @@ export interface PriceComponents {
     special: number;
     inoperable: number;
     supplementaryInsurance: number;
+    hasManagerDefined?: boolean;
     totalAdditional: number;
   };
   tollCosts?: {

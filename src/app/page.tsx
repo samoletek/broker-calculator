@@ -436,14 +436,14 @@ useEffect(() => {
             premium: premiumEnhancements ? 0.3 : 0,
             special: specialLoad ? 0.3 : 0,
             inoperable: inoperable ? 0.3 : 0,
-            supplementaryInsurance: supplementaryInsurance ? 0.05 : 0
+            supplementaryInsurance: 0,
+            hasManagerDefined: supplementaryInsurance
           };
           
           const additionalServicesSum = 
             (additionalServices.premium + 
             additionalServices.special + 
-            additionalServices.inoperable +
-            additionalServices.supplementaryInsurance);
+            additionalServices.inoperable);
     
         const additionalServicesImpact = basePrice * additionalServicesSum;
     

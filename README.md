@@ -1,8 +1,8 @@
 # Broker Calculator
 
-Broker Calculator is a web application that estimates the cost of transporting a vehicle across the United States. It calculates a shipping quote by taking into account various factors such as route distance, vehicle type and value, weather conditions, traffic, toll costs, fuel price adjustments, and selected additional services.
+Broker Calculator is a web application for estimating vehicle transportation costs across the United States. It calculates accurate shipping prices by considering multiple factors, including route distance, vehicle type and value, weather conditions, traffic congestion, toll costs, fuel price adjustments, and selected additional services.
 
-## Features
+## Key Features
 
 - Interactive UI with responsive design
 - Real-time route calculation and visualization using Google Maps API
@@ -16,6 +16,7 @@ Broker Calculator is a web application that estimates the cost of transporting a
 - Seamless integration with booking system
 - Dark theme support
 - Full responsive design
+- DDoS protection with reCAPTCHA and rate limiting
 
 ## How It Works
 
@@ -32,7 +33,7 @@ Broker Calculator is a web application that estimates the cost of transporting a
    The application uses the Google Maps API to generate the best route between the pickup and delivery locations, calculating total distance and estimating travel time.
 
 2. **Base Price Determination:**  
-   - For short routes (below a set threshold), a fixed base price is applied.  
+   - For short routes (below 300 miles), a fixed base price is applied.  
    - For longer routes, the base price is computed based on the distance and the chosen transport type.
 
 3. **Price Adjustments Using Multipliers:**  
@@ -59,6 +60,51 @@ Broker Calculator is a web application that estimates the cost of transporting a
 - **Detailed Price Breakdown:** Shows the base price, the contribution of each multiplier, toll charges, and additional service fees.
 - **Price Summary:** Presents the final price with options to receive it via email or proceed to booking.
 
+## Pricing Formula
+
+### Base Multipliers
+- **Transport Type** (open/enclosed):
+  - Open Transport: $0.62-0.93 per mile
+  - Enclosed Transport: $0.88-1.19 per mile (approx. 30-40% more expensive than open)
+
+- **Vehicle Value**:
+  - Under $100k: +0% (multiplier 1.0)
+  - $100k - $300k: +5% (multiplier 1.05)
+  - $300k - $500k: +10% (multiplier 1.1)
+  - Over $500k: +15% (multiplier 1.15)
+
+- **Distance**:
+  - Less than 300 miles: fixed price of $600
+  - More than 300 miles: distance * cost per mile for selected transport type
+
+### Additional Multipliers
+- **Weather Conditions**:
+  - Clear/Cloudy: +0% (multiplier 1.0)
+  - Rain: +5% (multiplier 1.05)
+  - Snow: +20% (multiplier 1.2)
+  - Storm: +15% (multiplier 1.15)
+
+- **Traffic**:
+  - Light: +0% (multiplier 1.0)
+  - Moderate: +10% (multiplier 1.1) 
+  - Heavy: +20% (multiplier 1.2)
+
+- **Auto Show Nearby**: +10% (multiplier 1.1)
+
+- **Fuel Price**: up to +5% (multiplier up to 1.05)
+
+- **Additional Services**:
+  - Premium Enhancements: +30% (multiplier 0.3)
+  - Special Load: +30% (multiplier 0.3)
+  - Inoperable Vehicle: +30% (multiplier 0.3)
+  - Supplementary Insurance: +5% (multiplier 0.05)
+
+### Additional Features
+- For vehicles valued at $300k or above, premium services are automatically included
+- Toll roads are calculated separately and added to the total cost
+- For routes over 1000 miles, a 10% discount is applied
+- For routes over 2000 miles, an additional 15% discount is applied
+
 ## Technologies
 
 - **Framework:** Next.js, React, TypeScript
@@ -66,6 +112,7 @@ Broker Calculator is a web application that estimates the cost of transporting a
 - **Styling:** Tailwind CSS with custom configurations
 - **UI Components:** Custom components with animations and intuitive interactions
 - **Forms:** Enhanced form handling with validation and interactive elements
+- **Security System:** reCAPTCHA, CSRF protection, rate limiting
 
 ## Project Structure
 

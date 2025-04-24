@@ -58,6 +58,7 @@ export interface PriceBreakdownProps {
     special: number;
     inoperable: number;
     supplementaryInsurance: number;
+    hasManagerDefined?: boolean;
     totalAdditional: number;
   };
   tollCosts?: {
