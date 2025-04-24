@@ -719,9 +719,9 @@ useEffect(() => {
                         <polyline points="20 6 9 17 4 12"></polyline>
                       </svg>
                   </div>
-                  <label className="text-sm sm:text-p2 font-montserrat relative group" htmlFor={key}>
+                  <label className="text-sm sm:text-p2 font-montserrat relative" htmlFor={key}>
                     {service.name}
-                    <span className="ml-4 sm:ml-8 inline-block cursor-help">
+                    <span className="ml-4 sm:ml-8 inline-block cursor-help group">
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         fill="none" 

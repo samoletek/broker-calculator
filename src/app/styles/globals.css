@@ -102,3 +102,7 @@ select option:checked {
 select option:disabled {
   color: #6B7280;
 }
+
+.group-hover\:visible {
+  z-index: 9999999 !important;
+}
