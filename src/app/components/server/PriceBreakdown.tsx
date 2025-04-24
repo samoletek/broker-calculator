@@ -84,7 +84,7 @@ export function PriceBreakdown({
                 {additionalServices.hasManagerDefined && (
                   <div className="flex justify-between text-p2">
                     <span className="text-gray-600">Supplementary Insurance</span>
-                    <span className="text-primary italic">To be quoted by manager</span>
+                    <span className="text-primary bold">To be quoted by manager</span>
                   </div>
                 )}
                 
