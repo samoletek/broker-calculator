@@ -743,7 +743,8 @@ useEffect(() => {
                         <div className="text-sm font-montserrat font-semibold text-gray-900 mb-8">
                           {key === 'premiumEnhancements' ? 'Premium Service Benefits:' : 
                           key === 'specialLoad' ? 'Special Load Services:' : 
-                          'Inoperable Vehicle Services:'}
+                          key === 'inoperable' ? 'Inoperable Vehicle Services:' :
+                          'Supplementary Insurance Services:'}
                         </div>
                         <ul className="space-y-2">
                           {service.tooltip?.map((tip, index) => (
