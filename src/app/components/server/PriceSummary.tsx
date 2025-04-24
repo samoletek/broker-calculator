@@ -31,6 +31,7 @@ export interface PriceSummaryProps {
     premiumEnhancements: boolean;
     specialLoad: boolean;
     inoperable: boolean;
+    supplementaryInsurance: boolean;
   };
   distance?: number;
   estimatedTime?: string;
@@ -158,6 +159,7 @@ export function PriceSummary({
       premiumEnhancements: additionalServices?.premiumEnhancements || false,
       specialLoad: additionalServices?.specialLoad || false,
       inoperable: additionalServices?.inoperable || false,
+      supplementaryInsurance: additionalServices?.supplementaryInsurance || false,
       selectedDate: selectedDate.toISOString()
     };
 

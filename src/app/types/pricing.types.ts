@@ -24,6 +24,7 @@ export interface PriceComponents {
     premium: number;
     special: number;
     inoperable: number;
+    supplementaryInsurance: number;
     totalAdditional: number;
   };
   tollCosts?: {

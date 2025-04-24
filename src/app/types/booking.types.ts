@@ -19,4 +19,5 @@ export interface BookingFormData {
     premiumEnhancements: boolean;
     specialLoad: boolean;
     inoperable: boolean;
+    supplementaryInsurance: boolean;
   }

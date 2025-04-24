@@ -81,6 +81,12 @@ export function PriceBreakdown({
                     <span className="text-primary">${(basePrice * additionalServices.inoperable).toFixed(2)}</span>
                   </div>
                 )}
+                {additionalServices.supplementaryInsurance > 0 && (
+                  <div className="flex justify-between text-p2">
+                    <span className="text-gray-600">Supplementary Insurance</span>
+                    <span className="text-primary">${(basePrice * additionalServices.supplementaryInsurance).toFixed(2)}</span>
+                  </div>
+                )}
                 
                 {basePriceBreakdown.distance < 300 && (
                   <div className="text-sm text-gray-500">

@@ -82,6 +82,7 @@ export default function BrokerCalculator() {
   const [premiumEnhancements, setPremiumEnhancements] = useState(false);
   const [specialLoad, setSpecialLoad] = useState(false);
   const [inoperable, setInoperable] = useState(false);
+  const [supplementaryInsurance, setSupplementaryInsurance] = useState(false);
 
   const [mapData, setMapData] = useState<google.maps.DirectionsResult | null>(null);
   const [routeInfo, setRouteInfo] = useState({
@@ -431,17 +432,18 @@ useEffect(() => {
           autoShowImpact + 
           fuelImpact;
     
-        // Дополнительные услуги
-        const additionalServices = {
-          premium: premiumEnhancements ? 0.3 : 0,
-          special: specialLoad ? 0.3 : 0,
-          inoperable: inoperable ? 0.3 : 0
-        };
-    
-        const additionalServicesSum = 
-          (additionalServices.premium + 
-          additionalServices.special + 
-          additionalServices.inoperable);
+          const additionalServices = {
+            premium: premiumEnhancements ? 0.3 : 0,
+            special: specialLoad ? 0.3 : 0,
+            inoperable: inoperable ? 0.3 : 0,
+            supplementaryInsurance: supplementaryInsurance ? 0.05 : 0
+          };
+          
+          const additionalServicesSum = 
+            (additionalServices.premium + 
+            additionalServices.special + 
+            additionalServices.inoperable +
+            additionalServices.supplementaryInsurance);
     
         const additionalServicesImpact = basePrice * additionalServicesSum;
     
@@ -662,7 +664,7 @@ useEffect(() => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-24">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8 sm:gap-24">
               {Object.entries(ADDITIONAL_SERVICES).map(([key, service]) => (
                 <div key={key} className="flex items-center space-x-8 sm:space-x-12">
                   <div className="relative">
@@ -671,7 +673,8 @@ useEffect(() => {
                       id={key}
                       checked={key === 'premiumEnhancements' ? premiumEnhancements : 
                               key === 'specialLoad' ? specialLoad : 
-                              key === 'inoperable' ? inoperable : false}
+                              key === 'inoperable' ? inoperable :
+                              key === 'supplementaryInsurance' ? supplementaryInsurance : false}
                       disabled={key === 'premiumEnhancements' && (vehicleValue === 'under500k' || vehicleValue === 'over500k')}
                       onChange={(e) => {
                         if (key === 'premiumEnhancements') {
@@ -686,6 +689,10 @@ useEffect(() => {
                           setInoperable(e.target.checked);
                           clearResults();
                         }
+                        else if (key === 'supplementaryInsurance') {
+                          setSupplementaryInsurance(e.target.checked);
+                          clearResults();
+                        }
                       }}
                       className={`appearance-none h-20 w-20 sm:h-24 sm:w-24 rounded
                         border-2 border-gray-200
@@ -697,19 +704,20 @@ useEffect(() => {
                           ? 'opacity-50 cursor-not-allowed' 
                           : ''}`}
                     />
-                    <svg 
-                      className={`absolute left-0 top-0 w-20 h-20 sm:w-24 sm:h-24 pointer-events-none text-white
-                        ${key === 'premiumEnhancements' ? premiumEnhancements : 
-                          key === 'specialLoad' ? specialLoad : 
-                          key === 'inoperable' ? inoperable ? 'block' : 'hidden' : 'hidden'}`}
-                      xmlns="http://www.w3.org/2000/svg" 
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
+                      <svg 
+                        className={`absolute left-0 top-0 w-20 h-20 sm:w-24 sm:h-24 pointer-events-none text-white
+                          ${key === 'premiumEnhancements' ? premiumEnhancements : 
+                            key === 'specialLoad' ? specialLoad : 
+                            key === 'inoperable' ? inoperable : 
+                            key === 'supplementaryInsurance' ? supplementaryInsurance ? 'block' : 'hidden' : 'hidden'}`}
+                        xmlns="http://www.w3.org/2000/svg" 
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
                   </div>
                   <label className="text-sm sm:text-p2 font-montserrat relative group" htmlFor={key}>
                     {service.name}
@@ -941,7 +949,8 @@ useEffect(() => {
               additionalServices={{
                 premiumEnhancements,
                 specialLoad,
-                inoperable
+                inoperable,
+                supplementaryInsurance
               }}
               distance={distance}
               estimatedTime={routeInfo.estimatedTime}

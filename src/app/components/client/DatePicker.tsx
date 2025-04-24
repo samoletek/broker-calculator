@@ -4,12 +4,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { AlertCircle, Calendar, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
 import type { DatePickerProps } from '@/app/types/components.types';
+import { createPortal } from 'react-dom';
 
 export function DatePicker({ date, onDateChange }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(date);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showWarning, setShowWarning] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -18,6 +20,8 @@ export function DatePicker({ date, onDateChange }: DatePickerProps) {
   maxDate.setFullYear(maxDate.getFullYear() + 1);
 
   useEffect(() => {
+    setMounted(true);
+    
     const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current && 
@@ -60,28 +64,36 @@ export function DatePicker({ date, onDateChange }: DatePickerProps) {
     return days;
   };
 
-  const handleApply = () => {
+  const handleApply = (e: React.MouseEvent) => {
+    e.stopPropagation();
     onDateChange(selectedDate);
     setIsOpen(false);
   };
 
-  const handleCancel = () => {
+  const handleCancel = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setSelectedDate(date);
     setIsOpen(false);
   };
 
-  const handleDateSelect = (newDate: Date | null) => {
+  const handleDateSelect = (newDate: Date | null, e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!newDate) return;
     if (newDate >= today && newDate <= maxDate) {
       setSelectedDate(newDate);
     }
   };
 
+  const handleInputClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsOpen(!isOpen);
+  };
+
   return (
     <div className="relative w-full">
       <div 
         className="relative w-full cursor-pointer"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleInputClick}
       >
         <input
           ref={inputRef}
@@ -104,16 +116,24 @@ export function DatePicker({ date, onDateChange }: DatePickerProps) {
         />
       </div>
       
-      {isOpen && (
+      {isOpen && mounted && createPortal(
         <div 
           ref={dropdownRef}
-          className="absolute z-50 mt-8 w-full bg-white 
+          className="fixed z-[9999] bg-white 
             rounded-[24px] shadow-lg border border-gray-200 
             font-montserrat text-p2 overflow-hidden"
+          style={{
+            top: inputRef.current ? inputRef.current.getBoundingClientRect().bottom + 8 : 0,
+            left: inputRef.current ? inputRef.current.getBoundingClientRect().left : 0,
+            width: inputRef.current ? inputRef.current.offsetWidth : 'auto'
+          }}
         >
           <div className="flex items-center justify-between p-12 border-b">
             <button 
-              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentMonth(subMonths(currentMonth, 1));
+              }}
               className="hover:bg-gray-100 rounded-full p-4"
             >
               <ChevronLeft className="w-16 h-16" />
@@ -122,7 +142,10 @@ export function DatePicker({ date, onDateChange }: DatePickerProps) {
               {format(currentMonth, 'MMMM yyyy')}
             </div>
             <button 
-              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentMonth(addMonths(currentMonth, 1));
+              }}
               className="hover:bg-gray-100 rounded-full p-4"
             >
               <ChevronRight className="w-16 h-16" />
@@ -139,7 +162,7 @@ export function DatePicker({ date, onDateChange }: DatePickerProps) {
               <button
                 key={index}
                 disabled={!day}
-                onClick={() => handleDateSelect(day)}
+                onClick={(e) => handleDateSelect(day, e)}
                 className={`aspect-square rounded-full text-center flex items-center justify-center
                   ${!day ? 'bg-transparent' : ''}
                   ${day && day.toDateString() === today.toDateString() ? 'bg-primary text-white' : ''}
@@ -187,7 +210,8 @@ export function DatePicker({ date, onDateChange }: DatePickerProps) {
               Price estimate for dates beyond 30 days may vary.
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

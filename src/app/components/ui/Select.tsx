@@ -1,14 +1,9 @@
 'use client';
 
-import React from 'react';
-import dynamic from 'next/dynamic';
+import React, { useEffect, useState } from 'react';
 import type { Props as SelectProps } from 'react-select';
 
-const ReactSelect = dynamic(() => import('react-select'), {
-  ssr: false,
-  loading: () => <div className="h-10 bg-gray-50 rounded-[24px] animate-pulse" />
-});
-
+// Полные стили для React-Select
 const selectStyles = {
   control: (base: any, state: any) => ({
     ...base,
@@ -19,7 +14,10 @@ const selectStyles = {
     boxShadow: state.isFocused ? '0 0 0 1px var(--primary)' : 'none',
     '&:hover': {
       borderColor: 'var(--primary)'
-    }
+    },
+    minHeight: '42px',
+    height: '42px',
+    padding: '0 12px'
   }),
   option: (base: any, { isSelected, isFocused }: { isSelected: boolean; isFocused: boolean }) => ({
     ...base,
@@ -41,7 +39,7 @@ const selectStyles = {
   }),
   menuPortal: (base: any) => ({
     ...base,
-    zIndex: 9999
+    zIndex: 9999999
   }),
   indicatorSeparator: () => ({
     display: 'none'
@@ -62,15 +60,37 @@ const selectStyles = {
   placeholder: (base: any) => ({
     ...base,
     color: '#6B7280'
+  }),
+  valueContainer: (base: any) => ({
+    ...base,
+    padding: '2px 8px',
+  }),
+  container: (base: any) => ({
+    ...base,
+    zIndex: 100,
+    position: 'relative'
+  }),
+  dropdownIndicator: (base: any) => ({
+    ...base,
+    padding: '0 8px'
+  }),
+  input: (base: any) => ({
+    ...base,
+    margin: 0,
+    padding: 0
   })
 };
 
-interface CustomSelectProps extends SelectProps {
-  label?: string;
-  error?: string;
-}
-
-export default function Select({ label, error, ...props }: CustomSelectProps) {
+// Исправляем типизацию компонента-заглушки
+function SelectPlaceholder({ 
+  label, 
+  value, 
+  placeholder 
+}: { 
+  label?: string, 
+  value?: any, 
+  placeholder?: React.ReactNode  // Изменено на ReactNode вместо string
+}) {
   return (
     <div className="w-full">
       {label && (
@@ -78,11 +98,91 @@ export default function Select({ label, error, ...props }: CustomSelectProps) {
           {label}
         </label>
       )}
+      <div className="mt-2 h-[42px] bg-gray-50 border border-gray-300 rounded-[24px] px-4 flex items-center text-gray-900">
+        {/* Преобразуем placeholder в строку, если он не строка */}
+        {value?.label || (placeholder && typeof placeholder === 'string' 
+          ? placeholder 
+          : 'Select...')}
+      </div>
+    </div>
+  );
+}
+
+interface CustomSelectProps extends SelectProps {
+  label?: string;
+  error?: string;
+}
+
+export default function Select({ label, error, value, placeholder, ...props }: CustomSelectProps) {
+  const [ReactSelect, setReactSelect] = useState<any>(null);
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    // Немедленно устанавливаем флаг монтирования
+    setMounted(true);
+    
+    // Загружаем React Select асинхронно, но без задержки рендера
+    import('react-select').then(module => {
+      setReactSelect(() => module.default);
+    });
+    
+    // Предзагрузка стилей для более плавного перехода
+    const style = document.createElement('style');
+    style.textContent = `
+      .react-select__control {
+        border-radius: 24px !important;
+        background-color: rgb(249 250 251) !important;
+        border-color: #D1D5DB !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
+    };
+  }, []);
+  
+  // Обработчик клика для предотвращения всплытия событий
+  const handleContainerClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+  
+  // Если модуль еще не загружен, показываем заглушку
+  if (!ReactSelect) {
+    return <SelectPlaceholder label={label} value={value} placeholder={placeholder} />;
+  }
+  
+  return (
+    <div className="w-full" onClick={handleContainerClick}>
+      {label && (
+        <label className="block text-p2 font-montserrat font-medium mb-8">
+          {label}
+        </label>
+      )}
       <ReactSelect
         {...props}
+        value={value}
+        placeholder={placeholder}
         styles={selectStyles}
         classNamePrefix="react-select"
-        menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+        menuPortalTarget={mounted ? document.body : undefined}
+        menuPosition="fixed"
+        components={{
+          ...props.components,
+        }}
+        // Обеспечиваем правильную работу с темой
+        theme={(theme: any) => ({
+          ...theme,
+          colors: {
+            ...theme.colors,
+            primary: 'var(--primary)',
+            primary75: 'var(--primary-hover)',
+            primary50: 'rgba(19, 86, 190, 0.5)',
+            primary25: 'rgba(19, 86, 190, 0.2)',
+          }
+        })}
       />
       {error && (
         <p className="mt-8 text-sm text-red-600">{error}</p>

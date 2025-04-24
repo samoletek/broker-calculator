@@ -12,6 +12,7 @@ interface BookingData {
   premiumEnhancements: boolean;
   specialLoad: boolean;
   inoperable: boolean;
+  supplementaryInsurance: boolean;
 }
 
 export const navigateToBooking = (data: BookingData) => {
@@ -39,6 +40,7 @@ export const navigateToBooking = (data: BookingData) => {
     premium: data.premiumEnhancements.toString(),
     special: data.specialLoad.toString(),
     inoperable: data.inoperable.toString(),
+    supplementaryInsurance: data.supplementaryInsurance.toString(),
     // Добавляем метку, чтобы распознать, что запрос пришел из калькулятора
     fromCalculator: 'true'
   }).toString();

@@ -1,6 +1,5 @@
 import { Loader } from '@googlemaps/js-api-loader';
 import type { GeoPoint } from '@/app/types/common.types';
-import { trackApiRequest } from '@/app/lib/hooks/useRateLimiter';
 
 export const initializeGoogleMaps = async (): Promise<typeof google.maps> => {
   try {
