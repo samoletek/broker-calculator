@@ -462,9 +462,11 @@ useEffect(() => {
   
         // Добавляем комиссию за кредитную карту если выбран этот метод оплаты
         const cardFee = paymentMethod === 'CREDIT_CARD' 
-          ? subtotalPrice * PAYMENT_METHODS.CREDIT_CARD.fee 
-          : 0;
+        ? subtotalPrice * PAYMENT_METHODS.CREDIT_CARD.fee 
+        : 0;
     
+        const finalPrice = subtotalPrice + cardFee;
+
         // Устанавливаем компоненты цены
         setPriceComponents({
           selectedDate,
@@ -491,7 +493,7 @@ useEffect(() => {
             totalAdditional: additionalServicesSum
           },
           tollCosts,
-          finalPrice: subtotalPrice + cardFee  // Добавляем cardFee к subtotalPrice для получения финальной цены
+          finalPrice: finalPrice  // Используем рассчитанную выше финальную цену
         });
       } catch (error) {
         // Проверяем, не связана ли ошибка с API лимитом

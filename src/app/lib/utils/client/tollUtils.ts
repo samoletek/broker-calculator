@@ -46,6 +46,7 @@ export const getRouteSegments = (route: google.maps.DirectionsResult, totalCost:
     .map(step => step.instructions.toLowerCase())
     .join(' ');
   let remainingCost = totalCost;
+  let anyRegionMatched = false;
 
   const regionSegments = [
     {
@@ -96,6 +97,7 @@ export const getRouteSegments = (route: google.maps.DirectionsResult, totalCost:
 
   regionSegments.forEach(region => {
     if (region.condition()) {
+      anyRegionMatched = true;
       const regionCost = Math.round(remainingCost * region.multiplier * 100) / 100;
       segments.push({
         location: region.name,
@@ -106,11 +108,19 @@ export const getRouteSegments = (route: google.maps.DirectionsResult, totalCost:
     }
   });
 
-  if (remainingCost > 5) {
+  if (remainingCost > 0) {
     segments.push({
       location: "Other Regional Toll Roads",
       cost: Math.round(remainingCost * 100) / 100,
       details: "(Various Local Tolls)"
+    });
+  }
+  
+  if (!anyRegionMatched && totalCost > 0) {
+    segments.push({
+      location: "General Toll Charges",
+      cost: totalCost,
+      details: "(Route Tolls)"
     });
   }
 
