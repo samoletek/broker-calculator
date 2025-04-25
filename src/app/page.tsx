@@ -426,7 +426,7 @@ useEffect(() => {
         const autoShowImpact = basePrice * (autoShowMultiplier - 1);
         const fuelImpact = basePrice * (fuelPriceMultiplier - 1);
     
-        // Суммируем все impact-ы
+        // Суммируем все основные impact-ы (БЕЗ комиссии за карту)
         const totalImpact = 
           vehicleImpact + 
           weatherImpact + 
@@ -457,7 +457,7 @@ useEffect(() => {
           total: totalTollCost
         };
         
-        // Рассчитываем промежуточную сумму до добавления комиссии
+        // Рассчитываем промежуточную сумму без комиссии за карту
         const subtotalPrice = basePrice + totalImpact + additionalServicesImpact + tollCosts.total;
   
         // Добавляем комиссию за кредитную карту если выбран этот метод оплаты
@@ -483,15 +483,15 @@ useEffect(() => {
             trafficImpact,
             autoShowImpact,
             fuelImpact,
-            cardFee,  // Добавляем комиссию
-            totalImpact: totalImpact + cardFee  // Включаем комиссию в общую сумму impact
+            cardFee,  // Комиссия за карту как отдельное поле
+            totalImpact  // totalImpact НЕ включает cardFee
           },
           additionalServices: {
             ...additionalServices,
             totalAdditional: additionalServicesSum
           },
           tollCosts,
-          finalPrice: subtotalPrice + cardFee  // Обновленная финальная цена с учетом комиссии
+          finalPrice: subtotalPrice + cardFee  // Добавляем cardFee к subtotalPrice для получения финальной цены
         });
       } catch (error) {
         // Проверяем, не связана ли ошибка с API лимитом
