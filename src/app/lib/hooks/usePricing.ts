@@ -61,6 +61,7 @@ export function usePricing() {
     newComponents.finalPrice = 
       newComponents.basePrice + 
       newComponents.mainMultipliers.totalImpact +
+      newComponents.mainMultipliers.cardFee + 
       additionalServicesImpact +
       (newComponents.tollCosts?.total || 0);
 
