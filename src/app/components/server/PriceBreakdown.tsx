@@ -1,7 +1,5 @@
 'use client';
 
-import { DollarSign } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Accordion,
   AccordionContent,
@@ -9,21 +7,6 @@ import {
   AccordionTrigger,
 } from '@/app/components/ui/Accordion';
 import type { PriceBreakdownProps } from '@/app/types/components.types';
-
-const contentVariants = {
-  hidden: { 
-    opacity: 0,
-    height: 0
-  },
-  visible: { 
-    opacity: 1,
-    height: "auto",
-    transition: {
-      duration: 0.3,
-      ease: "easeOut"
-    }
-  }
-};
 
 export function PriceBreakdown({
   distance,
@@ -34,6 +17,9 @@ export function PriceBreakdown({
   tollCosts,
   finalPrice
 }: PriceBreakdownProps) {
+  // Вычисляем общую сумму Supplemental Price Factors, включая cardFee
+  const supplementalTotal = mainMultipliers.totalImpact + mainMultipliers.cardFee;
+
   return (
     <div className="w-full p-4 sm:p-40 space-y-10 sm:space-y-20 bg-white rounded-[24px] border border-primary/10">
       <div className="flex justify-between items-center">
@@ -106,7 +92,7 @@ export function PriceBreakdown({
             <AccordionTrigger className="w-full p-24 hover:no-underline">
               <div className="flex justify-between w-full">
                 <span className="font-montserrat text-p2 font-bold">Supplemental Price Factors</span>
-                <span className="font-montserrat text-p2 text-[#1356BE]">${mainMultipliers.totalImpact.toFixed(2)}</span>
+                <span className="font-montserrat text-p2 text-[#1356BE]">${supplementalTotal.toFixed(2)}</span>
               </div>
             </AccordionTrigger>
             <AccordionContent>
