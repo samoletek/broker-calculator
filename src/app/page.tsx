@@ -541,10 +541,12 @@ useEffect(() => {
               <h1 className="font-jost text-2xl sm:text-[32px] font-bold">Delivery Calculator</h1>
             </div>
           </div>
-
+  
           <div className="space-y-12 sm:space-y-24">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-24">
-              <div>
+            {/* Первая линия: Дата + Pickup + Delivery */}
+            <div className="grid grid-cols-12 gap-8 sm:gap-24">
+              {/* Дата */}
+              <div className="col-span-12 sm:col-span-3">
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Shipping Date
                 </label>
@@ -558,81 +560,8 @@ useEffect(() => {
                 />
               </div>
               
-              <div>
-                <label className="block text-p2 font-montserrat font-medium mb-8">
-                  Transport Type
-                </label>
-                <Select
-                  options={Object.entries(TRANSPORT_TYPES).map(([type, data]): SelectOption => ({
-                    value: type,
-                    label: data.name
-                  }))}
-                  placeholder="Select transport type..."
-                  value={transportType 
-                    ? { value: transportType, label: TRANSPORT_TYPES[transportType].name } 
-                    : null}
-                  onChange={(option) => {
-                    const value = (option as SelectOption)?.value;
-                    if (value) {
-                      setTransportType(value as keyof typeof TRANSPORT_TYPES);
-                      clearResults();
-                    }
-                  }}
-                  isSearchable={false}
-                />
-                {errors.transportType && <p className="text-red-500 text-sm mt-2">{errors.transportType}</p>}
-              </div>
-
-              <div>
-                <label className="block text-p2 font-montserrat font-medium mb-8">
-                  Vehicle Type
-                </label>
-                <Select
-                  options={Object.entries(VEHICLE_TYPES).map(([type, data]): SelectOption => ({
-                    value: type,
-                    label: data.name,
-                    description: data.description
-                  }))}
-                  placeholder="Select vehicle type..."
-                  value={vehicleType 
-                    ? { value: vehicleType, label: VEHICLE_TYPES[vehicleType].name } 
-                    : null}
-                  onChange={(option) => {
-                    const value = (option as SelectOption)?.value;
-                    setVehicleType((value as keyof typeof VEHICLE_TYPES) || '');
-                    clearResults();
-                  }}
-                  isSearchable={false}
-                />
-                {errors.vehicleType && <p className="text-red-500 text-sm mt-2">{errors.vehicleType}</p>}
-              </div>
-
-              <div>
-                <label className="block text-p2 font-montserrat font-medium mb-8">
-                  Vehicle Value
-                </label>
-                <Select
-                  options={Object.entries(VEHICLE_VALUE_TYPES).map(([type, data]): SelectOption => ({
-                    value: type,
-                    label: data.name
-                  }))}
-                  placeholder="Select vehicle value..."
-                  value={vehicleValue 
-                    ? { value: vehicleValue, label: VEHICLE_VALUE_TYPES[vehicleValue].name } 
-                    : null}
-                  onChange={(option) => {
-                    const value = (option as SelectOption)?.value;
-                    setVehicleValue((value as keyof typeof VEHICLE_VALUE_TYPES) || '');
-                    clearResults();
-                  }}
-                  isSearchable={false}
-                />
-                {errors.vehicleValue && <p className="text-red-500 text-sm mt-2">{errors.vehicleValue}</p>}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-24">
-              <div>
+              {/* Pickup адрес */}
+              <div className="col-span-12 sm:col-span-4 lg:col-span-4 md:col-span-4">
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Pickup Location
                 </label>
@@ -652,8 +581,9 @@ useEffect(() => {
                 />
                 {errors.pickup && <p className="text-red-500 text-sm mt-2">{errors.pickup}</p>}
               </div>
-
-              <div>
+  
+              {/* Delivery адрес */}
+              <div className="col-span-12 sm:col-span-5 lg:col-span-5 md:col-span-5">
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Delivery Location
                 </label>
@@ -673,7 +603,82 @@ useEffect(() => {
                 />
                 {errors.delivery && <p className="text-red-500 text-sm mt-2">{errors.delivery}</p>}
               </div>
-
+            </div>
+  
+            {/* Вторая линия: Transport Type + Vehicle Type + Vehicle Value + Payment Method */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-24">
+              <div>
+                <label className="block text-p2 font-montserrat font-medium mb-8">
+                  Transport Type
+                </label>
+                <Select
+                  options={Object.entries(TRANSPORT_TYPES).map(([type, data]): SelectOption => ({
+                    value: type,
+                    label: data.name
+                  }))}
+                  placeholder="Select transport type"
+                  value={transportType 
+                    ? { value: transportType, label: TRANSPORT_TYPES[transportType].name } 
+                    : null}
+                  onChange={(option) => {
+                    const value = (option as SelectOption)?.value;
+                    if (value) {
+                      setTransportType(value as keyof typeof TRANSPORT_TYPES);
+                      clearResults();
+                    }
+                  }}
+                  isSearchable={false}
+                />
+                {errors.transportType && <p className="text-red-500 text-sm mt-2">{errors.transportType}</p>}
+              </div>
+  
+              <div>
+                <label className="block text-p2 font-montserrat font-medium mb-8">
+                  Vehicle Type
+                </label>
+                <Select
+                  options={Object.entries(VEHICLE_TYPES).map(([type, data]): SelectOption => ({
+                    value: type,
+                    label: data.name,
+                    description: data.description
+                  }))}
+                  placeholder="Select vehicle type"
+                  value={vehicleType 
+                    ? { value: vehicleType, label: VEHICLE_TYPES[vehicleType].name } 
+                    : null}
+                  onChange={(option) => {
+                    const value = (option as SelectOption)?.value;
+                    setVehicleType((value as keyof typeof VEHICLE_TYPES) || '');
+                    clearResults();
+                  }}
+                  isSearchable={false}
+                />
+                {errors.vehicleType && <p className="text-red-500 text-sm mt-2">{errors.vehicleType}</p>}
+              </div>
+  
+              <div>
+                <label className="block text-p2 font-montserrat font-medium mb-8">
+                  Vehicle Value
+                </label>
+                <Select
+                  options={Object.entries(VEHICLE_VALUE_TYPES).map(([type, data]): SelectOption => ({
+                    value: type,
+                    label: data.name
+                  }))}
+                  placeholder="Select vehicle value"
+                  value={vehicleValue 
+                    ? { value: vehicleValue, label: VEHICLE_VALUE_TYPES[vehicleValue].name } 
+                    : null}
+                  onChange={(option) => {
+                    const value = (option as SelectOption)?.value;
+                    setVehicleValue((value as keyof typeof VEHICLE_VALUE_TYPES) || '');
+                    clearResults();
+                  }}
+                  isSearchable={false}
+                />
+                {errors.vehicleValue && <p className="text-red-500 text-sm mt-2">{errors.vehicleValue}</p>}
+              </div>
+  
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Payment Method
@@ -683,7 +688,7 @@ useEffect(() => {
                     value: type,
                     label: data.name
                   }))}
-                  placeholder="Select payment method..."
+                  placeholder="Select payment method"
                   value={paymentMethod 
                     ? { value: paymentMethod, label: PAYMENT_METHODS[paymentMethod].name } 
                     : null}
@@ -696,104 +701,111 @@ useEffect(() => {
                 />
               </div>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8 sm:gap-24">
-              {Object.entries(ADDITIONAL_SERVICES).map(([key, service]) => (
-                <div key={key} className="flex items-center space-x-8 sm:space-x-12">
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      id={key}
-                      checked={key === 'premiumEnhancements' ? premiumEnhancements : 
-                              key === 'specialLoad' ? specialLoad : 
-                              key === 'inoperable' ? inoperable :
-                              key === 'supplementaryInsurance' ? supplementaryInsurance : false}
-                      disabled={key === 'premiumEnhancements' && (vehicleValue === 'under500k' || vehicleValue === 'over500k')}
-                      onChange={(e) => {
-                        if (key === 'premiumEnhancements') {
-                          setPremiumEnhancements(e.target.checked);
-                          clearResults();
-                        }
-                        else if (key === 'specialLoad') {
-                          setSpecialLoad(e.target.checked);
-                          clearResults();
-                        }
-                        else if (key === 'inoperable') {
-                          setInoperable(e.target.checked);
-                          clearResults();
-                        }
-                        else if (key === 'supplementaryInsurance') {
-                          setSupplementaryInsurance(e.target.checked);
-                          clearResults();
-                        }
-                      }}
-                      className={`appearance-none h-20 w-20 sm:h-24 sm:w-24 rounded
-                        border-2 border-gray-200
-                        checked:bg-primary checked:border-primary
-                        relative cursor-pointer transition-all duration-200
-                        disabled:opacity-50 disabled:cursor-not-allowed
-                        focus:ring-offset-0 focus:ring-0
-                        ${key === 'premiumEnhancements' && (vehicleValue === 'under500k' || vehicleValue === 'over500k') 
-                          ? 'opacity-50 cursor-not-allowed' 
-                          : ''}`}
-                    />
-                      <svg 
-                        className={`absolute left-0 top-0 w-20 h-20 sm:w-24 sm:h-24 pointer-events-none text-white
-                          ${key === 'premiumEnhancements' ? premiumEnhancements : 
-                            key === 'specialLoad' ? specialLoad : 
-                            key === 'inoperable' ? inoperable : 
-                            key === 'supplementaryInsurance' ? supplementaryInsurance ? 'block' : 'hidden' : 'hidden'}`}
-                        xmlns="http://www.w3.org/2000/svg" 
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                  </div>
-                  <label className="text-sm sm:text-p2 font-montserrat relative" htmlFor={key}>
-                    {service.name}
-                    <span className="ml-4 sm:ml-8 inline-block cursor-help group">
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        strokeWidth={1.5} 
-                        stroke="currentColor" 
-                        className="w-12 h-12 sm:w-16 sm:h-16 text-gray-500"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" 
+  
+            {/* Третья линия: Дополнительные услуги */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-24">
+              {['premiumEnhancements', 'supplementaryInsurance', 'inoperable', 'specialLoad']
+                .filter(key => key in ADDITIONAL_SERVICES)
+                .map((key) => {
+                  const service = ADDITIONAL_SERVICES[key];
+                  return (
+                    <div key={key} className="flex items-center space-x-8 sm:space-x-12">
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          id={key}
+                          checked={key === 'premiumEnhancements' ? premiumEnhancements : 
+                                  key === 'specialLoad' ? specialLoad : 
+                                  key === 'inoperable' ? inoperable :
+                                  key === 'supplementaryInsurance' ? supplementaryInsurance : false}
+                          disabled={key === 'premiumEnhancements' && (vehicleValue === 'under500k' || vehicleValue === 'over500k')}
+                          onChange={(e) => {
+                            if (key === 'premiumEnhancements') {
+                              setPremiumEnhancements(e.target.checked);
+                              clearResults();
+                            }
+                            else if (key === 'specialLoad') {
+                              setSpecialLoad(e.target.checked);
+                              clearResults();
+                            }
+                            else if (key === 'inoperable') {
+                              setInoperable(e.target.checked);
+                              clearResults();
+                            }
+                            else if (key === 'supplementaryInsurance') {
+                              setSupplementaryInsurance(e.target.checked);
+                              clearResults();
+                            }
+                          }}
+                          className={`appearance-none h-20 w-20 sm:h-24 sm:w-24 rounded
+                            border-2 border-gray-200
+                            checked:bg-primary checked:border-primary
+                            relative cursor-pointer transition-all duration-200
+                            disabled:opacity-50 disabled:cursor-not-allowed
+                            focus:ring-offset-0 focus:ring-0
+                            ${key === 'premiumEnhancements' && (vehicleValue === 'under500k' || vehicleValue === 'over500k') 
+                              ? 'opacity-50 cursor-not-allowed' 
+                              : ''}`}
                         />
-                      </svg>
-                      <div className="invisible group-hover:visible absolute z-50 w-[280px] p-4 sm:p-16
-                        bg-white border border-gray-200 rounded-[24px] shadow-lg
-                        left-1/2 -translate-x-1/2 
-                        bottom-full mb-2">
-                        <div className="text-sm font-montserrat font-semibold text-gray-900 mb-8">
-                          {key === 'premiumEnhancements' ? 'Premium Service Benefits:' : 
-                          key === 'specialLoad' ? 'Special Load Services:' : 
-                          key === 'inoperable' ? 'Inoperable Vehicle Services:' :
-                          'Supplementary Insurance Services:'}
-                        </div>
-                        <ul className="space-y-2">
-                          {service.tooltip?.map((tip, index) => (
-                            <li key={index} className="flex text-xs font-montserrat text-gray-700 leading-tight">
-                              <span className="mr-4 text-sm">•</span>
-                              <span>{tip}</span>
-                            </li>
-                          ))}
-                        </ul>
+                          <svg 
+                            className={`absolute left-0 top-0 w-20 h-20 sm:w-24 sm:h-24 pointer-events-none text-white
+                              ${key === 'premiumEnhancements' ? premiumEnhancements : 
+                                key === 'specialLoad' ? specialLoad : 
+                                key === 'inoperable' ? inoperable : 
+                                key === 'supplementaryInsurance' ? supplementaryInsurance ? 'block' : 'hidden' : 'hidden'}`}
+                            xmlns="http://www.w3.org/2000/svg" 
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
                       </div>
-                    </span>
-                  </label>
-                </div>
-              ))}
+                      <label className="text-sm sm:text-p2 font-montserrat relative" htmlFor={key}>
+                        {service.name}
+                        <span className="ml-4 sm:ml-8 inline-block cursor-help group">
+                          <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            fill="none" 
+                            viewBox="0 0 24 24" 
+                            strokeWidth={1.5} 
+                            stroke="currentColor" 
+                            className="w-12 h-12 sm:w-16 sm:h-16 text-gray-500"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" 
+                            />
+                          </svg>
+                          <div className="invisible group-hover:visible absolute z-50 w-[280px] p-4 sm:p-16
+                            bg-white border border-gray-200 rounded-[24px] shadow-lg
+                            left-1/2 -translate-x-1/2 
+                            bottom-full mb-2">
+                            <div className="text-sm font-montserrat font-semibold text-gray-900 mb-8">
+                              {key === 'premiumEnhancements' ? 'Premium Service Benefits:' : 
+                              key === 'specialLoad' ? 'Special Load Services:' : 
+                              key === 'inoperable' ? 'Inoperable Vehicle Services:' :
+                              'Supplementary Insurance Services:'}
+                            </div>
+                            <ul className="space-y-2">
+                              {service.tooltip?.map((tip, index) => (
+                                <li key={index} className="flex text-xs font-montserrat text-gray-700 leading-tight">
+                                  <span className="mr-4 text-sm">•</span>
+                                  <span>{tip}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </span>
+                      </label>
+                    </div>
+                  );
+                })}
             </div>
   
+            {/* Четвертая линия: Контактная информация */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-24">
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
@@ -821,7 +833,7 @@ useEffect(() => {
                   <p className="text-red-500 text-sm mt-2">{errors.name}</p>
                 )}
               </div>
-
+  
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Phone
@@ -851,7 +863,7 @@ useEffect(() => {
                   <p className="text-red-500 text-sm mt-2">{errors.phone}</p>
                 )}
               </div>
-
+  
               <div>
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Email
@@ -877,7 +889,7 @@ useEffect(() => {
                 )}
               </div>
             </div>
-
+  
             {/* Показываем reCAPTCHA, если нужно */}
             {showCaptcha && (
               <div className="w-full bg-gray-50 p-16 rounded-[24px] border border-primary/20 mt-16">
@@ -914,7 +926,7 @@ useEffect(() => {
                 />
               </div>
             )}
-
+  
             <div className="flex flex-col sm:flex-row gap-4 mt-12 sm:mt-24">
             <button
               onClick={calculatePrice}
@@ -938,7 +950,7 @@ useEffect(() => {
                 'Calculate Route and Price'
               )}
             </button>
-
+  
               <button
                 onClick={() => {
                   // Отправляем сообщение виксу для открытия поп-апа
@@ -1079,7 +1091,7 @@ useEffect(() => {
             </div>
           </div>
         )}
-
+  
         {/* Footer signature */}
           <div className="w-full text-center py-6 mt-8">
             <p className="text-xs text-gray-500 font-montserrat">
