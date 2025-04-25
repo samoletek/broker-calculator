@@ -13,6 +13,7 @@ import {
   VEHICLE_VALUE_TYPES,
   VEHICLE_TYPES,
   ADDITIONAL_SERVICES,
+  PAYMENT_METHODS, 
   getBaseRate
 } from '@/constants/pricing';
 import { validateName, validateEmail, validatePhoneNumber } from '@/app/lib/utils/client/validation';
@@ -83,6 +84,7 @@ export default function BrokerCalculator() {
   const [specialLoad, setSpecialLoad] = useState(false);
   const [inoperable, setInoperable] = useState(false);
   const [supplementaryInsurance, setSupplementaryInsurance] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<keyof typeof PAYMENT_METHODS | ''>('');
 
   const [mapData, setMapData] = useState<google.maps.DirectionsResult | null>(null);
   const [routeInfo, setRouteInfo] = useState({
@@ -432,18 +434,18 @@ useEffect(() => {
           autoShowImpact + 
           fuelImpact;
     
-          const additionalServices = {
-            premium: premiumEnhancements ? 0.3 : 0,
-            special: specialLoad ? 0.3 : 0,
-            inoperable: inoperable ? 0.3 : 0,
-            supplementaryInsurance: 0,
-            hasManagerDefined: supplementaryInsurance
-          };
-          
-          const additionalServicesSum = 
-            (additionalServices.premium + 
-            additionalServices.special + 
-            additionalServices.inoperable);
+        const additionalServices = {
+          premium: premiumEnhancements ? 0.3 : 0,
+          special: specialLoad ? 0.3 : 0,
+          inoperable: inoperable ? 0.3 : 0,
+          supplementaryInsurance: 0,
+          hasManagerDefined: supplementaryInsurance
+        };
+        
+        const additionalServicesSum = 
+          (additionalServices.premium + 
+          additionalServices.special + 
+          additionalServices.inoperable);
     
         const additionalServicesImpact = basePrice * additionalServicesSum;
     
@@ -454,6 +456,14 @@ useEffect(() => {
           segments: tollSegments,
           total: totalTollCost
         };
+        
+        // Рассчитываем промежуточную сумму до добавления комиссии
+        const subtotalPrice = basePrice + totalImpact + additionalServicesImpact + tollCosts.total;
+  
+        // Добавляем комиссию за кредитную карту если выбран этот метод оплаты
+        const cardFee = paymentMethod === 'CREDIT_CARD' 
+          ? subtotalPrice * PAYMENT_METHODS.CREDIT_CARD.fee 
+          : 0;
     
         // Устанавливаем компоненты цены
         setPriceComponents({
@@ -473,14 +483,15 @@ useEffect(() => {
             trafficImpact,
             autoShowImpact,
             fuelImpact,
-            totalImpact
+            cardFee,  // Добавляем комиссию
+            totalImpact: totalImpact + cardFee  // Включаем комиссию в общую сумму impact
           },
           additionalServices: {
             ...additionalServices,
             totalAdditional: additionalServicesSum
           },
           tollCosts,
-          finalPrice: basePrice + totalImpact + additionalServicesImpact + tollCosts.total
+          finalPrice: subtotalPrice + cardFee  // Обновленная финальная цена с учетом комиссии
         });
       } catch (error) {
         // Проверяем, не связана ли ошибка с API лимитом
@@ -661,6 +672,28 @@ useEffect(() => {
                   placeholder="Enter delivery address"
                 />
                 {errors.delivery && <p className="text-red-500 text-sm mt-2">{errors.delivery}</p>}
+              </div>
+
+              <div>
+                <label className="block text-p2 font-montserrat font-medium mb-8">
+                  Payment Method
+                </label>
+                <Select
+                  options={Object.entries(PAYMENT_METHODS).map(([type, data]): SelectOption => ({
+                    value: type,
+                    label: data.name
+                  }))}
+                  placeholder="Select payment method..."
+                  value={paymentMethod 
+                    ? { value: paymentMethod, label: PAYMENT_METHODS[paymentMethod].name } 
+                    : null}
+                  onChange={(option) => {
+                    const value = (option as SelectOption)?.value;
+                    setPaymentMethod((value as keyof typeof PAYMENT_METHODS) || '');
+                    clearResults();
+                  }}
+                  isSearchable={false}
+                />
               </div>
             </div>
 
@@ -947,6 +980,7 @@ useEffect(() => {
               transportType={transportType}
               vehicleType={vehicleType}
               vehicleValue={vehicleValue}
+              paymentMethod={paymentMethod}
               additionalServices={{
                 premiumEnhancements,
                 specialLoad,

@@ -85,6 +85,7 @@ export interface PriceBreakdownProps {
     trafficImpact: number;
     autoShowImpact: number;
     fuelImpact: number;
+    cardFee: number;
     totalImpact: number;
   };
 }

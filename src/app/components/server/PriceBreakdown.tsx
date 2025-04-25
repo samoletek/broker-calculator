@@ -132,6 +132,12 @@ export function PriceBreakdown({
                   <span className="text-gray-600">Fuel Impact</span>
                   <span className="text-primary">${mainMultipliers.fuelImpact.toFixed(2)}</span>
                 </div>
+                {mainMultipliers.cardFee > 0 && (
+                  <div className="flex justify-between text-p2">
+                    <span className="text-gray-600">Credit Card Fee (3%)</span>
+                    <span className="text-primary">${mainMultipliers.cardFee.toFixed(2)}</span>
+                  </div>
+                )}
               </div>
             </AccordionContent>
           </div>

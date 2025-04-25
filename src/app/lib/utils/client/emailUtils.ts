@@ -11,6 +11,7 @@ interface EmailData {
     vehicleValue: string;
     selectedDate?: string;
     distance?: number;
+    paymentMethod?: string;
   };
 }
 

@@ -27,6 +27,7 @@ export interface PriceSummaryProps {
   transportType?: string;
   vehicleType?: string;
   vehicleValue?: string;
+  paymentMethod?: string;
   additionalServices?: {
     premiumEnhancements: boolean;
     specialLoad: boolean;
@@ -47,6 +48,7 @@ export function PriceSummary({
   transportType,
   vehicleType,
   vehicleValue,
+  paymentMethod,
   additionalServices,
   distance,
   estimatedTime,
@@ -94,6 +96,7 @@ export function PriceSummary({
           transportType: transportType || '',
           vehicleType: vehicleType || '',
           vehicleValue: vehicleValue || '',
+          paymentMethod: paymentMethod || '',
           selectedDate: selectedDate?.toISOString(),
           distance: distance
         }

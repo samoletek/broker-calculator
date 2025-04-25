@@ -198,6 +198,29 @@ export const ADDITIONAL_SERVICES: Record<string, AdditionalService> = {
   }
 };
 
+export const PAYMENT_METHODS = {
+  CREDIT_CARD: {
+    id: 'creditCard',
+    name: 'Credit Card',
+    fee: 0.03  // 3% комиссия
+  },
+  ACH: {
+    id: 'ach',
+    name: 'ACH',
+    fee: 0
+  },
+  CHECK: {
+    id: 'check',
+    name: 'Check',
+    fee: 0
+  },
+  COD: {
+    id: 'cod',
+    name: 'COD (Cash on Delivery)',
+    fee: 0
+  }
+};
+
 // Конфигурация погодных условий
 export const WEATHER_MULTIPLIERS: Record<string, number> = {
   clear: 1.0,

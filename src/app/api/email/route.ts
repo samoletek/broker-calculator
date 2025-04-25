@@ -15,6 +15,7 @@ interface EmailRequestBody {
     transportType: string;
     vehicleType: string;
     vehicleValue: string;
+    paymentMethod?: string;
     selectedDate?: string;
     distance?: number;
   };
@@ -73,6 +74,7 @@ export async function POST(request: Request) {
       transport_type: body.calculationData.transportType || '',
       vehicle_type: body.calculationData.vehicleType || '',
       vehicle_value: body.calculationData.vehicleValue || '',
+      payment_method: body.calculationData.paymentMethod || 'Not specified',
       date: body.calculationData.selectedDate
         ? new Date(body.calculationData.selectedDate).toLocaleDateString()
         : 'Not specified',
