@@ -1093,31 +1093,6 @@ useEffect(() => {
             </div>
           </div>
         )}
-  
-        {/* Footer signature */}
-          <div className="w-full text-center py-6 mt-8">
-            <p className="text-xs text-gray-500 font-montserrat">
-              Developed by{" "}
-              <a 
-                href="https://t.me/carsandpaints" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="inline-flex items-center text-primary hover:text-primary-hover transition-colors group"
-              >
-                <span className="border-b border-transparent group-hover:border-primary">drew</span>
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  width="14" 
-                  height="14" 
-                  viewBox="0 0 24 24" 
-                  fill="currentColor" 
-                  className="ml-1.5" 
-                >
-                  <path d="M20.665,3.717l-17.73,6.837c-1.21,0.486-1.203,1.161-0.222,1.462l4.552,1.42l10.532-6.645 c0.498-0.303,0.953-0.14,0.579,0.192l-8.533,7.701l-0.332,4.979c0.322,0,0.46-0.147,0.64-0.317l1.538-1.485l4.202,3.098 c0.774,0.426,1.332,0.208,1.526-0.715l2.762-13.002C20.587,2.753,21.189,2.303,20.665,3.717z"></path>
-                </svg>
-              </a>
-            </p>
-          </div>
       </div>
     </div>
   );
