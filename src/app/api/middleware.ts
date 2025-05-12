@@ -4,25 +4,9 @@ import { getIronSession } from 'iron-session';
 import { validateCSRFToken } from '@/app/lib/csrf';
 import { sessionOptions } from '@/app/lib/session';
 
-// Хранилище для ограничения запросов
-const requestStore: {
-  [key: string]: {
-    count: number;
-    lastReset: number;
-  };
-} = {};
-
-// Лимиты запросов
-const RATE_LIMIT = {
-  windowMs: 60 * 1000, // 1 минута
-  maxRequestsPerWindow: 20, // максимальное количество запросов за окно
-};
-
 // Пути, которые не требуют CSRF-токена
 const CSRF_EXEMPT_PATHS = [
   '/api/csrf',
-  '/api/verify-recaptcha',
-  '/api/captcha',
   '/api/maps'
 ];
 
@@ -33,32 +17,6 @@ export async function middleware(request: NextRequest) {
   const ipHeader = request.headers.get('x-forwarded-for');
   const ip = ipHeader ? ipHeader.split(',')[0].trim() : 'unknown';
   const now = Date.now();
-  
-  // Проверяем, есть ли запись для этого IP
-  if (!requestStore[ip]) {
-    requestStore[ip] = {
-      count: 0,
-      lastReset: now,
-    };
-  }
-  
-  // Сбрасываем счетчик, если прошло время окна
-  if (now - requestStore[ip].lastReset > RATE_LIMIT.windowMs) {
-    requestStore[ip].count = 0;
-    requestStore[ip].lastReset = now;
-  }
-  
-  // Увеличиваем счетчик запросов
-  requestStore[ip].count += 1;
-  
-  // Проверяем, не превышен ли лимит
-  if (requestStore[ip].count > RATE_LIMIT.maxRequestsPerWindow) {
-    console.log(`Rate limit exceeded for IP: ${ip}`);
-    return NextResponse.json(
-      { error: 'Too many requests, please try again later' },
-      { status: 429 }
-    );
-  }
   
   // Создаем объект response - нужен для iron-session
   const response = NextResponse.next();

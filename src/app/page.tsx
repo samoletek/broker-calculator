@@ -19,18 +19,12 @@ import {
 import { validateName, validateEmail, validatePhoneNumber } from '@/app/lib/utils/client/validation';
 import { useGoogleMaps } from '@/app/lib/hooks/useGoogleMaps';
 import { usePricing } from '@/app/lib/hooks/usePricing';
-import { useRateLimiter } from '@/app/lib/hooks/useRateLimiter';
 import { validateAddress, isSameLocation } from '@/app/lib/utils/client/maps';
 import { calculateTollCost, getRouteSegments } from '@/app/lib/utils/client/tollUtils';
 import { checkAutoShows, getAutoShowMultiplier } from '@/app/lib/utils/client/autoShowsUtils';
 import { calculateEstimatedTransitTime, getRoutePoints } from '@/app/lib/utils/client/transportUtils';
 import { getFuelPriceMultiplier } from '@/app/lib/utils/client/fuelUtils';
 import type { SelectOption } from '@/app/types/common.types';
-
-// Динамический импорт компонентов
-const GoogleReCaptcha = dynamic(() => import('@/app/lib/utils/client/GoogleReCaptcha'), {
-  ssr: false,
-});
 
 const GoogleMap = dynamic(() => import('@/app/components/client/GoogleMap'), {
   ssr: false,
@@ -100,13 +94,6 @@ export default function BrokerCalculator() {
   // Hooks
   const { priceComponents, setPriceComponents, updatePriceComponents } = usePricing();
   const googleMaps = useGoogleMaps();
-  const { 
-    showCaptcha,
-    captchaVerified,
-    trackCalculationRequest,
-    trackAutocompleteRequest,
-    verifyRecaptcha 
-  } = useRateLimiter();
   
   // Refs
   const mapRef = useRef<HTMLDivElement>(null);
@@ -139,21 +126,11 @@ useEffect(() => {
       };
     };
     
-    // Создаем дебаунсед функцию для отслеживания запросов
-    const debouncedTrackAutocomplete = debounce(() => {
-      return trackAutocompleteRequest();
-    }, 300);
-    
     try {
       // Инициализация автозаполнения для пикапа
       const pickupAutocomplete = new googleMaps.places.Autocomplete(pickupInputRef.current, {
         types: ['address'],
         componentRestrictions: { country: 'us' },
-      });
-      
-      // Отслеживаем запросы на ввод
-      pickupInputRef.current.addEventListener('input', () => {
-        debouncedTrackAutocomplete();
       });
       
       pickupAutocomplete.addListener('place_changed', () => {
@@ -168,10 +145,6 @@ useEffect(() => {
       const deliveryAutocomplete = new googleMaps.places.Autocomplete(deliveryInputRef.current, {
         types: ['address'],
         componentRestrictions: { country: 'us' },
-      });
-      
-      deliveryInputRef.current.addEventListener('input', () => {
-        debouncedTrackAutocomplete();
       });
       
       deliveryAutocomplete.addListener('place_changed', () => {
@@ -191,7 +164,7 @@ useEffect(() => {
   if (googleMaps) {
     initAutocomplete();
   }
-}, [googleMaps, trackAutocompleteRequest]);
+}, [googleMaps]);
 
   useEffect(() => {
     const isExpensiveVehicle = vehicleValue === 'under500k' || vehicleValue === 'over500k';
@@ -229,14 +202,6 @@ useEffect(() => {
       general: ''
     });
   }, [setPriceComponents]);
-
-  // Handling reCAPTCHA verification
-  const handleRecaptchaVerify = async (token: string | null) => {
-    if (await verifyRecaptcha(token)) {
-      // Если верификация успешна, сбрасываем состояние ошибки
-      setErrors((prev) => ({ ...prev, general: '' }));
-    }
-  };
 
   // Validations
   const validateFields = () => {
@@ -299,11 +264,6 @@ useEffect(() => {
   const calculatePrice = async () => {
     if (!validateFields()) return;
     if (typeof window === 'undefined' || !googleMaps) return;
-  
-    // Проверяем лимит вычислений и капчу
-    if (!trackCalculationRequest()) {
-      return;
-    }
     
     if (!selectedDate) {
       setErrors((prev) => ({ ...prev, selectedDate: 'Please select a shipping date' }));
@@ -893,46 +853,10 @@ useEffect(() => {
             </div>
   
             {/* Показываем reCAPTCHA, если нужно */}
-            {showCaptcha && (
-              <div className="w-full bg-gray-50 p-16 rounded-[24px] border border-primary/20 mt-16">
-                <div className="mb-8 text-center">
-                  <h3 className="font-jost text-xl font-bold text-primary mb-4">Security Verification Required</h3>
-                  <p className="font-montserrat text-gray-600">
-                    We have detected multiple requests from your device. Please complete the verification below to continue.
-                  </p>
-                </div>
-                
-                <GoogleReCaptcha 
-                  onVerify={(token) => {
-                    console.log('reCAPTCHA verification attempt');
-                    verifyRecaptcha(token).then(result => {
-                      if (result) {
-                        console.log('reCAPTCHA verification successful');
-                        setErrors(prev => ({ ...prev, general: '' }));
-                      } else {
-                        console.log('reCAPTCHA verification failed');
-                        setErrors(prev => ({ 
-                          ...prev, 
-                          general: 'Verification failed. Please try again.' 
-                        }));
-                      }
-                    });
-                  }}
-                  onExpired={() => {
-                    console.log('reCAPTCHA expired');
-                    setErrors(prev => ({ 
-                      ...prev, 
-                      general: 'Verification expired. Please try again.' 
-                    }));
-                  }}
-                />
-              </div>
-            )}
-  
             <div className="flex flex-col sm:flex-row gap-4 mt-12 sm:mt-24">
             <button
               onClick={calculatePrice}
-              disabled={loading || (showCaptcha && !captchaVerified)}
+              disabled={loading}
               className="w-full sm:flex-1 bg-primary hover:bg-primary/90
                 text-white py-8 sm:py-12 px-8 sm:px-16 rounded-[24px]
                 disabled:bg-primary/50
@@ -946,8 +870,6 @@ useEffect(() => {
                   <Loader2 className="w-16 h-16 sm:w-20 sm:h-20 mr-4 sm:mr-8 animate-spin" />
                   Calculating...
                 </>
-              ) : showCaptcha && !captchaVerified ? (
-                'Please complete verification above'
               ) : (
                 'Calculate Route and Price'
               )}

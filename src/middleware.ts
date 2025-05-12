@@ -10,7 +10,7 @@ export function middleware(request: NextRequest) {
     img-src 'self' data: https://maps.googleapis.com https://maps.gstatic.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     font-src 'self' https://fonts.gstatic.com;
-    frame-src 'self' https://www.google.com;
+    frame-src 'self'
   `.replace(/\s{2,}/g, ' ').trim();
 
   // Создаем новый ответ клонированием оригинального
