@@ -25,6 +25,7 @@ import { checkAutoShows, getAutoShowMultiplier } from '@/app/lib/utils/client/au
 import { calculateEstimatedTransitTime, getRoutePoints } from '@/app/lib/utils/client/transportUtils';
 import { getFuelPriceMultiplier } from '@/app/lib/utils/client/fuelUtils';
 import type { SelectOption } from '@/app/types/common.types';
+import { submitCalculationLead, prepareCalculatorDataForLead } from '@/app/lib/utils/client/leadSubmissionUtils';
 
 const GoogleMap = dynamic(() => import('@/app/components/client/GoogleMap'), {
   ssr: false,
@@ -116,15 +117,6 @@ useEffect(() => {
     }
     
     console.log("Initializing autocomplete with Google Maps");
-    
-    // Функция debounce для ограничения запросов
-    const debounce = (func: Function, delay: number) => {
-      let timeout: NodeJS.Timeout;
-      return (...args: any[]) => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func(...args), delay);
-      };
-    };
     
     try {
       // Инициализация автозаполнения для пикапа
@@ -261,7 +253,7 @@ useEffect(() => {
     return isValid;
   };
   
-  const calculatePrice = async () => {
+const calculatePrice = async () => {
     if (!validateFields()) return;
     if (typeof window === 'undefined' || !googleMaps) return;
     
@@ -445,16 +437,64 @@ useEffect(() => {
             trafficImpact,
             autoShowImpact,
             fuelImpact,
-            cardFee,  // Комиссия за карту как отдельное поле
-            totalImpact  // totalImpact НЕ включает cardFee
+            cardFee,
+            totalImpact
           },
           additionalServices: {
             ...additionalServices,
             totalAdditional: additionalServicesSum
           },
           tollCosts,
-          finalPrice: finalPrice  // Используем рассчитанную выше финальную цену
+          finalPrice: finalPrice
         });
+        
+        // Отправка лида после калькуляции
+        if (finalPrice > 0) {
+          try {
+            const leadData = prepareCalculatorDataForLead({
+              name,
+              email,
+              phone,
+              pickup: pickupValidation.formattedAddress!,
+              delivery: deliveryValidation.formattedAddress!,
+              selectedDate,
+              transportType,
+              vehicleType,
+              vehicleValue,
+              premiumEnhancements,
+              specialLoad,
+              inoperable,
+              supplementaryInsurance,
+              finalPrice,
+              distance: distanceInMiles
+            });
+            
+            // Submit asynchronously without blocking UI
+            submitCalculationLead(leadData)
+              .then(result => {
+                if (result.success) {
+                  console.log('Lead submitted successfully:', result);
+                  
+                  // Optionally show a subtle notification
+                  if (!result.cached) {
+                    console.log('New lead created with hash:', result.calculationHash);
+                  }
+                } else {
+                  console.warn('Lead submission failed:', result.message);
+                  // affect the calculator experience
+                }
+              })
+              .catch(error => {
+                console.error('Lead submission error:', error);
+                // Silent failure - don't interrupt user experience
+              });
+              
+          } catch (error) {
+            console.error('Error preparing lead data:', error);
+            // Continue normally even if lead submission fails
+          }
+        }
+        
       } catch (error) {
         // Проверяем, не связана ли ошибка с API лимитом
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
