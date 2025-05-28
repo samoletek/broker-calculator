@@ -1,8 +1,5 @@
 // src/app/lib/utils/client/awsLeadMapper.ts
 
-/**
- * Interface for AWS Lead structure based on the provided JSON format
- */
 export interface AWSLeadData {
   Request: string;
   Id: string;
@@ -157,8 +154,6 @@ const parseName = (fullName: string): { firstName: string; lastName: string } =>
  * Map premium enhancements to AWS format
  */
 const mapPremiumEnhancements = (premiumEnhancements: boolean): string => {
-  // In AWS format, Premium can be "Ramp", "Liftgate", etc.
-  // Since we don't have specific details, we'll use a generic value
   return premiumEnhancements ? 'Premium Service' : 'No';
 };
 

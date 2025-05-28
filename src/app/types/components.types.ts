@@ -1,5 +1,4 @@
 import type { BasePriceBreakdown, GeoPoint } from './common.types';
-import type { WeatherData } from '@/app/lib/utils/client/weather';
 
 export interface WeatherMapProps {
   routePoints: {

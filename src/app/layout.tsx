@@ -3,7 +3,7 @@ import "./styles/globals.css";
 import "./styles/components.css";
 
 export const metadata: Metadata = {
-  title: "Broker Calculator - Vehicle Transport Price Estimator",
+  title: "Broker Calculator - Vehicle Transport Price Estimator built by architeq.io",
   description: "Professional vehicle transport cost calculator for accurate shipping estimates across the United States",
   keywords: "vehicle transport, car shipping calculator, auto transport quote, car delivery cost",
 };

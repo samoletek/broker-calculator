@@ -100,8 +100,6 @@ export default function BrokerCalculator() {
   const mapRef = useRef<HTMLDivElement>(null);
   const pickupInputRef = useRef<HTMLInputElement>(null);
   const deliveryInputRef = useRef<HTMLInputElement>(null);
-
-  const WIX_CALLBACK_FORM_URL = "https://your-wix-site.com/callback-form";
   
 // В useEffect для инициализации автозаполнения
 useEffect(() => {

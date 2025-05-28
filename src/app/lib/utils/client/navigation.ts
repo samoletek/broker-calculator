@@ -1,5 +1,4 @@
 // src/app/lib/utils/client/navigation.ts
-// ЗАМЕНИ ВЕСЬ ФАЙЛ navigation.ts В КАЛЬКУЛЯТОРЕ НА ЭТОТ КОД
 
 interface BookingData {
   name: string;

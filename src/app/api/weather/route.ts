@@ -14,7 +14,6 @@ export async function POST(request: Request) {
       );
     }
     
-    // Проверяем наличие API-ключа
     if (!process.env.WEATHER_API_KEY) {
       console.error('WEATHER_API_KEY is not defined');
       return NextResponse.json(

@@ -13,11 +13,6 @@ const CSRF_EXEMPT_PATHS = [
 export async function middleware(request: NextRequest) {
   console.log(`API Middleware called for ${request.method} ${request.nextUrl.pathname}`);
   
-  // Используем заголовок для получения IP
-  const ipHeader = request.headers.get('x-forwarded-for');
-  const ip = ipHeader ? ipHeader.split(',')[0].trim() : 'unknown';
-  const now = Date.now();
-  
   // Создаем объект response - нужен для iron-session
   const response = NextResponse.next();
   
@@ -26,8 +21,6 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   );
   
-  // Проверка CSRF только для POST, PUT, DELETE методов
-  // Пропускаем проверку для GET и OPTIONS запросов и для исключённых маршрутов
   if (
     request.method !== 'GET' && 
     request.method !== 'OPTIONS' && 

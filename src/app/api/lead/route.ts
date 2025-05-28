@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       id: body.Id,
       email: body.client.EMail,
       quote: body.Quote,
-      calculationHash: body.Lead?.VIN // We'll use VIN field to store hash
+      calculationHash: body.Lead?.VIN
     });
     
     try {
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
         headers: {
           'Content-Type': 'application/json',
         },
-        timeout: 10000 // 10 seconds timeout
+        timeout: 10000
       });
       
       console.log('AWS Lambda response:', response.status, response.data);
@@ -59,8 +59,6 @@ export async function POST(request: Request) {
     } catch (awsError) {
       console.error('AWS Lambda error:', awsError);
       
-      // Don't fail the whole operation if AWS is down
-      // We can implement a retry queue later
       return NextResponse.json({
         success: false,
         message: 'Failed to send lead to AWS, but calculation saved locally',

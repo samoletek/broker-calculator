@@ -1,7 +1,4 @@
 import { NextResponse } from 'next/server';
-import { getIronSession } from 'iron-session';
-import { validateCSRFToken } from '@/app/lib/csrf';
-import { sessionOptions } from '@/app/lib/session';
 import emailjs from '@emailjs/browser';
 
 interface EmailRequestBody {
@@ -39,11 +36,6 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
     
-    // Создаем объект response для сессии
-    const response = NextResponse.json({ success: false, message: 'Initializing' });
-    
-    // Проверка CSRF не нужна для этого маршрута, так как проверка уже выполнена в middleware
-    // Но мы все равно логируем заголовок для отладки
     const csrfToken = request.headers.get('csrf-token');
     console.log('CSRF Token received:', csrfToken ? 'Present' : 'Missing');
     

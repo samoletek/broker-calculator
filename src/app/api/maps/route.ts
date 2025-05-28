@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 
-// Маршрут для геокодирования адреса (получение координат по адресу)
+// Маршрут для геокодирования адреса
 export async function POST(request: Request) {
   try {
     const body = await request.json();
