@@ -1,4 +1,6 @@
 // src/app/lib/utils/client/navigation.ts
+// ЗАМЕНИ ВЕСЬ ФАЙЛ navigation.ts В КАЛЬКУЛЯТОРЕ НА ЭТОТ КОД
+
 interface BookingData {
   name: string;
   phone: string;
@@ -18,21 +20,16 @@ interface BookingData {
 export const navigateToBooking = (data: BookingData) => {
   const wixBookingPage = "https://www.carhauldirect.com/booking";
   
-  // Сохраняем полные данные в sessionStorage для доступа на странице букинга
-  // Это работает только при прямом доступе, не в iframe между доменами
-  try {
-      sessionStorage.setItem('booking_data', JSON.stringify(data));
-  } catch (e) {
-      console.warn('Failed to save to sessionStorage:', e);
-  }
+  // Логируем для отладки
+  console.log('Navigating to booking with data:', data);
   
-  // Сокращаем длинные строки для URL
+  // Подготавливаем полные параметры для URL
   const queryParams = new URLSearchParams({
     name: data.name,
     email: data.email,
     phone: data.phone,
-    pickup: data.pickup.substring(0, 100), // Ограничиваем длину для URL
-    delivery: data.delivery.substring(0, 100),
+    pickup: data.pickup,
+    delivery: data.delivery,
     date: data.selectedDate,
     transport: data.transportType,
     vehicle: data.vehicleType,
@@ -41,18 +38,28 @@ export const navigateToBooking = (data: BookingData) => {
     special: data.specialLoad.toString(),
     inoperable: data.inoperable.toString(),
     supplementaryInsurance: data.supplementaryInsurance.toString(),
-    // Добавляем метку, чтобы распознать, что запрос пришел из калькулятора
     fromCalculator: 'true'
   }).toString();
 
-  // Проверяем, находимся ли мы внутри iFrame
   const targetUrl = `${wixBookingPage}?${queryParams}`;
   
+  // Проверяем, находимся ли мы внутри iFrame
   if (window !== window.parent) {
-      // Мы в iFrame - выполняем навигацию родительского окна
+    console.log('Detected iframe, navigating parent window');
+    
+    // Сначала отправляем данные через postMessage для сохранения
+    window.parent.postMessage({
+      action: 'saveBookingData',
+      data: data
+    }, '*');
+    
+    // Небольшая задержка, затем переходим
+    setTimeout(() => {
       window.parent.location.href = targetUrl;
+    }, 100);
   } else {
-      // Мы не в iFrame - стандартная навигация
-      window.location.href = targetUrl;
+    // Мы не в iFrame - стандартная навигация
+    console.log('Direct navigation');
+    window.location.href = targetUrl;
   }
 };
