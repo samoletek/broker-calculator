@@ -53,8 +53,8 @@ export const submitCalculationLead = async (data: CalculatorData): Promise<LeadS
     // Map calculator data to AWS format
     const awsLeadData = mapCalculatorDataToAWSLead(data);
     
-    // Store hash in VIN field (as suggested by Kostya)
-    awsLeadData.Lead.VIN = calculationHash;
+    // Add hash to the top-level Hash field instead of VIN
+    awsLeadData.Hash = calculationHash;
     
     console.log('Mapped AWS lead data:', {
       id: awsLeadData.Id,
@@ -129,6 +129,7 @@ export const prepareCalculatorDataForLead = (formData: {
   specialLoad: boolean;
   inoperable: boolean;
   supplementaryInsurance: boolean;
+  paymentMethod?: string;
   finalPrice: number;
   distance?: number;
 }): CalculatorData => {
@@ -146,6 +147,7 @@ export const prepareCalculatorDataForLead = (formData: {
     specialLoad: formData.specialLoad,
     inoperable: formData.inoperable,
     supplementaryInsurance: formData.supplementaryInsurance,
+    paymentMethod: formData.paymentMethod,
     finalPrice: formData.finalPrice,
     distance: formData.distance
   };

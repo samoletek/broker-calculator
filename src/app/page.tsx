@@ -463,6 +463,7 @@ const calculatePrice = async () => {
               specialLoad,
               inoperable,
               supplementaryInsurance,
+              paymentMethod,
               finalPrice,
               distance: distanceInMiles
             });

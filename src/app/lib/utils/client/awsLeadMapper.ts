@@ -1,9 +1,15 @@
 // src/app/lib/utils/client/awsLeadMapper.ts
 
+/**
+ * Interface for AWS Lead structure based on the provided JSON format
+ */
 export interface AWSLeadData {
   Request: string;
   Id: string;
+  Hash: string;
   shipping_date: string;
+  PaymentMethod: string;
+  PaymentTerms: string;
   client: {
     Type: string;
     EMail: string;
@@ -27,6 +33,7 @@ export interface AWSLeadData {
     Make: string;
     Model: string;
     Year: string;
+    Reason: string;
   };
   cargo: {
     Cargo_type: string;
@@ -80,6 +87,9 @@ export interface CalculatorData {
   specialLoad: boolean;
   inoperable: boolean;
   supplementaryInsurance: boolean;
+  
+  // Payment
+  paymentMethod?: string;
   
   // Price
   finalPrice: number;
@@ -154,6 +164,8 @@ const parseName = (fullName: string): { firstName: string; lastName: string } =>
  * Map premium enhancements to AWS format
  */
 const mapPremiumEnhancements = (premiumEnhancements: boolean): string => {
+  // In AWS format, Premium can be "Ramp", "Liftgate", etc.
+  // Since we don't have specific details, we'll use a generic value
   return premiumEnhancements ? 'Premium Service' : 'No';
 };
 
@@ -203,19 +215,22 @@ export const mapCalculatorDataToAWSLead = (data: CalculatorData): AWSLeadData =>
   return {
     Request: "Add New Lead from Website",
     Id: leadId,
+    Hash: data.calculationHash || "",
     shipping_date: formatDate(data.selectedDate),
+    PaymentMethod: mapPaymentMethod(data.paymentMethod),
+    PaymentTerms: "",
     client: {
       Type: "Private person",
       EMail: data.email,
       PhoneNumber: data.phone,
       FirstName: firstName,
       LastName: lastName,
-      Address_1: pickupAddress.street, // Using pickup address as client address
+      Address_1: pickupAddress.street,
       City: pickupAddress.city,
       State: pickupAddress.state,
       Zip: pickupAddress.zip
     },
-    Quote: `$${data.finalPrice.toFixed(0)}`,
+    Quote: `${data.finalPrice.toFixed(0)}`,
     Lead: {
       Inoperable: data.inoperable ? "Yes" : "No",
       Special: data.specialLoad ? "Yes" : "No",
@@ -225,10 +240,11 @@ export const mapCalculatorDataToAWSLead = (data: CalculatorData): AWSLeadData =>
                     data.vehicleValue === 'under300k' ? "$100k - $300k" :
                     data.vehicleValue === 'under500k' ? "$300k - $500k" : "Over $500k",
       VehicleType: mapVehicleType(data.vehicleType),
-      VIN: "", // Not collected in calculator
-      Make: "", // Not collected in calculator
-      Model: "", // Not collected in calculator
-      Year: "" // Not collected in calculator
+      VIN: "",
+      Make: "",
+      Model: "",
+      Year: "",
+      Reason: ""
     },
     cargo: {
       Cargo_type: mapVehicleType(data.vehicleType),
@@ -236,7 +252,7 @@ export const mapCalculatorDataToAWSLead = (data: CalculatorData): AWSLeadData =>
                      data.vehicleValue === 'under300k' ? "$100k - $300k" :
                      data.vehicleValue === 'under500k' ? "$300k - $500k" : "Over $500k",
       Pickup: {
-        FirstName: firstName, // Using client name for pickup
+        FirstName: firstName,
         LastName: lastName,
         EMail: data.email,
         Phone: data.phone,
@@ -247,7 +263,7 @@ export const mapCalculatorDataToAWSLead = (data: CalculatorData): AWSLeadData =>
         Date: formatDate(data.selectedDate)
       },
       Delivery: {
-        FirstName: "", // Not collected separately
+        FirstName: "",
         LastName: "",
         EMail: "",
         Phone: "",
@@ -288,6 +304,22 @@ const mapVehicleType = (vehicleType: string): string => {
   };
   
   return typeMap[vehicleType] || vehicleType;
+};
+
+/**
+ * Map payment method from calculator format to AWS format
+ */
+const mapPaymentMethod = (paymentMethod?: string): string => {
+  if (!paymentMethod) return ''; // Return empty if not provided
+  
+  const methodMap: Record<string, string> = {
+    'CREDIT_CARD': 'Credit Card',
+    'ACH': 'ACH',
+    'CHECK': 'Check',
+    'COD': 'COD'
+  };
+  
+  return methodMap[paymentMethod] || '';
 };
 
 /**
