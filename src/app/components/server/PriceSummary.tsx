@@ -58,12 +58,8 @@ export function PriceSummary({
   const [isSending, setIsSending] = useState(false);
 
   const handleSavePrice = async () => {
-    console.log('🔴 КНОПКА НАЖАТА - handleSavePrice запущена');
-    console.log('🔴 contactInfo:', contactInfo);
-    
     // Проверяем, есть ли email
     if (!contactInfo?.email) {
-      console.log('🔴 НЕТ EMAIL - показываем ошибку');
       setToast({
         show: true,
         message: 'Email address is required to send the price quote',
@@ -73,11 +69,22 @@ export function PriceSummary({
       return;
     }
 
-    console.log('🔴 EMAIL ЕСТЬ - продолжаем');
     setIsSending(true);
+
+    // Сохраняем расчет локально
+    const savedCalculation = {
+      finalPrice,
+      basePrice,
+      date: selectedDate?.toISOString(),
+      savedAt: new Date().toISOString()
+    };
     
     try {
-      // Отправляем email с расчетом (localStorage будет сохранен в emailUtils)
+      const savedCalculations = JSON.parse(localStorage.getItem('savedCalculations') || '[]');
+      savedCalculations.push(savedCalculation);
+      localStorage.setItem('savedCalculations', JSON.stringify(savedCalculations));
+      
+      // Отправляем email с расчетом
       const emailData = {
         name: contactInfo.name || 'Customer',
         email: contactInfo.email,
@@ -94,8 +101,6 @@ export function PriceSummary({
           distance: distance
         }
       };
-
-      console.log('🚀 PriceSummary отправляет данные:', emailData);
 
       const emailResult = await sendPriceEmail(emailData);
       
