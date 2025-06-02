@@ -16,33 +16,11 @@ interface EmailData {
 }
 
 /**
- * Получает CSRF токен с сервера
- */
-export const getCSRFToken = async (): Promise<string> => {
-  try {
-    console.log('Fetching CSRF token');
-    // При первом запросе выполняем обычный fetch без CSRF токена
-    const response = await fetch('/api/csrf');
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`CSRF token error (${response.status}):`, errorText);
-      throw new Error(`Failed to get CSRF token: ${response.statusText}`);
-    }
-    const data = await response.json();
-    console.log('CSRF token received successfully');
-    return data.csrfToken;
-  } catch (error) {
-    console.error('Error getting CSRF token:', error);
-    throw error;
-  }
-};
-
-/**
- * Отправляет электронное письмо с ценовым расчетом через наш серверный API
+ * Отправляет электронное письмо с ценовым расчетом через EmailJS
  */
 export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean; message: string}> => {
   try {
-    console.log('Starting email sending process');
+    console.log('Starting email sending process via EmailJS');
     
     // Сохраняем расчет локально
     const calculationId = `QUOTE-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
@@ -108,57 +86,28 @@ export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean
     
     console.log('Sending email via EmailJS');
     
-    try {
-      const result = await emailjs.send(
-        serviceId,
-        templateId,
-        templateParams,
-        {
-          publicKey: publicKey,
-        }
-      );
-      
-      console.log('Email sent successfully:', result);
-      
-      return { 
-        success: true, 
-        message: `Price quote has been sent to your email! Quote ID: ${calculationId}`
-      };
-    } catch (emailError) {
-      console.error('EmailJS error:', emailError);
-      
-      // Если не сработала клиентская отправка, пробуем через API
-      console.log('Falling back to server API endpoint');
-      
-      try {
-        const response = await fetch('/api/email', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Server responded with status: ${response.status}`);
-        }
-        
-        const responseData = await response.json();
-        return { 
-          success: true, 
-          message: responseData?.message || `Price quote has been sent to your email!` 
-        };
-      } catch (apiError) {
-        console.error('API fallback error:', apiError);
-        throw apiError;
+    const result = await emailjs.send(
+      serviceId,
+      templateId,
+      templateParams,
+      {
+        publicKey: publicKey,
       }
-    }
+    );
+    
+    console.log('Email sent successfully:', result);
+    
+    return { 
+      success: true, 
+      message: `Price quote has been sent to your email! Quote ID: ${calculationId}`
+    };
+    
   } catch (error) {
     console.error('Error sending email:', error);
     
     return { 
       success: false, 
-      message: `Failed to send email. Please try again later.` 
+      message: 'Failed to send email. Please try again later.' 
     };
   }
 };

@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   console.log('Email API endpoint called');
   
   try {
-    // Сначала убедимся, что все нужные переменные окружения доступны
+    // Убедимся, что все нужные переменные окружения доступны
     if (!process.env.EMAILJS_SERVICE_ID || !process.env.EMAILJS_TEMPLATE_ID || !process.env.EMAILJS_PUBLIC_KEY) {
       console.error('Missing EmailJS environment variables');
       return NextResponse.json({
@@ -35,9 +35,6 @@ export async function POST(request: Request) {
         message: 'Email service is not properly configured.'
       }, { status: 500 });
     }
-    
-    const csrfToken = request.headers.get('csrf-token');
-    console.log('CSRF Token received:', csrfToken ? 'Present' : 'Missing');
     
     const body = await request.json() as EmailRequestBody;
     console.log('Received email request for:', body.email);
@@ -90,7 +87,6 @@ export async function POST(request: Request) {
       
       console.log('Email sent successfully:', result);
       
-      // Обязательно возвращаем объект с полем message
       return NextResponse.json({
         success: true,
         message: `Price quote has been sent to your email! Quote ID: ${calculationId}`
