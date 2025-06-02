@@ -58,8 +58,12 @@ export function PriceSummary({
   const [isSending, setIsSending] = useState(false);
 
   const handleSavePrice = async () => {
+    console.log('🔴 КНОПКА НАЖАТА - handleSavePrice запущена');
+    console.log('🔴 contactInfo:', contactInfo);
+    
     // Проверяем, есть ли email
     if (!contactInfo?.email) {
+      console.log('🔴 НЕТ EMAIL - показываем ошибку');
       setToast({
         show: true,
         message: 'Email address is required to send the price quote',
@@ -69,6 +73,7 @@ export function PriceSummary({
       return;
     }
 
+    console.log('🔴 EMAIL ЕСТЬ - продолжаем');
     setIsSending(true);
     
     try {
