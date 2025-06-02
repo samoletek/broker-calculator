@@ -49,11 +49,10 @@ export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean
       };
     }
     
-    // Подготавливаем данные для EmailJS
+    // Подготавливаем данные для EmailJS (точно как в шаблоне)
     const templateParams = {
       to_name: data.name || 'Customer',
       to_email: data.email,
-      subject: 'Vehicle Transport Price Quote',
       quote_id: calculationId,
       pickup: data.calculationData.pickup || '',
       delivery: data.calculationData.delivery || '',
