@@ -16,17 +16,14 @@ interface EmailData {
 }
 
 /**
- * Отправляет электронное письмо с ценовым расчетом через EmailJS
+ * Отправляет электронное письмо с ценовым расчетом через EmailJS (только клиентский)
  */
 export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean; message: string}> => {
   try {
-    console.log('Starting email sending process via EmailJS');
-    
     // Сохраняем расчет локально
     const calculationId = `QUOTE-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
     
     try {
-      console.log('Saving calculation to localStorage');
       const savedCalculations = JSON.parse(localStorage.getItem('savedCalculations') || '[]');
       savedCalculations.push({
         id: calculationId,
@@ -36,7 +33,6 @@ export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean
         details: data.calculationData
       });
       localStorage.setItem('savedCalculations', JSON.stringify(savedCalculations));
-      console.log('Calculation saved to localStorage');
     } catch (e) {
       console.error('Error saving calculation to localStorage:', e);
     }
@@ -46,14 +42,7 @@ export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean
     const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
     const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
     
-    console.log('EmailJS configuration check:', { 
-      serviceId: serviceId ? 'Found' : 'Missing',
-      templateId: templateId ? 'Found' : 'Missing',
-      publicKey: publicKey ? 'Found' : 'Missing'
-    });
-    
     if (!serviceId || !templateId || !publicKey) {
-      console.error('Missing EmailJS environment variables');
       return {
         success: false,
         message: 'Email service is not properly configured. Please contact support.'
@@ -84,8 +73,7 @@ export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean
     // Импортируем emailjs динамически
     const emailjs = await import('@emailjs/browser');
     
-    console.log('Sending email via EmailJS');
-    
+    // Отправляем через EmailJS (клиентский)
     const result = await emailjs.send(
       serviceId,
       templateId,
@@ -94,8 +82,6 @@ export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean
         publicKey: publicKey,
       }
     );
-    
-    console.log('Email sent successfully:', result);
     
     return { 
       success: true, 
