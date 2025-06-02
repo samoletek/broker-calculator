@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, memo } from 'react';
+import { useState, useEffect, useMemo, memo, useCallback, useRef } from 'react';
 import { Cloud, Sun, CloudRain, CloudSnow } from 'lucide-react';
 import { format } from 'date-fns';
 import type { WeatherMapProps } from '@/app/types/components.types';
@@ -40,15 +40,46 @@ const WeatherConditions = memo<WeatherMapProps>(({
   selectedDate
 }) => {
   const [weatherData, setWeatherData] = useState<WeatherData[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Кэш для предотвращения повторных запросов
+  const cacheRef = useRef<{[key: string]: { data: WeatherData[], timestamp: number }}>({});
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 минут
 
   const midPoint = useMemo(() => 
     getMidPoint(routePoints.pickup, routePoints.delivery),
     [routePoints.pickup, routePoints.delivery]
   );
 
+  // Стабильная функция для обновления погоды
+  const updateWeatherMultiplier = useCallback((weatherData: WeatherData[]) => {
+    const worstMultiplier = getWorstWeatherMultiplier(weatherData);
+    if (onWeatherUpdate) {
+      onWeatherUpdate(worstMultiplier || 1);
+    }
+  }, []); // Пустые dependencies - функция стабильная
+
   useEffect(() => {
     const fetchWeatherData = async () => {
+      // Создаем ключ для кэширования
+      const cacheKey = `${routePoints.pickup.lat}-${routePoints.pickup.lng}-${routePoints.delivery.lat}-${routePoints.delivery.lng}-${selectedDate?.toDateString()}`;
+      
+      // Проверяем кэш
+      const cachedData = cacheRef.current[cacheKey];
+      if (cachedData && Date.now() - cachedData.timestamp < CACHE_DURATION) {
+        console.log('🌦️ Using cached weather data');
+        setWeatherData(cachedData.data);
+        updateWeatherMultiplier(cachedData.data);
+        return;
+      }
+
+      if (isLoading) return; // Предотвращаем множественные запросы
+      
+      setIsLoading(true);
+      
       try {
+        console.log('🌦️ Fetching fresh weather data');
+        
         const points = [
           routePoints.pickup,
           midPoint,
@@ -62,21 +93,36 @@ const WeatherConditions = memo<WeatherMapProps>(({
           location: index === 0 ? 'Pickup' : index === 1 ? 'Mid-Route' : 'Delivery'
         }));
 
-        setWeatherData(enrichedWeatherData);
+        // Сохраняем в кэш
+        cacheRef.current[cacheKey] = {
+          data: enrichedWeatherData,
+          timestamp: Date.now()
+        };
 
-        const worstMultiplier = getWorstWeatherMultiplier(enrichedWeatherData);
-        if (onWeatherUpdate) {
-          onWeatherUpdate(worstMultiplier || 1);
-        }
+        setWeatherData(enrichedWeatherData);
+        updateWeatherMultiplier(enrichedWeatherData);
+        
       } catch (error) {
         console.error('Error fetching weather data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     if (routePoints && selectedDate) {
       fetchWeatherData();
     }
-  }, [routePoints, selectedDate, midPoint, onWeatherUpdate]);
+  }, [
+    routePoints.pickup.lat, 
+    routePoints.pickup.lng, 
+    routePoints.delivery.lat, 
+    routePoints.delivery.lng, 
+    selectedDate?.toDateString(), 
+    midPoint.lat, 
+    midPoint.lng,
+    updateWeatherMultiplier,
+    isLoading
+  ]); // onWeatherUpdate убран из dependencies!
 
   return (
     <div className="w-full p-4 sm:p-40 space-y-10 sm:space-y-20 bg-white rounded-[24px] border border-primary/10">
@@ -90,23 +136,27 @@ const WeatherConditions = memo<WeatherMapProps>(({
       </div>
   
       <div className="space-y-8 sm:space-y-16">
-        {weatherData.map((point, index) => (
-          <div
-            key={`${point.location}-${index}`}
-            className="flex items-center justify-between bg-[#F6F6FA] rounded-[24px] p-4 sm:p-16"
-          >
-            <div className="flex items-center gap-8 sm:gap-16">
-              {getWeatherIcon(point.condition)}
-              <div>
-                <div className="font-medium text-sm sm:text-base">{point.location}</div>
-                <div className="text-gray-600 text-xs sm:text-sm">{point.condition}</div>
+        {isLoading && weatherData.length === 0 ? (
+          <div className="text-center text-gray-500">Loading weather data...</div>
+        ) : (
+          weatherData.map((point, index) => (
+            <div
+              key={`${point.location}-${index}`}
+              className="flex items-center justify-between bg-[#F6F6FA] rounded-[24px] p-4 sm:p-16"
+            >
+              <div className="flex items-center gap-8 sm:gap-16">
+                {getWeatherIcon(point.condition)}
+                <div>
+                  <div className="font-medium text-sm sm:text-base">{point.location}</div>
+                  <div className="text-gray-600 text-xs sm:text-sm">{point.condition}</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="font-medium text-sm sm:text-base">{point.temperature}°F</div>
               </div>
             </div>
-            <div className="text-right">
-              <div className="font-medium text-sm sm:text-base">{point.temperature}°F</div>
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
   
       {weatherData.length > 0 && (

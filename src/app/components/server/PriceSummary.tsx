@@ -70,20 +70,8 @@ export function PriceSummary({
     }
 
     setIsSending(true);
-
-    // Сохраняем расчет локально
-    const savedCalculation = {
-      finalPrice,
-      basePrice,
-      date: selectedDate?.toISOString(),
-      savedAt: new Date().toISOString()
-    };
     
     try {
-      const savedCalculations = JSON.parse(localStorage.getItem('savedCalculations') || '[]');
-      savedCalculations.push(savedCalculation);
-      localStorage.setItem('savedCalculations', JSON.stringify(savedCalculations));
-      
       // Отправляем email с расчетом
       const emailData = {
         name: contactInfo.name || 'Customer',
@@ -117,7 +105,6 @@ export function PriceSummary({
         onSavePrice();
       }
     } catch (error) {
-      console.error('Error saving calculation or sending email:', error);
       setToast({ 
         show: true, 
         message: 'Failed to process your request', 

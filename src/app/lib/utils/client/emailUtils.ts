@@ -16,7 +16,7 @@ interface EmailData {
 }
 
 /**
- * Отправляет электронное письмо с ценовым расчетом через EmailJS (только клиентский)
+ * Отправляет электронное письмо с ценовым расчетом через EmailJS
  */
 export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean; message: string}> => {
   try {
@@ -72,11 +72,7 @@ export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean
     // Импортируем emailjs динамически
     const emailjs = await import('@emailjs/browser');
     
-    // Временная отладка - нужно увидеть что отправляется
-    console.log('📧 ОТПРАВЛЯЕМЫЕ ДАННЫЕ:', JSON.stringify(templateParams, null, 2));
-    console.log('🔑 КЛЮЧИ:', JSON.stringify({ serviceId, templateId, publicKey: publicKey?.substring(0, 10) + '...' }, null, 2));
-    
-    // Отправляем через EmailJS (клиентский)
+    // Отправляем через EmailJS
     const result = await emailjs.send(
       serviceId,
       templateId,
