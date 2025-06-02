@@ -70,21 +70,9 @@ export function PriceSummary({
     }
 
     setIsSending(true);
-
-    // Сохраняем расчет локально
-    const savedCalculation = {
-      finalPrice,
-      basePrice,
-      date: selectedDate?.toISOString(),
-      savedAt: new Date().toISOString()
-    };
     
     try {
-      const savedCalculations = JSON.parse(localStorage.getItem('savedCalculations') || '[]');
-      savedCalculations.push(savedCalculation);
-      localStorage.setItem('savedCalculations', JSON.stringify(savedCalculations));
-      
-      // Отправляем email с расчетом
+      // Отправляем email с расчетом (localStorage будет сохранен в emailUtils)
       const emailData = {
         name: contactInfo.name || 'Customer',
         email: contactInfo.email,
@@ -101,6 +89,8 @@ export function PriceSummary({
           distance: distance
         }
       };
+
+      console.log('🚀 PriceSummary отправляет данные:', emailData);
 
       const emailResult = await sendPriceEmail(emailData);
       
