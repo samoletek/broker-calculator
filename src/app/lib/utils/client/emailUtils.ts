@@ -72,6 +72,14 @@ export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean
     // Импортируем emailjs динамически
     const emailjs = await import('@emailjs/browser');
     
+    // Временная отладка - удалить после исправления
+    console.log('EmailJS Debug:', {
+      serviceId,
+      templateId,
+      publicKey: publicKey ? 'Present' : 'Missing',
+      templateParams
+    });
+    
     // Отправляем через EmailJS (клиентский)
     const result = await emailjs.send(
       serviceId,
