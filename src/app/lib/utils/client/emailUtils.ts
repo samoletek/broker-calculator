@@ -49,7 +49,7 @@ export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean
       };
     }
     
-    // Подготавливаем данные для EmailJS (точно как в шаблоне)
+    // Подготавливаем данные для EmailJS (точно как в успешном логе)
     const templateParams = {
       to_name: data.name || 'Customer',
       to_email: data.email,
@@ -73,8 +73,8 @@ export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean
     const emailjs = await import('@emailjs/browser');
     
     // Временная отладка - нужно увидеть что отправляется
-    console.log('📧 ОТПРАВЛЯЕМЫЕ ДАННЫЕ:', templateParams);
-    console.log('🔑 КЛЮЧИ:', { serviceId, templateId, publicKey: publicKey?.substring(0, 10) + '...' });
+    console.log('📧 ОТПРАВЛЯЕМЫЕ ДАННЫЕ:', JSON.stringify(templateParams, null, 2));
+    console.log('🔑 КЛЮЧИ:', JSON.stringify({ serviceId, templateId, publicKey: publicKey?.substring(0, 10) + '...' }, null, 2));
     
     // Отправляем через EmailJS (клиентский)
     const result = await emailjs.send(
