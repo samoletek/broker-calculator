@@ -19,9 +19,12 @@ interface EmailData {
  * Отправляет электронное письмо с ценовым расчетом через EmailJS (только клиентский)
  */
 export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean; message: string}> => {
+  console.log('🚀 sendPriceEmail called with:', { email: data.email, finalPrice: data.calculationData.finalPrice });
+  
   try {
     // Сохраняем расчет локально
     const calculationId = `QUOTE-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+    console.log('💾 Generated calculationId:', calculationId);
     
     try {
       const savedCalculations = JSON.parse(localStorage.getItem('savedCalculations') || '[]');
@@ -33,8 +36,9 @@ export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean
         details: data.calculationData
       });
       localStorage.setItem('savedCalculations', JSON.stringify(savedCalculations));
+      console.log('💾 Saved to localStorage');
     } catch (e) {
-      console.error('Error saving calculation to localStorage:', e);
+      console.error('❌ Error saving calculation to localStorage:', e);
     }
     
     // Получаем EmailJS ключи из переменных окружения
@@ -42,7 +46,14 @@ export const sendPriceEmail = async (data: EmailData): Promise<{success: boolean
     const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
     const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
     
+    console.log('🔑 EmailJS env check:', {
+      serviceId: serviceId ? `Found: ${serviceId}` : 'Missing',
+      templateId: templateId ? `Found: ${templateId}` : 'Missing',
+      publicKey: publicKey ? `Found: ${publicKey}` : 'Missing'
+    });
+    
     if (!serviceId || !templateId || !publicKey) {
+      console.error('❌ Missing EmailJS environment variables');
       return {
         success: false,
         message: 'Email service is not properly configured. Please contact support.'
