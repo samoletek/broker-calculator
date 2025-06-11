@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { PricingConfig, EdgeConfigResponse } from '../../../types/pricing-config.types';
+import { get } from '@vercel/edge-config';
+import { PricingConfig } from '../../../types/pricing-config.types';
 import { DEFAULT_PRICING_CONFIG } from '../../../constants/default-pricing-config';
 
 interface UsePricingConfigResult {
@@ -21,30 +22,20 @@ export function usePricingConfig(): UsePricingConfigResult {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/pricing-config', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // Добавляем cache busting для получения актуальных данных
-        cache: 'no-store'
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result: EdgeConfigResponse = await response.json();
-
-      if (result.success && result.data) {
-        setConfig(result.data);
-        setVersion(result.version || result.data.version);
+      // Получаем конфигурацию напрямую из Edge Config (клиентская сторона)
+      const config = await get<PricingConfig>('pricing-config');
+      
+      if (config) {
+        setConfig(config);
+        setVersion(config.version);
       } else {
-        throw new Error(result.error || 'Failed to fetch pricing configuration');
+        // Если конфигурации нет в Edge Config, используем дефолтную
+        setConfig(DEFAULT_PRICING_CONFIG);
+        setVersion(DEFAULT_PRICING_CONFIG.version);
       }
     } catch (err) {
-      console.error('Error fetching pricing config:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      console.error('Error fetching pricing config from Edge Config:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load pricing configuration');
       // В случае ошибки используем дефолтную конфигурацию
       setConfig(DEFAULT_PRICING_CONFIG);
       setVersion(DEFAULT_PRICING_CONFIG.version);
@@ -73,38 +64,17 @@ export function usePricingConfig(): UsePricingConfigResult {
 // Хелпер для получения конфигурации на сервере (для SSR)
 export async function getPricingConfigServer(): Promise<PricingConfig> {
   try {
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NODE_ENV === 'development'
-        ? 'http://localhost:3000'
-        : '';
-
-    if (!baseUrl) {
-      console.warn('No base URL available for server-side config fetch, using default');
+    // Получаем конфигурацию напрямую из Edge Config (серверная сторона)
+    const config = await get<PricingConfig>('pricing-config');
+    
+    if (config) {
+      return config;
+    } else {
+      console.warn('No pricing config found in Edge Config, using default');
       return DEFAULT_PRICING_CONFIG;
     }
-
-    const response = await fetch(`${baseUrl}/api/pricing-config`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store'
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result: EdgeConfigResponse = await response.json();
-
-    if (result.success && result.data) {
-      return result.data;
-    } else {
-      throw new Error(result.error || 'Failed to fetch pricing configuration');
-    }
   } catch (error) {
-    console.error('Error fetching server-side pricing config:', error);
+    console.error('Error fetching server-side pricing config from Edge Config:', error);
     return DEFAULT_PRICING_CONFIG;
   }
 }

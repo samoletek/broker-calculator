@@ -2,9 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { get, getAll } from '@vercel/edge-config';
 import { PricingConfigHistory } from '../../../../types/pricing-config.types';
 
-// GET - получить историю изменений конфигурации
-export async function GET() {
+// GET - получить историю изменений конфигурации (только для авторизованных)
+export async function GET(request: NextRequest) {
   try {
+    // Проверяем авторизацию через API key
+    const authHeader = request.headers.get('authorization');
+    const apiKey = request.headers.get('x-api-key');
+    const expectedAuth = process.env.AWS_LAMBDA_API_KEY;
+    
+    const isValidBearer = authHeader === `Bearer ${expectedAuth}`;
+    const isValidApiKey = apiKey === expectedAuth;
+    
+    if (!expectedAuth || (!isValidBearer && !isValidApiKey)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized - Admin access required'
+      }, { status: 401 });
+    }
+
     // Получаем историю из Edge Config
     const history = await get<PricingConfigHistory[]>('pricing-config-history') || [];
     

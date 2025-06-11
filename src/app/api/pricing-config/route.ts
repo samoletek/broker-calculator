@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { get, getAll } from '@vercel/edge-config';
-import { PricingConfig, EdgeConfigResponse } from '../../../types/pricing-config.types';
-import { DEFAULT_PRICING_CONFIG } from '../../../constants/default-pricing-config';
+import { get } from '@vercel/edge-config';
+import { PricingConfig, EdgeConfigResponse, PricingConfigHistory } from '../../../types/pricing-config.types';
 
 // Helper function to add CORS headers
 function addCorsHeaders(response: NextResponse) {
@@ -12,47 +11,69 @@ function addCorsHeaders(response: NextResponse) {
   return response;
 }
 
+// Helper function to save config to history
+async function saveConfigToHistory(config: PricingConfig) {
+  try {
+    const historyEntry: PricingConfigHistory = {
+      id: `config_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+      version: config.version,
+      config: config,
+      createdAt: new Date().toISOString(),
+      updatedBy: 'system-backup'
+    };
+
+    // Получаем текущую историю
+    const currentHistory = await get<PricingConfigHistory[]>('pricing-config-history') || [];
+    
+    // Добавляем новую запись
+    const updatedHistory = [historyEntry, ...currentHistory];
+    
+    // Ограничиваем количество записей (последние 50)
+    const limitedHistory = updatedHistory.slice(0, 50);
+
+    // Сохраняем в Edge Config
+    if (process.env.VERCEL_ACCESS_TOKEN && process.env.EDGE_CONFIG_ID) {
+      const historyResponse = await fetch(`https://api.vercel.com/v1/edge-config/${process.env.EDGE_CONFIG_ID}/items`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${process.env.VERCEL_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: [
+            {
+              operation: 'upsert',
+              key: 'pricing-config-history',
+              value: limitedHistory
+            }
+          ]
+        })
+      });
+
+      if (!historyResponse.ok) {
+        throw new Error(`History save failed: ${historyResponse.status}`);
+      }
+
+      console.log('Config saved to history:', historyEntry.id);
+    }
+  } catch (error) {
+    console.error('Error saving config to history:', error);
+    throw error;
+  }
+}
+
 // Handle OPTIONS requests for CORS
 export async function OPTIONS() {
   const response = new NextResponse(null, { status: 200 });
   return addCorsHeaders(response);
 }
 
-// GET - получить текущую конфигурацию ценообразования
+// GET - закрыт для публичного доступа
 export async function GET() {
-  try {
-    // Пытаемся получить конфигурацию из Edge Config
-    const config = await get<PricingConfig>('pricing-config');
-    
-    if (!config) {
-      // Если конфигурации нет, возвращаем дефолтную
-      const response: EdgeConfigResponse = {
-        success: true,
-        data: DEFAULT_PRICING_CONFIG,
-        version: DEFAULT_PRICING_CONFIG.version
-      };
-      
-      return addCorsHeaders(NextResponse.json(response));
-    }
-
-    const response: EdgeConfigResponse = {
-      success: true,
-      data: config,
-      version: config.version
-    };
-
-    return addCorsHeaders(NextResponse.json(response));
-  } catch (error) {
-    console.error('Error fetching pricing config:', error);
-    
-    const response: EdgeConfigResponse = {
-      success: false,
-      error: 'Failed to fetch pricing configuration',
-      data: DEFAULT_PRICING_CONFIG // Fallback на дефолтную конфигурацию
-    };
-
-    return addCorsHeaders(NextResponse.json(response, { status: 500 }));
-  }
+  return addCorsHeaders(NextResponse.json({
+    success: false,
+    error: 'Access denied'
+  }, { status: 403 }));
 }
 
 // POST - обновить конфигурацию (только для внутреннего использования из AWS)
@@ -93,13 +114,64 @@ export async function POST(request: NextRequest) {
     // Добавляем timestamp последнего обновления
     newConfig.lastUpdated = new Date().toISOString();
 
-    // Здесь должно быть обновление Edge Config через Management API
-    // Временно возвращаем успех (нужно будет настроить после создания Edge Config)
-    console.log('New pricing config received:', {
-      version: newConfig.version,
-      lastUpdated: newConfig.lastUpdated,
-      updatedBy: newConfig.updatedBy
-    });
+    // Сначала сохраняем текущую конфигурацию в историю
+    try {
+      const currentConfig = await get<PricingConfig>('pricing-config');
+      if (currentConfig) {
+        await saveConfigToHistory(currentConfig);
+      }
+    } catch (error) {
+      console.warn('Failed to save current config to history:', error);
+      // Продолжаем обновление даже если история не сохранилась
+    }
+
+    // Обновляем Edge Config через Management API
+    if (!process.env.EDGE_CONFIG_ID) {
+      return addCorsHeaders(NextResponse.json({
+        success: false,
+        error: 'Edge Config ID not configured'
+      }, { status: 500 }));
+    }
+
+    try {
+      const edgeConfigResponse = await fetch(`https://api.vercel.com/v1/edge-config/${process.env.EDGE_CONFIG_ID}/items`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${process.env.VERCEL_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: [
+            {
+              operation: 'upsert',
+              key: 'pricing-config',
+              value: newConfig
+            }
+          ]
+        })
+      });
+
+      if (!edgeConfigResponse.ok) {
+        const errorData = await edgeConfigResponse.text();
+        console.error('Failed to update Edge Config:', errorData);
+        return addCorsHeaders(NextResponse.json({
+          success: false,
+          error: 'Failed to update pricing configuration in Edge Config'
+        }, { status: 500 }));
+      }
+
+      console.log('Edge Config updated successfully:', {
+        version: newConfig.version,
+        lastUpdated: newConfig.lastUpdated,
+        updatedBy: newConfig.updatedBy
+      });
+    } catch (error) {
+      console.error('Error updating Edge Config:', error);
+      return addCorsHeaders(NextResponse.json({
+        success: false,
+        error: 'Failed to update Edge Config'
+      }, { status: 500 }));
+    }
 
     const response: EdgeConfigResponse = {
       success: true,
