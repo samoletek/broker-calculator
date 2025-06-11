@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { Truck, Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import Select from '@/app/components/ui/Select';
 import { DatePicker } from '@/app/components/client/DatePicker';
 import { PriceBreakdown }  from '@/app/components/server/PriceBreakdown';
@@ -547,12 +547,6 @@ const calculatePrice = async () => {
     <div className="min-h-screen bg-white p-4 sm:p-8 md:p-24">
       <div className="max-w-7xl mx-auto space-y-12 sm:space-y-24">
         <div className="bg-white rounded-[32px] p-4 sm:p-8 md:p-24 border border-primary/10">
-          <div className="flex items-center mb-8 sm:mb-24">
-            <div className="flex items-center space-x-8 sm:space-x-16">
-              <Truck className="w-24 h-24 sm:w-32 sm:h-32 text-primary" />
-              <h1 className="font-jost text-2xl sm:text-[32px] font-bold">Delivery Calculator</h1>
-            </div>
-          </div>
   
           <div className="space-y-12 sm:space-y-24">
             {/* Первая линия: Дата + Pickup + Delivery */}
