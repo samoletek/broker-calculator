@@ -3,8 +3,19 @@ import type { GeoPoint } from '@/app/types/common.types';
 
 export const initializeGoogleMaps = async (): Promise<typeof google.maps> => {
   try {
+    // Получаем API ключ через безопасный endpoint
+    const response = await fetch('/api/maps');
+    if (!response.ok) {
+      throw new Error('Failed to fetch Google Maps API key');
+    }
+    
+    const { apiKey } = await response.json();
+    if (!apiKey) {
+      throw new Error('Google Maps API key not available');
+    }
+    
     const loader = new Loader({
-      apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+      apiKey: apiKey,
       version: "weekly",
       libraries: ["places", "geometry", "routes"],
       channel: 'broker-calculator'

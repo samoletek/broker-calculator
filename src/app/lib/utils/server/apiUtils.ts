@@ -20,7 +20,7 @@ interface GoogleMapsTestResult extends ApiTestResult<GoogleGeocodingResponse> {
 export const testWeatherApi = async (lat: number, lng: number): Promise<WeatherTestResult> => {
   try {
     const response = await axios.get<WeatherTestResponse>(
-      `https://api.weatherapi.com/v1/current.json?key=${process.env.NEXT_PUBLIC_WEATHER_API_KEY}&q=${lat},${lng}`
+      `https://api.weatherapi.com/v1/current.json?key=${process.env.WEATHER_API_KEY}&q=${lat},${lng}`
     );
     console.log('Weather API Response:', response.data);
     return {
@@ -41,7 +41,7 @@ export const testWeatherApi = async (lat: number, lng: number): Promise<WeatherT
 export const testGoogleMapsApi = async (address: string): Promise<GoogleMapsTestResult> => {
   try {
     const response = await axios.get<GoogleGeocodingResponse>(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${process.env.GOOGLE_MAPS_API_KEY}`
     );
     console.log('Google Maps API Response:', response.data);
     return {
