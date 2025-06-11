@@ -999,6 +999,7 @@ const calculatePrice = async () => {
                       waypoints: []
                     }}
                     selectedDate={selectedDate}
+                    config={config}
                     onWeatherUpdate={(weatherMultiplier) => {
                       if (priceComponents) {
                         setPriceComponents((prev) => {
@@ -1031,6 +1032,7 @@ const calculatePrice = async () => {
                   mapData={mapData}
                   selectedDate={selectedDate}
                   tollCosts={priceComponents.tollCosts}
+                  config={config}
                   onTollUpdate={(tollCost: number, segments?: Array<{ location: string, cost: number }>) => {
                     if (priceComponents) {
                       setPriceComponents((prev) => {

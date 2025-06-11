@@ -37,7 +37,8 @@ function getMidPoint(start: { lat: number; lng: number }, end: { lat: number; ln
 const WeatherConditions = memo<WeatherMapProps>(({
   routePoints,
   onWeatherUpdate,
-  selectedDate
+  selectedDate,
+  config
 }) => {
   const [weatherData, setWeatherData] = useState<WeatherData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -86,7 +87,7 @@ const WeatherConditions = memo<WeatherMapProps>(({
           routePoints.delivery
         ];
 
-        const weatherResults = await analyzeRouteWeather(points, selectedDate);
+        const weatherResults = await analyzeRouteWeather(points, config, selectedDate);
         
         const enrichedWeatherData = weatherResults.map((data, index) => ({
           ...data,

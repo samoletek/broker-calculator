@@ -1,4 +1,5 @@
 import type { BasePriceBreakdown, GeoPoint } from './common.types';
+import type { PricingConfig } from '../../../types/pricing-config.types';
 
 export interface WeatherMapProps {
   routePoints: {
@@ -8,6 +9,7 @@ export interface WeatherMapProps {
   };
   selectedDate?: Date;
   onWeatherUpdate: (multiplier: number) => void;
+  config: PricingConfig;
 }
 
 export interface DatePickerProps {
@@ -46,6 +48,7 @@ export interface RouteInfoProps {
     }>;
     total: number;
   };
+  config: PricingConfig;
 }
 
 export interface PriceBreakdownProps {

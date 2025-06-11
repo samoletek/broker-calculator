@@ -3,6 +3,21 @@ import { get, getAll } from '@vercel/edge-config';
 import { PricingConfig, EdgeConfigResponse } from '../../../types/pricing-config.types';
 import { DEFAULT_PRICING_CONFIG } from '../../../constants/default-pricing-config';
 
+// Helper function to add CORS headers
+function addCorsHeaders(response: NextResponse) {
+  response.headers.set('Access-Control-Allow-Origin', 'https://www.brokercalculator.xyz');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
+  response.headers.set('Access-Control-Max-Age', '86400');
+  return response;
+}
+
+// Handle OPTIONS requests for CORS
+export async function OPTIONS() {
+  const response = new NextResponse(null, { status: 200 });
+  return addCorsHeaders(response);
+}
+
 // GET - получить текущую конфигурацию ценообразования
 export async function GET() {
   try {
@@ -17,7 +32,7 @@ export async function GET() {
         version: DEFAULT_PRICING_CONFIG.version
       };
       
-      return NextResponse.json(response);
+      return addCorsHeaders(NextResponse.json(response));
     }
 
     const response: EdgeConfigResponse = {
@@ -26,7 +41,7 @@ export async function GET() {
       version: config.version
     };
 
-    return NextResponse.json(response);
+    return addCorsHeaders(NextResponse.json(response));
   } catch (error) {
     console.error('Error fetching pricing config:', error);
     
@@ -36,32 +51,43 @@ export async function GET() {
       data: DEFAULT_PRICING_CONFIG // Fallback на дефолтную конфигурацию
     };
 
-    return NextResponse.json(response, { status: 500 });
+    return addCorsHeaders(NextResponse.json(response, { status: 500 }));
   }
 }
 
 // POST - обновить конфигурацию (только для внутреннего использования из AWS)
 export async function POST(request: NextRequest) {
   try {
-    // Проверяем авторизацию (можно добавить API key из AWS)
+    // Проверяем авторизацию через API key из AWS
     const authHeader = request.headers.get('authorization');
+    const apiKey = request.headers.get('x-api-key');
     const expectedAuth = process.env.AWS_LAMBDA_API_KEY;
     
-    if (!expectedAuth || authHeader !== `Bearer ${expectedAuth}`) {
-      return NextResponse.json({
+    // Поддерживаем два формата: Bearer token и X-API-Key header
+    const isValidBearer = authHeader === `Bearer ${expectedAuth}`;
+    const isValidApiKey = apiKey === expectedAuth;
+    
+    if (!expectedAuth || (!isValidBearer && !isValidApiKey)) {
+      console.error('Unauthorized pricing config update attempt:', {
+        hasAuthHeader: !!authHeader,
+        hasApiKey: !!apiKey,
+        expectedAuthLength: expectedAuth?.length
+      });
+      
+      return addCorsHeaders(NextResponse.json({
         success: false,
-        error: 'Unauthorized'
-      }, { status: 401 });
+        error: 'Unauthorized - Invalid API key'
+      }, { status: 401 }));
     }
 
     const newConfig: PricingConfig = await request.json();
     
     // Валидация структуры конфигурации
     if (!newConfig.version || !newConfig.baseRates) {
-      return NextResponse.json({
+      return addCorsHeaders(NextResponse.json({
         success: false,
         error: 'Invalid configuration structure'
-      }, { status: 400 });
+      }, { status: 400 }));
     }
 
     // Добавляем timestamp последнего обновления
@@ -81,13 +107,13 @@ export async function POST(request: NextRequest) {
       version: newConfig.version
     };
 
-    return NextResponse.json(response);
+    return addCorsHeaders(NextResponse.json(response));
   } catch (error) {
     console.error('Error updating pricing config:', error);
     
-    return NextResponse.json({
+    return addCorsHeaders(NextResponse.json({
       success: false,
       error: 'Failed to update pricing configuration'
-    }, { status: 500 });
+    }, { status: 500 }));
   }
 }

@@ -39,11 +39,13 @@ export const getWeatherData = async (
   date?: Date
 ): Promise<WeatherResponse> => {
   try {
-    // Используем наш серверный API вместо прямого вызова Weather API
+    // Используем наш серверный API вместо прямого вызова Weather API с коротким таймаутом
     const response = await axios.post<WeatherResponse>('/api/weather', {
       lat: point.lat,
       lng: point.lng,
       date: date ? format(date, 'yyyy-MM-dd') : undefined
+    }, {
+      timeout: 2000 // 2 секунды таймаут для каждого запроса
     });
     
     return response.data;
@@ -79,6 +81,55 @@ export const calculateWeatherMultiplier = (condition: string, config: PricingCon
   return multipliers[weatherCondition];
 };
 
+// Функция для создания альтернативных точек (сдвиг для погоды)
+const getAlternativePoint = (point: GeoPoint, attempt: number = 1): GeoPoint => {
+  const offset = 0.01 * attempt; // Увеличиваем сдвиг с каждой попыткой
+  const directions = [
+    { lat: offset, lng: 0 },      // север
+    { lat: -offset, lng: 0 },     // юг  
+    { lat: 0, lng: offset },      // восток
+    { lat: 0, lng: -offset },     // запад
+    { lat: offset, lng: offset }, // северо-восток
+  ];
+  
+  const direction = directions[(attempt - 1) % directions.length];
+  return {
+    lat: point.lat + direction.lat,
+    lng: point.lng + direction.lng
+  };
+};
+
+// Функция получения погоды с retry для альтернативных точек
+const getWeatherWithRetry = async (
+  point: GeoPoint,
+  config: PricingConfig,
+  date?: Date,
+  maxAttempts: number = 3
+): Promise<WeatherData> => {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const targetPoint = attempt === 1 ? point : getAlternativePoint(point, attempt - 1);
+      const response = await getWeatherData(targetPoint, date);
+      
+      return {
+        condition: response.current.condition.text,
+        temperature: response.current.temp_f,
+        multiplier: calculateWeatherMultiplier(response.current.condition.text, config)
+      };
+    } catch (error) {
+      console.warn(`Weather attempt ${attempt} failed for point:`, point, error);
+      
+      // Если это последняя попытка, выбрасываем ошибку
+      if (attempt === maxAttempts) {
+        throw error;
+      }
+    }
+  }
+  
+  // Этот код недостижим, но TypeScript требует return
+  throw new Error('All weather attempts failed');
+};
+
 // Функция для анализа погодных условий по маршруту
 export const analyzeRouteWeather = async (
   points: GeoPoint[],
@@ -86,18 +137,27 @@ export const analyzeRouteWeather = async (
   date?: Date
 ): Promise<WeatherData[]> => {
   try {
-    const weatherDataPromises = points.map(async point => {
-      const response = await getWeatherData(point, date);
-      const condition = response.current.condition.text;
-      
-      return {
-        condition,
-        temperature: response.current.temp_f,
-        multiplier: calculateWeatherMultiplier(condition, config)
-      };
-    });
+    // Параллельные запросы с retry логикой
+    const weatherResults = await Promise.allSettled(
+      points.map(point => getWeatherWithRetry(point, config, date, 3))
+    );
 
-    return await Promise.all(weatherDataPromises);
+    // Обрабатываем результаты
+    const weatherData: WeatherData[] = [];
+    
+    for (let i = 0; i < weatherResults.length; i++) {
+      const result = weatherResults[i];
+      
+      if (result.status === 'fulfilled') {
+        weatherData.push(result.value);
+      } else {
+        // Если все retry упали - это техническая ошибка API
+        console.error(`Weather failed for point ${i}:`, result.reason);
+        throw new Error(`Weather API unavailable for route point ${i + 1}`);
+      }
+    }
+
+    return weatherData;
   } catch (error) {
     console.error('Route weather analysis error:', error);
     throw error;
