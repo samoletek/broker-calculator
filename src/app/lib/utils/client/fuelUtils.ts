@@ -1,3 +1,5 @@
+import { PricingConfig } from '../../../../types/pricing-config.types';
+
 interface GasStation {
   name: string;
   location: {
@@ -15,7 +17,8 @@ interface PlaceDetails extends google.maps.places.PlaceResult {
 
 export const checkFuelPrices = async (
   points: Array<{ lat: number; lng: number }>,
-  google: typeof window.google
+  google: typeof window.google,
+  config: PricingConfig
 ): Promise<number | null> => {
   const service = new google.maps.places.PlacesService(document.createElement('div'));
 
@@ -65,9 +68,9 @@ export const checkFuelPrices = async (
                   }
 
                   // price_level in Google Places API is 0-4
-                  // Convert to approximate diesel price
-                  const basePrice = 3.50; // base diesel price
-                  const priceMultiplier = result.price_level ? (1 + result.price_level * 0.1) : null;
+                  // Convert to approximate diesel price using dynamic config
+                  const basePrice = config.fuel.baseDieselPrice;
+                  const priceMultiplier = result.price_level ? (1 + result.price_level * config.fuel.priceLevelMultiplier) : null;
                   
                   resolve({
                     name: result.name || 'Unknown Station',
@@ -110,11 +113,14 @@ export const checkFuelPrices = async (
 
 export const getFuelPriceMultiplier = async (
   points: Array<{ lat: number; lng: number }>,
-  google: typeof window.google
+  google: typeof window.google,
+  config: PricingConfig
 ): Promise<number> => {
-  const maxPrice = await checkFuelPrices(points, google);
+  const maxPrice = await checkFuelPrices(points, google, config);
   if (!maxPrice) return 1.0;
 
-  const basePrice = 3.50;
-  return maxPrice > basePrice * 1.05 ? 1.05 : 1.0;
+  const basePrice = config.fuel.baseDieselPrice;
+  const threshold = basePrice * config.fuel.priceThreshold;
+  
+  return maxPrice > threshold ? config.fuel.highPriceMultiplier : 1.0;
 };

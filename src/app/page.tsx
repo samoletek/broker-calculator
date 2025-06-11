@@ -9,13 +9,14 @@ import { PriceBreakdown }  from '@/app/components/server/PriceBreakdown';
 import PriceSummary from '@/app/components/server/PriceSummary';
 import RouteInfo from '@/app/components/server/RouteInfo';
 import {
-  TRANSPORT_TYPES,
-  VEHICLE_VALUE_TYPES,
+  getTransportTypes,
+  getVehicleValueTypes,
   VEHICLE_TYPES,
-  ADDITIONAL_SERVICES,
-  PAYMENT_METHODS, 
+  getAdditionalServices,
+  getPaymentMethods, 
   getBaseRate
 } from '@/constants/pricing';
+import { usePricingConfig } from '@/app/lib/hooks/usePricingConfig';
 import { validateName, validateEmail, validatePhoneNumber } from '@/app/lib/utils/client/validation';
 import { useGoogleMaps } from '@/app/lib/hooks/useGoogleMaps';
 import { usePricing } from '@/app/lib/hooks/usePricing';
@@ -44,12 +45,20 @@ const WeatherConditions = dynamic(() => import('@/app/components/client/WeatherC
 });
 
 export default function BrokerCalculator() {
+  // Получаем динамическую конфигурацию ценообразования
+  const { config, loading: configLoading, error: configError } = usePricingConfig();
+  
+  // Получаем динамические константы на основе конфигурации
+  const TRANSPORT_TYPES = getTransportTypes(config);
+  const VEHICLE_VALUE_TYPES = getVehicleValueTypes(config);
+  const ADDITIONAL_SERVICES = getAdditionalServices(config);
+  const PAYMENT_METHODS = getPaymentMethods(config);
+
   // State management
   const [pickup, setPickup] = useState('');
   const [delivery, setDelivery] = useState('');
   const [distance, setDistance] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
   const [transportType, setTransportType] = useState<keyof typeof TRANSPORT_TYPES | ''>('');
@@ -330,30 +339,32 @@ const calculatePrice = async () => {
     
         setRouteInfo((prev) => ({
           ...prev,
-          estimatedTime: calculateEstimatedTransitTime(distanceInMiles)
+          estimatedTime: calculateEstimatedTransitTime(distanceInMiles, config)
         }));
     
         // Проверяем наличие автошоу
         const pickupAutoShows = await checkAutoShows(
           { lat: response.routes[0].legs[0].start_location.lat(), lng: response.routes[0].legs[0].start_location.lng() },
           selectedDate,
-          window.google
+          window.google,
+          config
         );
     
         const deliveryAutoShows = await checkAutoShows(
           { lat: response.routes[0].legs[0].end_location.lat(), lng: response.routes[0].legs[0].end_location.lng() },
           selectedDate,
-          window.google
+          window.google,
+          config
         );
     
         // Определяем базовую цену
-        const basePrice = distanceInMiles <= 300 ? 
-          600 : 
-          getBaseRate(distanceInMiles, transportType);
+        const basePrice = distanceInMiles <= config.validation.shortDistanceLimit ? 
+          config.validation.minPriceThreshold : 
+          getBaseRate(distanceInMiles, transportType, config);
     
         // Данные для разбивки базовой цены
         const basePriceBreakdown = {
-          ratePerMile: distanceInMiles <= 300 ? 0 : TRANSPORT_TYPES[transportType].baseRatePerMile.max,
+          ratePerMile: distanceInMiles <= config.validation.shortDistanceLimit ? 0 : TRANSPORT_TYPES[transportType].baseRatePerMile.max,
           distance: distanceInMiles,
           total: basePrice
         };
@@ -361,11 +372,11 @@ const calculatePrice = async () => {
         // Получаем множители
         const vehicleMultiplier = VEHICLE_VALUE_TYPES[vehicleValue].multiplier;
         const autoShowMultiplier = Math.max(
-          getAutoShowMultiplier(pickupAutoShows, selectedDate),
-          getAutoShowMultiplier(deliveryAutoShows, selectedDate)
+          getAutoShowMultiplier(pickupAutoShows, selectedDate, config),
+          getAutoShowMultiplier(deliveryAutoShows, selectedDate, config)
         );
         const routePoints = getRoutePoints(response);
-        const fuelPriceMultiplier = await getFuelPriceMultiplier(routePoints, window.google);
+        const fuelPriceMultiplier = await getFuelPriceMultiplier(routePoints, window.google, config);
         const weatherMultiplier = 1.0;
         const trafficMultiplier = 1.0;
     
@@ -400,8 +411,8 @@ const calculatePrice = async () => {
         const additionalServicesImpact = basePrice * additionalServicesSum;
     
         // Расчет платных дорог
-        const totalTollCost = calculateTollCost(distanceInMiles, response.routes[0]);
-        const tollSegments = getRouteSegments(response, totalTollCost);
+        const totalTollCost = calculateTollCost(distanceInMiles, response.routes[0], config);
+        const tollSegments = getRouteSegments(response, totalTollCost, config);
         const tollCosts = {
           segments: tollSegments,
           total: totalTollCost
@@ -555,7 +566,7 @@ const calculatePrice = async () => {
                   date={selectedDate} 
                   onDateChange={(date) => {
                     setSelectedDate(date);
-                    setError(null);
+                    setErrors(prev => ({ ...prev, selectedDate: '' }));
                     clearResults();
                   }}
                 />

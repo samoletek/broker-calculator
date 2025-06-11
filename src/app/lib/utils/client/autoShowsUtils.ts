@@ -1,3 +1,5 @@
+import { PricingConfig } from '../../../../types/pricing-config.types';
+
 interface PlaceDetails extends google.maps.places.PlaceResult {
   name: string;
   geometry?: {
@@ -21,13 +23,14 @@ interface AutoShowEvent {
 export const checkAutoShows = async (
   location: { lat: number; lng: number },
   date: Date,
-  google: typeof window.google
+  google: typeof window.google,
+  config: PricingConfig
 ): Promise<AutoShowEvent[]> => {
   const service = new google.maps.places.PlacesService(document.createElement('div'));
   
   const searchParams: google.maps.places.PlaceSearchRequest = {
     location: location,
-    radius: 32186, // 20 miles in meters
+    radius: config.autoShows.searchRadius,
     keyword: 'auto show car show automotive exhibition convention center stadium'
   };
 
@@ -44,11 +47,11 @@ export const checkAutoShows = async (
       });
     });
 
-    // Search date +/- 3 days
+    // Search date +/- dateRange days from config
     const searchStartDate = new Date(date);
-    searchStartDate.setDate(searchStartDate.getDate() - 3);
+    searchStartDate.setDate(searchStartDate.getDate() - config.autoShows.dateRange);
     const searchEndDate = new Date(date);
-    searchEndDate.setDate(searchEndDate.getDate() + 3);
+    searchEndDate.setDate(searchEndDate.getDate() + config.autoShows.dateRange);
 
     if (places.length === 0) {
       return [];
@@ -108,9 +111,9 @@ export const checkAutoShows = async (
   }
 };
 
-export const getAutoShowMultiplier = (autoShows: AutoShowEvent[], date: Date): number => {
+export const getAutoShowMultiplier = (autoShows: AutoShowEvent[], date: Date, config: PricingConfig): number => {
   if (autoShows.length > 0) {
-    return 1.1; // +10% to base price
+    return config.autoShows.multiplier;
   }
   return 1.0;
 };

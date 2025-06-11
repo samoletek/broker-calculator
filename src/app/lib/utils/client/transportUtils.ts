@@ -1,9 +1,10 @@
 import { TrafficData, TrafficPoint } from '@/app/types/components.types';
+import { PricingConfig } from '../../../../types/pricing-config.types';
 
-export const calculateEstimatedTransitTime = (distance: number): string => {
- const DAILY_DRIVING_MILES = 500; // Active miles per day
+export const calculateEstimatedTransitTime = (distance: number, config: PricingConfig): string => {
+ const dailyDrivingMiles = config.transport.dailyDrivingMiles;
  
- const transitDays = Math.ceil(distance / DAILY_DRIVING_MILES);
+ const transitDays = Math.ceil(distance / dailyDrivingMiles);
  
  if (transitDays === 1) {
    return '1 day';
@@ -18,7 +19,8 @@ export const analyzeTrafficConditions = async (
   origin: { lat: number; lng: number },
   destination: { lat: number; lng: number },
   date: Date,
-  google: typeof window.google
+  google: typeof window.google,
+  config: PricingConfig
 ): Promise<TrafficData> => {
   try {
     const service = new google.maps.DirectionsService();
@@ -55,15 +57,18 @@ export const analyzeTrafficConditions = async (
     let status: 'light' | 'moderate' | 'heavy';
     let multiplier: number;
 
-    if (congestion < 1.3) {
+    const lightThreshold = config.transport.trafficThresholds.lightThreshold;
+    const heavyThreshold = config.transport.trafficThresholds.heavyThreshold;
+
+    if (congestion < lightThreshold) {
       status = 'light';
-      multiplier = 1.0;
-    } else if (congestion < 1.6) {
+      multiplier = config.transport.trafficMultipliers.light;
+    } else if (congestion < heavyThreshold) {
       status = 'moderate';
-      multiplier = 1.1;
+      multiplier = config.transport.trafficMultipliers.moderate;
     } else {
       status = 'heavy';
-      multiplier = 1.2;
+      multiplier = config.transport.trafficMultipliers.heavy;
     }
 
     const path = result.routes[0].overview_path;

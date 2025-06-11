@@ -2,6 +2,7 @@ import axios from 'axios';
 import { format } from 'date-fns';
 import type { WeatherResponse } from '@/app/types/api.types';
 import type { GeoPoint } from '@/app/types/common.types';
+import { PricingConfig } from '../../../../types/pricing-config.types';
 
 // Общие типы для погодных условий
 export interface WeatherData {
@@ -23,13 +24,14 @@ export const WEATHER_CONDITIONS = {
 
 type WeatherConditionType = typeof WEATHER_CONDITIONS[keyof typeof WEATHER_CONDITIONS];
 
-export const WEATHER_MULTIPLIERS: Record<WeatherConditionType, number> = {
-  'clear': 1.0,
-  'cloudy': 1.0,
-  'rain': 1.05,
-  'snow': 1.2,
-  'storm': 1.15,
-};
+export const getWeatherMultipliers = (config: PricingConfig): Record<WeatherConditionType | 'extreme', number> => ({
+  'clear': config.weatherMultipliers.clear,
+  'cloudy': config.weatherMultipliers.cloudy,
+  'rain': config.weatherMultipliers.rain,
+  'snow': config.weatherMultipliers.snow,
+  'storm': config.weatherMultipliers.storm,
+  'extreme': config.weatherMultipliers.extreme,
+});
 
 // Основная функция получения погодных данных
 export const getWeatherData = async (
@@ -71,14 +73,16 @@ export const determineWeatherCondition = (condition: string): WeatherConditionTy
 };
 
 // Функция расчета погодного множителя
-export const calculateWeatherMultiplier = (condition: string): number => {
+export const calculateWeatherMultiplier = (condition: string, config: PricingConfig): number => {
   const weatherCondition = determineWeatherCondition(condition);
-  return WEATHER_MULTIPLIERS[weatherCondition];
+  const multipliers = getWeatherMultipliers(config);
+  return multipliers[weatherCondition];
 };
 
 // Функция для анализа погодных условий по маршруту
 export const analyzeRouteWeather = async (
   points: GeoPoint[],
+  config: PricingConfig,
   date?: Date
 ): Promise<WeatherData[]> => {
   try {
@@ -89,7 +93,7 @@ export const analyzeRouteWeather = async (
       return {
         condition,
         temperature: response.current.temp_f,
-        multiplier: calculateWeatherMultiplier(condition)
+        multiplier: calculateWeatherMultiplier(condition, config)
       };
     });
 
