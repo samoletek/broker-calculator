@@ -24,6 +24,8 @@ interface VehicleTypeData {
   description: string;
 }
 
+import { PricingConfig } from '../types/pricing-config.types';
+
 interface AdditionalService {
   name: string;
   multiplier: number;
@@ -31,43 +33,43 @@ interface AdditionalService {
   tooltip?: string[];
 }
 
-// Конфигурация типов транспорта
-export const TRANSPORT_TYPES: Record<string, TransportTypeData> = {
+// Конфигурация типов транспорта - теперь с динамическими ставками
+export const getTransportTypes = (config: PricingConfig): Record<string, TransportTypeData> => ({
   openTransport: {
     name: 'Open Transport',
     baseRatePerMile: {
-      min: 0.62,
-      max: 0.93
+      min: config.baseRates.openTransport.min,
+      max: config.baseRates.openTransport.max
     }
   },
   enclosedTransport: {
     name: 'Enclosed Transport',
     baseRatePerMile: {
-      min: 0.88,
-      max: 1.19
+      min: config.baseRates.enclosedTransport.min,
+      max: config.baseRates.enclosedTransport.max
     }
   }
-};
+});
 
-// Типы стоимости автомобилей
-export const VEHICLE_VALUE_TYPES: Record<string, VehicleValueType> = {
+// Типы стоимости автомобилей - теперь с динамическими множителями
+export const getVehicleValueTypes = (config: PricingConfig): Record<string, VehicleValueType> => ({
   under100k: {
     name: 'Under $100k',
-    multiplier: 1.0
+    multiplier: config.vehicleValueMultipliers.under100k
   },
   under300k: {
     name: '$100k - $300k',
-    multiplier: 1.05
+    multiplier: config.vehicleValueMultipliers.from100kTo300k
   },
   under500k: {
     name: '$300k - $500k',
-    multiplier: 1.1
+    multiplier: config.vehicleValueMultipliers.from300kTo500k
   },
   over500k: {
     name: 'Over $500k',
-    multiplier: 1.15
+    multiplier: config.vehicleValueMultipliers.over500k
   }
-};
+});
 
 // Типы транспортных средств
 export const VEHICLE_TYPES: Record<string, VehicleTypeData> = {
@@ -149,11 +151,11 @@ export const VEHICLE_TYPES: Record<string, VehicleTypeData> = {
   }
 };
 
-// Дополнительные услуги
-export const ADDITIONAL_SERVICES: Record<string, AdditionalService> = {
+// Дополнительные услуги - теперь с динамическими множителями
+export const getAdditionalServices = (config: PricingConfig): Record<string, AdditionalService> => ({
   premiumEnhancements: {
     name: 'Premium Enhancements',
-    multiplier: 1.15,
+    multiplier: config.additionalServices.premiumEnhancements,
     tooltip: [
       'Language Proficiency: Skilled professionals fluent in the required language.',
       'Professional Attire: Staff dressed to represent your business with excellence.',
@@ -164,7 +166,7 @@ export const ADDITIONAL_SERVICES: Record<string, AdditionalService> = {
   },
   specialLoad: {
     name: 'Special Load',
-    multiplier: 1.1,
+    multiplier: config.additionalServices.specialLoad,
     tooltip: [
       'Multi-point deliveries or roundtrip transportation',
       'Access to restricted areas (ports, military bases)',
@@ -175,7 +177,7 @@ export const ADDITIONAL_SERVICES: Record<string, AdditionalService> = {
   },
   inoperable: {
     name: 'Inoperable/Zero Mileage',
-    multiplier: 1.1,
+    multiplier: config.additionalServices.inoperableZeroMileage,
     tooltip: [
       'Transportation of non-running vehicles',
       'Specialized loading equipment for inoperable vehicles',
@@ -186,7 +188,7 @@ export const ADDITIONAL_SERVICES: Record<string, AdditionalService> = {
   },
   supplementaryInsurance: {
     name: 'Supplementary Insurance',
-    multiplier: 0,
+    multiplier: config.additionalServices.supplementaryInsurance,
     managerDefined: true,
     tooltip: [
       'Single-trip insurance for peace of mind when transporting luxury vehicles',
@@ -196,72 +198,76 @@ export const ADDITIONAL_SERVICES: Record<string, AdditionalService> = {
       'The price of insurance will be quoted by our representative'
     ]
   }
-};
+});
 
-export const PAYMENT_METHODS = {
+export const getPaymentMethods = (config: PricingConfig) => ({
   CREDIT_CARD: {
     id: 'creditCard',
     name: 'Credit Card',
-    fee: 0.03  // 3% комиссия
+    fee: config.paymentFees.creditCard
   },
   ACH: {
     id: 'ach',
     name: 'ACH',
-    fee: 0
+    fee: config.paymentFees.achCheckCod
   },
   CHECK: {
     id: 'check',
     name: 'Check',
-    fee: 0
+    fee: config.paymentFees.achCheckCod
   },
   COD: {
     id: 'cod',
     name: 'COD (Cash on Delivery)',
-    fee: 0
+    fee: config.paymentFees.achCheckCod
   }
-};
+});
 
-// Конфигурация погодных условий
-export const WEATHER_MULTIPLIERS: Record<string, number> = {
-  clear: 1.0,
-  cloudy: 1.0,
-  rain: 1.05,
-  snow: 1.1,
-  storm: 1.1,
-  extreme: 1.2
-};
+// Конфигурация погодных условий - теперь динамическая
+export const getWeatherMultipliers = (config: PricingConfig): Record<string, number> => ({
+  clear: config.weatherMultipliers.clear,
+  cloudy: config.weatherMultipliers.cloudy,
+  rain: config.weatherMultipliers.rain,
+  snow: config.weatherMultipliers.snow,
+  storm: config.weatherMultipliers.storm,
+  extreme: config.weatherMultipliers.extreme
+});
 
-// Конфигурация маршрутов
-export const ROUTE_FACTORS: Record<string, number> = {
-  popular: 0.9,
-  regular: 1.0,
-  remote: 1.2
-};
+// Конфигурация маршрутов - теперь динамическая
+export const getRouteFactors = (config: PricingConfig): Record<string, number> => ({
+  popular: config.routeFactors.popular,
+  regular: config.routeFactors.regular,
+  remote: config.routeFactors.remote
+});
 
-// Популярные маршруты
-export const POPULAR_ROUTES: PopularRoute[] = [
-  { from: "New York", to: "Los Angeles", factor: 0.9 },
-  { from: "Miami", to: "Chicago", factor: 0.9 },
-  { from: "New York", to: "Miami", factor: 0.9 },
-  { from: "Miami", to: "New York", factor: 0.9 },
-  { from: "Boston", to: "Washington", factor: 0.9 },
-  { from: "San Francisco", to: "Las Vegas", factor: 0.9 },
-  { from: "Seattle", to: "Portland", factor: 0.9 },
-  { from: "Washington", to: "Los Angeles", factor: 0.9 },
-  { from: "Los Angeles", to: "Washington", factor: 0.9 },
-  { from: "Los Angeles", to: "New York", factor: 0.9 },
-  { from: "Los Angeles", to: "Chicago", factor: 0.9 },
+// Популярные маршруты - теперь с динамическими факторами
+export const getPopularRoutes = (config: PricingConfig): PopularRoute[] => [
+  { from: "New York", to: "Los Angeles", factor: config.routeFactors.popular },
+  { from: "Miami", to: "Chicago", factor: config.routeFactors.popular },
+  { from: "New York", to: "Miami", factor: config.routeFactors.popular },
+  { from: "Miami", to: "New York", factor: config.routeFactors.popular },
+  { from: "Boston", to: "Washington", factor: config.routeFactors.popular },
+  { from: "San Francisco", to: "Las Vegas", factor: config.routeFactors.popular },
+  { from: "Seattle", to: "Portland", factor: config.routeFactors.popular },
+  { from: "Washington", to: "Los Angeles", factor: config.routeFactors.popular },
+  { from: "Los Angeles", to: "Washington", factor: config.routeFactors.popular },
+  { from: "Los Angeles", to: "New York", factor: config.routeFactors.popular },
+  { from: "Los Angeles", to: "Chicago", factor: config.routeFactors.popular },
 ];
 
-// Вспомогательные функции
-export const getBaseRate = (distance: number, transportType: keyof typeof TRANSPORT_TYPES) => {
-  const type = TRANSPORT_TYPES[transportType];
+// Вспомогательные функции - теперь с динамической конфигурацией
+export const getBaseRate = (distance: number, transportType: string, config: PricingConfig) => {
+  const transportTypes = getTransportTypes(config);
+  const type = transportTypes[transportType as keyof typeof transportTypes];
   const ratePerMile = type.baseRatePerMile.max;
   return distance * ratePerMile;
 };
 
-export const getRouteFactor = (pickup: string, delivery: string): number => {
-  const isPopularRoute = POPULAR_ROUTES.some(
+export const getRouteFactorDynamic = (pickup: string, delivery: string, config: PricingConfig): number => {
+  const popularRoutes = getPopularRoutes(config);
+  const routeFactors = getRouteFactors(config);
+  
+  const isPopularRoute = popularRoutes.some(
     route => 
       (pickup.toLowerCase().includes(route.from.toLowerCase()) && 
        delivery.toLowerCase().includes(route.to.toLowerCase())) ||
@@ -270,7 +276,7 @@ export const getRouteFactor = (pickup: string, delivery: string): number => {
   );
 
   if (isPopularRoute) {
-    return ROUTE_FACTORS.popular;
+    return routeFactors.popular;
   }
 
   const remoteAreas = ['hawaii', 'montana', 'wyoming', 'idaho', 'north dakota', 'south dakota'];
@@ -278,10 +284,9 @@ export const getRouteFactor = (pickup: string, delivery: string): number => {
     area => pickup.toLowerCase().includes(area) || delivery.toLowerCase().includes(area)
   );
 
-  return isRemote ? ROUTE_FACTORS.remote : ROUTE_FACTORS.regular;
+  return isRemote ? routeFactors.remote : routeFactors.regular;
 };
 
-export const isDistanceValid = (distance: number): boolean => {
-  const MAX_DISTANCE = 3500; // максимальная дистанция в милях
-  return distance <= MAX_DISTANCE;
+export const isDistanceValid = (distance: number, config: PricingConfig): boolean => {
+  return distance <= config.validation.maxDistance;
 };

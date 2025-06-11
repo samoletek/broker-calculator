@@ -18,7 +18,8 @@ const RouteInfo: React.FC<RouteInfoProps> = memo(({
   mapData,
   selectedDate,
   onTollUpdate,
-  tollCosts
+  tollCosts,
+  config
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const hasCalculatedTolls = useRef(false);
@@ -30,11 +31,11 @@ const RouteInfo: React.FC<RouteInfoProps> = memo(({
   };
 
   const calculateTolls = useCallback(() => {
-    if (!mapData || !distance || hasCalculatedTolls.current) return;
+    if (!mapData || !distance || hasCalculatedTolls.current || !config) return;
   
     try {
-      const totalTollCost = calculateTollCost(distance, mapData.routes[0]);
-      const segments = getRouteSegments(mapData, totalTollCost);
+      const totalTollCost = calculateTollCost(distance, mapData.routes[0], config);
+      const segments = getRouteSegments(mapData, totalTollCost, config);
   
       // Проверяем, изменились ли данные
       if (!tollCosts || tollCosts.total !== totalTollCost) {
@@ -45,18 +46,14 @@ const RouteInfo: React.FC<RouteInfoProps> = memo(({
       console.error('Error calculating tolls:', error);
       onTollUpdate(0, []);
     }
-  }, [distance, mapData, tollCosts, onTollUpdate]);
+  }, [distance, mapData, config]);
   
   useEffect(() => {
-    calculateTolls();
-  }, [calculateTolls]);
-
-  useEffect(() => {
-    calculateTolls();
-    return () => {
-      hasCalculatedTolls.current = false;
-    };
-  }, [calculateTolls]);
+    if (mapData && distance) {
+      hasCalculatedTolls.current = false; // Сбрасываем флаг при изменении данных
+      calculateTolls();
+    }
+  }, [mapData, distance, calculateTolls]);
 
   return (
     <div className="w-full p-4 sm:p-40 bg-white rounded-[24px] border border-primary/10">
