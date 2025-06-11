@@ -23,7 +23,7 @@ import { usePricing } from '@/app/lib/hooks/usePricing';
 import { validateAddress, isSameLocation } from '@/app/lib/utils/client/maps';
 import { calculateTollCost, getRouteSegments } from '@/app/lib/utils/client/tollUtils';
 import { checkAutoShows, getAutoShowMultiplier } from '@/app/lib/utils/client/autoShowsUtils';
-import { calculateEstimatedTransitTime, getRoutePoints } from '@/app/lib/utils/client/transportUtils';
+import { calculateEstimatedTransitTime } from '@/app/lib/utils/client/transportUtils';
 import { getFuelPriceMultiplier } from '@/app/lib/utils/client/fuelUtils';
 import type { SelectOption } from '@/app/types/common.types';
 import { submitCalculationLead, prepareCalculatorDataForLead } from '@/app/lib/utils/client/leadSubmissionUtils';
@@ -375,8 +375,7 @@ const calculatePrice = async () => {
           getAutoShowMultiplier(pickupAutoShows, selectedDate, config),
           getAutoShowMultiplier(deliveryAutoShows, selectedDate, config)
         );
-        const routePoints = getRoutePoints(response);
-        const fuelPriceMultiplier = await getFuelPriceMultiplier(routePoints, window.google, config);
+        const fuelPriceMultiplier = await getFuelPriceMultiplier(response, window.google, config);
         const weatherMultiplier = 1.0;
         const trafficMultiplier = 1.0;
     
