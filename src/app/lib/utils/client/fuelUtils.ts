@@ -3,15 +3,10 @@ import { PricingConfig } from '../../../../types/pricing-config.types';
 interface EIAFuelPrice {
   duoarea: string;
   stateDescription: string;
-  value: number;
+  value: string; // EIA API returns price as string
   period: string;
 }
 
-interface EIAResponse {
-  response: {
-    data: EIAFuelPrice[];
-  };
-}
 
 // Map US states to PADD (Petroleum Administration for Defense District) codes
 const STATE_TO_PADD: Record<string, string> = {
@@ -82,7 +77,7 @@ const getRouteStates = async (
   }
 };
 
-// Get diesel prices from EIA API using PADD codes
+// Get diesel prices from EIA API using PADD codes via server endpoint
 const getEIADieselPrices = async (
   paddCodes: string[],
   startDate: string,
@@ -91,16 +86,24 @@ const getEIADieselPrices = async (
   if (paddCodes.length === 0) return [];
   
   try {
-    const paddParams = paddCodes.map(padd => `facets[duoarea][]=${padd}`).join('&');
-    const url = `https://api.eia.gov/v2/petroleum/pri/gnd/data?api_key=${process.env.EIA_API_KEY}&frequency=weekly&data[]=value&${paddParams}&start=${startDate}&end=${endDate}&sort[0][column]=period&sort[0][direction]=desc`;
+    const params = new URLSearchParams();
+    paddCodes.forEach(code => params.append('paddCodes', code));
+    params.append('startDate', startDate);
+    params.append('endDate', endDate);
     
-    const response = await fetch(url);
+    const response = await fetch(`/api/fuel?${params.toString()}`);
+    
     if (!response.ok) {
-      throw new Error(`EIA API error: ${response.status}`);
+      throw new Error(`Fuel API error: ${response.status}`);
     }
     
-    const data: EIAResponse = await response.json();
-    return data.response.data || [];
+    const result = await response.json();
+    
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to fetch fuel data');
+    }
+    
+    return result.data || [];
   } catch (error) {
     console.error('Error fetching EIA data:', error);
     return [];
@@ -141,8 +144,8 @@ export const getFuelPriceMultiplier = async (
     }
     
     // Calculate average prices
-    const avgCurrentPrice = currentPrices.reduce((sum, p) => sum + p.value, 0) / currentPrices.length;
-    const avgHistoricalPrice = historicalPrices.reduce((sum, p) => sum + p.value, 0) / historicalPrices.length;
+    const avgCurrentPrice = currentPrices.reduce((sum, p) => sum + parseFloat(p.value), 0) / currentPrices.length;
+    const avgHistoricalPrice = historicalPrices.reduce((sum, p) => sum + parseFloat(p.value), 0) / historicalPrices.length;
     
     // If current prices are more than 5% higher than historical, apply multiplier
     const priceIncrease = (avgCurrentPrice - avgHistoricalPrice) / avgHistoricalPrice;
@@ -159,12 +162,3 @@ export const getFuelPriceMultiplier = async (
   }
 };
 
-// Legacy function - keeping for backwards compatibility  
-export const checkFuelPrices = async (
-  directionsResult: google.maps.DirectionsResult,
-  google: typeof window.google,
-  config: PricingConfig
-): Promise<number | null> => {
-  const multiplier = await getFuelPriceMultiplier(directionsResult, google, config);
-  return multiplier;
-};
