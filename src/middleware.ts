@@ -5,7 +5,7 @@ export function middleware(request: NextRequest) {
   // Определяем CSP заголовки с разрешением для iframe
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://vercel.live;
     connect-src 'self' https://api.weatherapi.com https://api.emailjs.com https://api.eia.gov;
     img-src 'self' data: https://maps.googleapis.com https://maps.gstatic.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;

@@ -4,6 +4,7 @@ import { APIErrorHandler } from '@/app/lib/utils/api/errorHandler';
 
 interface GeocodeRequest {
   address: string;
+  limit?: number; // Ограничение количества результатов для autocomplete
 }
 
 interface GeocodeResult {
@@ -99,15 +100,19 @@ const postHandler = async (request: NextRequest) => {
       });
     }
 
+    // Применяем лимит результатов если указан (для autocomplete)
+    const limitedResults = body.limit ? usResults.slice(0, body.limit) : usResults;
+
     console.log('Geocoding success:', { 
       address: body.address, 
-      resultCount: usResults.length,
-      firstResult: usResults[0]?.formatted_address 
+      resultCount: limitedResults.length,
+      limit: body.limit,
+      firstResult: limitedResults[0]?.formatted_address 
     });
 
     return NextResponse.json({
       success: true,
-      results: usResults,
+      results: limitedResults,
       status: data.status
     });
 

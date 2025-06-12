@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { Loader2, AlertCircle } from 'lucide-react';
 import Select from '@/app/components/ui/Select';
 import { DatePicker } from '@/app/components/client/DatePicker';
+import AddressAutocomplete from '@/app/components/client/AddressAutocomplete';
 import { PriceBreakdown }  from '@/app/components/server/PriceBreakdown';
 import PriceSummary from '@/app/components/server/PriceSummary';
 import RouteInfo from '@/app/components/server/RouteInfo';
@@ -105,8 +106,6 @@ export default function ClientCalculator({ config }: ClientCalculatorProps) {
   
   // Refs
   const mapRef = useRef<HTMLDivElement>(null);
-  const pickupInputRef = useRef<HTMLInputElement>(null);
-  const deliveryInputRef = useRef<HTMLInputElement>(null);
   
 // Автозаполнение отключено - используем server-side API
 // В будущем можно добавить debounced поиск через /api/maps/geocode
@@ -498,21 +497,19 @@ const calculatePrice = async () => {
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Pickup Location
                 </label>
-                <input
-                  ref={pickupInputRef}
-                  type="text"
-                  className={`mt-8 block w-full rounded-[24px] bg-gray-50 border text-gray-900 placeholder-gray-500 
-                    focus:ring-primary focus:border-primary font-montserrat text-p2
-                    ${errors.pickup ? 'border-red-500' : 'border-gray-300'}`}
+                <AddressAutocomplete
                   value={pickup}
-                  onChange={(e) => {
-                    setPickup(e.target.value);
+                  onChange={(value) => {
+                    setPickup(value);
                     setErrors((prev) => ({ ...prev, pickup: '' }));
                     clearResults();
                   }}
+                  onClear={clearResults}
                   placeholder="Enter pickup address"
+                  className="mt-8 block w-full rounded-[24px] bg-gray-50 border text-gray-900 placeholder-gray-500 
+                    focus:ring-primary focus:border-primary font-montserrat text-p2"
+                  error={errors.pickup}
                 />
-                {errors.pickup && <p className="text-red-500 text-sm mt-2">{errors.pickup}</p>}
               </div>
   
               {/* Delivery адрес */}
@@ -520,21 +517,19 @@ const calculatePrice = async () => {
                 <label className="block text-p2 font-montserrat font-medium mb-8">
                   Delivery Location
                 </label>
-                <input
-                  ref={deliveryInputRef}
-                  type="text"
-                  className={`mt-8 block w-full rounded-[24px] bg-gray-50 border text-gray-900 placeholder-gray-500 
-                    focus:ring-primary focus:border-primary font-montserrat text-p2
-                    ${errors.delivery ? 'border-red-500' : 'border-gray-300'}`}
+                <AddressAutocomplete
                   value={delivery}
-                  onChange={(e) => {
-                    setDelivery(e.target.value)
+                  onChange={(value) => {
+                    setDelivery(value);
                     setErrors((prev) => ({ ...prev, delivery: '' }));
                     clearResults();
                   }}
+                  onClear={clearResults}
                   placeholder="Enter delivery address"
+                  className="mt-8 block w-full rounded-[24px] bg-gray-50 border text-gray-900 placeholder-gray-500 
+                    focus:ring-primary focus:border-primary font-montserrat text-p2"
+                  error={errors.delivery}
                 />
-                {errors.delivery && <p className="text-red-500 text-sm mt-2">{errors.delivery}</p>}
               </div>
             </div>
   
