@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { get } from '@vercel/edge-config';
 import { PricingConfig, EdgeConfigResponse, PricingConfigHistory } from '../../../types/pricing-config.types';
+import { withCors } from '@/app/lib/utils/api/cors';
 
-// Helper function to add CORS headers
-function addCorsHeaders(response: NextResponse) {
-  response.headers.set('Access-Control-Allow-Origin', 'https://www.brokercalculator.xyz');
-  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
-  response.headers.set('Access-Control-Max-Age', '86400');
-  return response;
-}
 
 // Helper function to save config to history
 async function saveConfigToHistory(config: PricingConfig) {
@@ -62,22 +55,18 @@ async function saveConfigToHistory(config: PricingConfig) {
   }
 }
 
-// Handle OPTIONS requests for CORS
-export async function OPTIONS() {
-  const response = new NextResponse(null, { status: 200 });
-  return addCorsHeaders(response);
-}
-
 // GET - закрыт для публичного доступа
-export async function GET() {
-  return addCorsHeaders(NextResponse.json({
+const getHandler = async () => {
+  return NextResponse.json({
     success: false,
     error: 'Access denied'
-  }, { status: 403 }));
-}
+  }, { status: 403 });
+};
+
+export const GET = withCors(getHandler);
 
 // POST - обновить конфигурацию (только для внутреннего использования из AWS)
-export async function POST(request: NextRequest) {
+const postHandler = async (request: NextRequest) => {
   try {
     // Проверяем авторизацию через API key из AWS
     const authHeader = request.headers.get('authorization');
@@ -95,20 +84,20 @@ export async function POST(request: NextRequest) {
         expectedAuthLength: expectedAuth?.length
       });
       
-      return addCorsHeaders(NextResponse.json({
+      return NextResponse.json({
         success: false,
         error: 'Unauthorized - Invalid API key'
-      }, { status: 401 }));
+      }, { status: 401 });
     }
 
     const newConfig: PricingConfig = await request.json();
     
     // Валидация структуры конфигурации
     if (!newConfig.version || !newConfig.baseRates) {
-      return addCorsHeaders(NextResponse.json({
+      return NextResponse.json({
         success: false,
         error: 'Invalid configuration structure'
-      }, { status: 400 }));
+      }, { status: 400 });
     }
 
     // Добавляем timestamp последнего обновления
@@ -127,10 +116,10 @@ export async function POST(request: NextRequest) {
 
     // Обновляем Edge Config через Management API
     if (!process.env.EDGE_CONFIG_ID) {
-      return addCorsHeaders(NextResponse.json({
+      return NextResponse.json({
         success: false,
         error: 'Edge Config ID not configured'
-      }, { status: 500 }));
+      }, { status: 500 });
     }
 
     try {
@@ -154,10 +143,10 @@ export async function POST(request: NextRequest) {
       if (!edgeConfigResponse.ok) {
         const errorData = await edgeConfigResponse.text();
         console.error('Failed to update Edge Config:', errorData);
-        return addCorsHeaders(NextResponse.json({
+        return NextResponse.json({
           success: false,
           error: 'Failed to update pricing configuration in Edge Config'
-        }, { status: 500 }));
+        }, { status: 500 });
       }
 
       console.log('Edge Config updated successfully:', {
@@ -167,10 +156,10 @@ export async function POST(request: NextRequest) {
       });
     } catch (error) {
       console.error('Error updating Edge Config:', error);
-      return addCorsHeaders(NextResponse.json({
+      return NextResponse.json({
         success: false,
         error: 'Failed to update Edge Config'
-      }, { status: 500 }));
+      }, { status: 500 });
     }
 
     const response: EdgeConfigResponse = {
@@ -179,13 +168,15 @@ export async function POST(request: NextRequest) {
       version: newConfig.version
     };
 
-    return addCorsHeaders(NextResponse.json(response));
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error updating pricing config:', error);
     
-    return addCorsHeaders(NextResponse.json({
+    return NextResponse.json({
       success: false,
       error: 'Failed to update pricing configuration'
-    }, { status: 500 }));
+    }, { status: 500 });
   }
-}
+};
+
+export const POST = withCors(postHandler);

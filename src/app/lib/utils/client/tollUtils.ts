@@ -7,19 +7,20 @@ import { PricingConfig } from '../../../../types/pricing-config.types';
  * - Использует базовую ставку baseRate и корректирует её по регионам.
  * - Ограничивает итог в пределах [minCost, maxCost].
  */
+// DEPRECATED: Функция использует Google Maps типы
+// Заменена на server-side API /api/tolls/calculate
 export const calculateTollCost = (
   distance: number,
-  mainRoute: google.maps.DirectionsRoute,
+  mainRoute: import('@/app/types/maps.types').DirectionsRoute,
   config: PricingConfig
 ): number => {
   const baseRate = config.tolls.baseTollRate;
   const minCost = Math.max(config.tolls.minCostBase, distance * config.tolls.minCostMultiplier);
   const maxCost = distance * config.tolls.maxCostMultiplier;
 
-  // Собираем все инструкции маршрута в единый текст
-  const routeText = mainRoute.legs[0].steps
-    .map(step => step.instructions.toLowerCase())
-    .join(' ');
+  // DEPRECATED: Обработка route instructions перенесена на сервер
+  console.warn('calculateTollCost deprecated - use /api/tolls/calculate');
+  const routeText = mainRoute.summary.toLowerCase();
 
   // Определяем, через какие штаты/регионы идёт маршрут
   const states = new Set<string>();
@@ -107,15 +108,17 @@ export const calculateTollCost = (
  * getRouteSegments
  * Разбивает общую сумму на региональные сегменты и "прочие".
  */
+// DEPRECATED: Функция использует Google Maps типы
+// Заменена на server-side API /api/tolls/calculate
 export const getRouteSegments = (
-  routeResult: google.maps.DirectionsResult,
+  routeResult: import('@/app/types/maps.types').DirectionsResult,
   totalCost: number,
   config: PricingConfig
 ): TollSegment[] => {
   const segments: TollSegment[] = [];
-  const routeText = routeResult.routes[0].legs[0].steps
-    .map(step => step.instructions.toLowerCase())
-    .join(' ');
+  // DEPRECATED: Route analysis перенесен на сервер
+  console.warn('getRouteSegments deprecated - use /api/tolls/calculate');
+  const routeText = routeResult.routes[0].summary.toLowerCase();
   let remainingCost = totalCost;
   let anyRegionMatched = false;
 

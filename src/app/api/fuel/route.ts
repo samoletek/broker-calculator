@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withRateLimit } from '@/app/lib/utils/api/rateLimit';
 
 interface EIAFuelPrice {
   duoarea: string;
@@ -14,7 +15,7 @@ interface EIAResponse {
   };
 }
 
-export async function GET(request: NextRequest) {
+const getHandler = async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
   const paddCodes = searchParams.getAll('paddCodes');
   const startDate = searchParams.get('startDate');
@@ -62,4 +63,6 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+};
+
+export const GET = withRateLimit(getHandler, 'fuel');

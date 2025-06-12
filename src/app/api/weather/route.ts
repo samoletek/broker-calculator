@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import type { WeatherResponse } from '@/app/types/api.types';
+import { withRateLimit } from '@/app/lib/utils/api/rateLimit';
 
-export async function POST(request: Request) {
+const postHandler = async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { lat, lng, date } = body;
@@ -41,4 +42,6 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+};
+
+export const POST = withRateLimit(postHandler, 'weather');

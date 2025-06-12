@@ -17,14 +17,12 @@ import {
   getBaseRate
 } from '@/constants/pricing';
 import { validateName, validateEmail, validatePhoneNumber } from '@/app/lib/utils/client/validation';
-import { useGoogleMaps } from '@/app/lib/hooks/useGoogleMaps';
 import { usePricing } from '@/app/lib/hooks/usePricing';
-import { validateAddress, isSameLocation } from '@/app/lib/utils/client/maps';
-import { calculateTollCost, getRouteSegments } from '@/app/lib/utils/client/tollUtils';
-import { checkAutoShows, getAutoShowMultiplier } from '@/app/lib/utils/client/autoShowsUtils';
+import { validateAddress, isSameLocation } from '@/app/lib/utils/client/mapsAPI';
 import { calculateEstimatedTransitTime } from '@/app/lib/utils/client/transportUtils';
-import { getFuelPriceMultiplier } from '@/app/lib/utils/client/fuelUtils';
+import { calculateCompleteRoute } from '@/app/lib/utils/client/enhancedMapsAPI';
 import type { SelectOption } from '@/app/types/common.types';
+import type { DirectionsResult } from '@/app/types/maps.types';
 import { submitCalculationLead, prepareCalculatorDataForLead } from '@/app/lib/utils/client/leadSubmissionUtils';
 import { PricingConfig } from '@/types/pricing-config.types';
 
@@ -91,7 +89,7 @@ export default function ClientCalculator({ config }: ClientCalculatorProps) {
   const [supplementaryInsurance, setSupplementaryInsurance] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<keyof typeof PAYMENT_METHODS | ''>('');
 
-  const [mapData, setMapData] = useState<google.maps.DirectionsResult | null>(null);
+  const [mapData, setMapData] = useState<DirectionsResult | null>(null);
   const [routeInfo, setRouteInfo] = useState({
     isPopularRoute: false,
     isRemoteArea: false,
@@ -104,67 +102,14 @@ export default function ClientCalculator({ config }: ClientCalculatorProps) {
 
   // Hooks
   const { priceComponents, setPriceComponents, updatePriceComponents } = usePricing();
-  const googleMaps = useGoogleMaps();
   
   // Refs
   const mapRef = useRef<HTMLDivElement>(null);
   const pickupInputRef = useRef<HTMLInputElement>(null);
   const deliveryInputRef = useRef<HTMLInputElement>(null);
   
-// В useEffect для инициализации автозаполнения
-useEffect(() => {
-  const initAutocomplete = async () => {
-    if (!googleMaps || !pickupInputRef.current || !deliveryInputRef.current) return;
-    
-    // Очищаем предыдущие слушатели
-    if (window.google && window.google.maps && window.google.maps.event) {
-      const pickupInput = pickupInputRef.current;
-      const deliveryInput = deliveryInputRef.current;
-      google.maps.event.clearInstanceListeners(pickupInput);
-      google.maps.event.clearInstanceListeners(deliveryInput);
-    }
-    
-    console.log("Initializing autocomplete with Google Maps");
-    
-    try {
-      // Инициализация автозаполнения для пикапа
-      const pickupAutocomplete = new googleMaps.places.Autocomplete(pickupInputRef.current, {
-        types: ['address'],
-        componentRestrictions: { country: 'us' },
-      });
-      
-      pickupAutocomplete.addListener('place_changed', () => {
-        const place = pickupAutocomplete.getPlace();
-        if (place.formatted_address) {
-          setPickup(place.formatted_address);
-          clearResults();
-        }
-      });
-      
-      // Инициализация автозаполнения для доставки
-      const deliveryAutocomplete = new googleMaps.places.Autocomplete(deliveryInputRef.current, {
-        types: ['address'],
-        componentRestrictions: { country: 'us' },
-      });
-      
-      deliveryAutocomplete.addListener('place_changed', () => {
-        const place = deliveryAutocomplete.getPlace();
-        if (place.formatted_address) {
-          setDelivery(place.formatted_address);
-          clearResults();
-        }
-      });
-      
-      console.log("Autocomplete successfully initialized");
-    } catch (error) {
-      console.error("Error initializing autocomplete:", error);
-    }
-  };
-
-  if (googleMaps) {
-    initAutocomplete();
-  }
-}, [googleMaps]);
+// Автозаполнение отключено - используем server-side API
+// В будущем можно добавить debounced поиск через /api/maps/geocode
 
   useEffect(() => {
     const isExpensiveVehicle = vehicleValue === 'under500k' || vehicleValue === 'over500k';
@@ -263,7 +208,7 @@ useEffect(() => {
   
 const calculatePrice = async () => {
     if (!validateFields()) return;
-    if (typeof window === 'undefined' || !googleMaps) return;
+    if (typeof window === 'undefined') return;
     
     if (!selectedDate) {
       setErrors((prev) => ({ ...prev, selectedDate: 'Please select a shipping date' }));
@@ -276,8 +221,8 @@ const calculatePrice = async () => {
     try {
       // Проверяем адреса
       const [pickupValidation, deliveryValidation] = await Promise.all([
-        validateAddress(pickup, googleMaps),
-        validateAddress(delivery, googleMaps)
+        validateAddress(pickup),
+        validateAddress(delivery)
       ]);
   
       // Проверяем ошибки API лимитов
@@ -310,7 +255,7 @@ const calculatePrice = async () => {
       }
   
       // Проверяем, не одинаковые ли адреса
-      const isSame = await isSameLocation(pickup, delivery, googleMaps);
+      const isSame = await isSameLocation(pickup, delivery);
       if (isSame) {
         setErrors(prev => ({
           ...prev,
@@ -325,38 +270,25 @@ const calculatePrice = async () => {
       setPickup(pickupValidation.formattedAddress!);
       setDelivery(deliveryValidation.formattedAddress!);
   
-      const service = new googleMaps.DirectionsService();
-      
+      // Используем комплексный расчет маршрута через enterprise API
       try {
-        const response = await service.route({
-          origin: pickupValidation.formattedAddress!,
-          destination: deliveryValidation.formattedAddress!,
-          travelMode: googleMaps.TravelMode.DRIVING
-        });
+        const routeResult = await calculateCompleteRoute(
+          pickupValidation.formattedAddress!,
+          deliveryValidation.formattedAddress!
+        );
+
+        if (!routeResult.success) {
+          throw new Error(routeResult.error || 'Route calculation failed');
+        }
     
-        setMapData(response);
-        const distanceInMiles = (response.routes[0].legs[0].distance?.value || 0) / 1609.34;
+        setMapData({ routes: [routeResult.route!] });
+        const distanceInMiles = routeResult.distance!;
         setDistance(Math.round(distanceInMiles));
     
         setRouteInfo((prev) => ({
           ...prev,
           estimatedTime: calculateEstimatedTransitTime(distanceInMiles, config)
         }));
-    
-        // Проверяем наличие автошоу
-        const pickupAutoShows = await checkAutoShows(
-          { lat: response.routes[0].legs[0].start_location.lat(), lng: response.routes[0].legs[0].start_location.lng() },
-          selectedDate,
-          window.google,
-          config
-        );
-    
-        const deliveryAutoShows = await checkAutoShows(
-          { lat: response.routes[0].legs[0].end_location.lat(), lng: response.routes[0].legs[0].end_location.lng() },
-          selectedDate,
-          window.google,
-          config
-        );
     
         // Определяем базовую цену
         const basePrice = distanceInMiles <= config.validation.shortDistanceLimit ? 
@@ -370,15 +302,12 @@ const calculatePrice = async () => {
           total: basePrice
         };
     
-        // Получаем множители
+        // Получаем множители (все через enterprise API)
         const vehicleMultiplier = VEHICLE_VALUE_TYPES[vehicleValue].multiplier;
-        const autoShowMultiplier = Math.max(
-          getAutoShowMultiplier(pickupAutoShows, selectedDate, config),
-          getAutoShowMultiplier(deliveryAutoShows, selectedDate, config)
-        );
-        const fuelPriceMultiplier = await getFuelPriceMultiplier(response, window.google, config);
-        const weatherMultiplier = 1.0;
-        const trafficMultiplier = 1.0;
+        const autoShowMultiplier = 1.0; // Логика автошоу удалена
+        const fuelPriceMultiplier = routeResult.fuelMultiplier || 1.0;
+        const weatherMultiplier = 1.0; // Можно добавить weather API позже
+        const trafficMultiplier = 1.0; // Можно добавить traffic API позже
     
         // Рассчитываем денежный impact для каждого фактора
         const vehicleImpact = basePrice * (vehicleMultiplier - 1);
@@ -410,12 +339,10 @@ const calculatePrice = async () => {
     
         const additionalServicesImpact = basePrice * additionalServicesSum;
     
-        // Расчет платных дорог
-        const totalTollCost = calculateTollCost(distanceInMiles, response.routes[0], config);
-        const tollSegments = getRouteSegments(response, totalTollCost, config);
+        // Используем результаты toll calculation из enterprise API
         const tollCosts = {
-          segments: tollSegments,
-          total: totalTollCost
+          segments: routeResult.tollCosts?.segments || [],
+          total: routeResult.tollCosts?.totalCost || 0
         };
         
         // Рассчитываем промежуточную сумму без комиссии за карту
@@ -983,12 +910,12 @@ const calculatePrice = async () => {
                   <WeatherConditions
                     routePoints={{
                       pickup: {
-                        lat: Number(mapData.routes[0].legs[0].start_location.lat()),
-                        lng: Number(mapData.routes[0].legs[0].start_location.lng())
+                        lat: mapData.routes[0].legs[0].start_location.lat,
+                        lng: mapData.routes[0].legs[0].start_location.lng
                       },
                       delivery: {
-                        lat: Number(mapData.routes[0].legs[0].end_location.lat()),
-                        lng: Number(mapData.routes[0].legs[0].end_location.lng())
+                        lat: mapData.routes[0].legs[0].end_location.lat,
+                        lng: mapData.routes[0].legs[0].end_location.lng
                       },
                       waypoints: []
                     }}

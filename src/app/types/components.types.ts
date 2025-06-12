@@ -1,5 +1,5 @@
 import type { BasePriceBreakdown, GeoPoint } from './common.types';
-import type { PricingConfig } from '../../../types/pricing-config.types';
+import type { PricingConfig } from '../../types/pricing-config.types';
 
 export interface WeatherMapProps {
   routePoints: {
@@ -18,7 +18,20 @@ export interface DatePickerProps {
 }
 
 export interface GoogleMapProps {
-  mapData: google.maps.DirectionsResult;
+  mapData: {
+    routes: Array<{
+      legs: Array<{
+        distance?: { text: string; value: number };
+        duration?: { text: string; value: number };
+        start_address: string;
+        end_address: string;
+        start_location: { lat: number; lng: number };
+        end_location: { lat: number; lng: number };
+      }>;
+      overview_polyline: { points: string };
+      summary: string;
+    }>;
+  } | null;
 }
 
 export interface RouteInfoProps {
@@ -33,7 +46,7 @@ export interface RouteInfoProps {
     status: 'light' | 'moderate' | 'heavy';
     delay: number;
   };
-  mapData: google.maps.DirectionsResult;
+  mapData: import('./maps.types').DirectionsResult;
   selectedDate?: Date;
   onTollUpdate: (totalCost: number, segments?: Array<{ 
     location: string; 
