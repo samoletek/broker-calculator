@@ -62,7 +62,10 @@ export async function getAddressSuggestions(
       // Игнорируем отмененные запросы
       return [];
     }
-    console.error('Address autocomplete error:', error);
+    // Логируем только реальные ошибки, не пустые результаты
+    if (error instanceof Error && !error.message.includes('404')) {
+      console.error('Address autocomplete error:', error);
+    }
     return [];
   }
 }
@@ -77,5 +80,5 @@ export const getDebouncedAddressSuggestions = debounce(
     const suggestions = await getAddressSuggestions(input, signal);
     callback(suggestions);
   },
-  300 // 300ms задержка
+  150 // 150ms задержка - быстрее
 );

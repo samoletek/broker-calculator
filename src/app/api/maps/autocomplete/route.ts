@@ -72,6 +72,7 @@ const postHandler = async (request: NextRequest) => {
     // Проверяем статус ответа от Google
     if (data.status !== 'OK') {
       if (data.status === 'ZERO_RESULTS') {
+        console.log('No autocomplete results found for:', body.input);
         return NextResponse.json({
           success: true,
           results: []
