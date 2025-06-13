@@ -86,7 +86,7 @@ const postHandler = async (request: NextRequest) => {
 
       if (data.error.status === 'PERMISSION_DENIED') {
         console.error('Google Places API request denied:', data.error.message);
-        return APIErrorHandler.createError('API_ACCESS_DENIED', 403);
+        return APIErrorHandler.createError('CONFIGURATION_ERROR', 403);
       }
 
       throw new Error(`Google Places API error: ${data.error.status} - ${data.error.message}`);
