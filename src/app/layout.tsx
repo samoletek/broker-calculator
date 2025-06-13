@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./styles/globals.css";
 import "./styles/components.css";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Broker Calculator - Vehicle Transport Price Estimator built by architeq.io",
@@ -24,9 +25,11 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-screen flex-col">
-        <main className="flex-1">
-          {children}
-        </main>
+        <ErrorBoundary>
+          <main className="flex-1">
+            {children}
+          </main>
+        </ErrorBoundary>
       </body>
     </html>
   );

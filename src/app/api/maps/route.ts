@@ -1,52 +1,22 @@
 import { NextResponse } from 'next/server';
-import axios from 'axios';
 
-// Маршрут для геокодирования адреса
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { address } = body;
-    
-    if (!address) {
-      return NextResponse.json(
-        { error: 'Address is required' },
-        { status: 400 }
-      );
-    }
-    
-    const response = await axios.get(
-      `https://maps.googleapis.com/maps/api/geocode/json`,
-      {
-        params: {
-          address: address,
-          key: process.env.GOOGLE_MAPS_API_KEY
-        }
-      }
-    );
-    
-    return NextResponse.json(response.data);
-  } catch (error) {
-    console.error('Error with Google Maps API:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch geolocation data' },
-      { status: 500 }
-    );
-  }
+// Этот endpoint теперь deprecated - используйте специализированные endpoints:
+// POST /api/maps/geocode - для геокодирования
+// POST /api/maps/directions - для маршрутов
+// POST /api/maps/distance-matrix - для матрицы расстояний
+
+export async function GET() {
+  return NextResponse.json({
+    success: false,
+    error: 'This endpoint is deprecated',
+    message: 'Please use specialized endpoints: /api/maps/geocode, /api/maps/directions, /api/maps/distance-matrix'
+  }, { status: 410 });
 }
 
-// GET метод обязательно должен возвращать объект с apiKey
-export async function GET() {
-    // Проверяем наличие API-ключа
-    if (!process.env.GOOGLE_MAPS_API_KEY) {
-      console.error('GOOGLE_MAPS_API_KEY is not defined');
-      return NextResponse.json(
-        { error: 'API key is not configured' },
-        { status: 500 }
-      );
-    }
-    
-    // Возвращаем API ключ в правильной структуре
-    return NextResponse.json({
-      apiKey: process.env.GOOGLE_MAPS_API_KEY,
-    });
-  }
+export async function POST() {
+  return NextResponse.json({
+    success: false,
+    error: 'This endpoint is deprecated', 
+    message: 'Please use specialized endpoints: /api/maps/geocode, /api/maps/directions, /api/maps/distance-matrix'
+  }, { status: 410 });
+}

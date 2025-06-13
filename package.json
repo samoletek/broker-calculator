@@ -10,10 +10,8 @@
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
-    "@googlemaps/js-api-loader": "^1.16.8",
     "@radix-ui/react-accordion": "^1.2.3",
     "@types/axios": "^0.9.36",
-    "@types/google.maps": "^3.58.1",
     "@vercel/edge-config": "^1.4.0",
     "axios": "^1.8.4",
     "clsx": "^2.1.1",

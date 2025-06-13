@@ -3,7 +3,10 @@ import { type NextConfig } from 'next'
 const config: NextConfig = {
   reactStrictMode: true,
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
+  },
+  eslint: {
+    ignoreDuringBuilds: false,
   },
   env: {
     NEXT_PUBLIC_RUNTIME_CONFIG: 'true'

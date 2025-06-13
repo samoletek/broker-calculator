@@ -1,21 +1,19 @@
 // src/app/api/lead/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import type { AWSLeadData } from '@/app/lib/utils/client/awsLeadMapper';
+import { APIErrorHandler } from '@/app/lib/utils/api/errorHandler';
+import { withRateLimit } from '@/app/lib/utils/api/rateLimit';
 
 // AWS Lambda endpoint URL from environment variable
 const AWS_LEAD_ENDPOINT = process.env.AWS_LEAD_ENDPOINT;
 
-export async function POST(request: Request) {
+const postHandler = async (request: NextRequest) => {
   console.log('Lead API endpoint called');
   
   // Check if endpoint is configured
   if (!AWS_LEAD_ENDPOINT) {
-    console.error('AWS_LEAD_ENDPOINT is not configured');
-    return NextResponse.json(
-      { success: false, message: 'AWS endpoint not configured' },
-      { status: 500 }
-    );
+    return APIErrorHandler.handleMissingConfig('AWS Lead Endpoint');
   }
   
   try {
@@ -24,10 +22,8 @@ export async function POST(request: Request) {
     
     // Basic validation
     if (!body.Id || !body.client?.EMail || !body.Quote) {
-      console.error('Missing required lead data');
-      return NextResponse.json(
-        { success: false, message: 'Missing required data' },
-        { status: 400 }
+      return APIErrorHandler.handleValidationError(
+        'Missing required lead data: ID, email, or quote information'
       );
     }
     
@@ -57,25 +53,12 @@ export async function POST(request: Request) {
       });
       
     } catch (awsError) {
-      console.error('AWS Lambda error:', awsError);
-      
-      // Don't fail the whole operation if AWS is down
-      // We can implement a retry queue later
-      return NextResponse.json({
-        success: false,
-        message: 'Failed to send lead to AWS, but calculation saved locally',
-        error: awsError instanceof Error ? awsError.message : 'Unknown error'
-      }, { status: 500 });
+      return APIErrorHandler.handleError(awsError);
     }
     
   } catch (error) {
-    console.error('Error in lead route:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Failed to process lead data'
-      },
-      { status: 500 }
-    );
+    return APIErrorHandler.handleError(error);
   }
-}
+};
+
+export const POST = withRateLimit(postHandler, 'lead');
