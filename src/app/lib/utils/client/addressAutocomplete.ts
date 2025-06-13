@@ -29,13 +29,13 @@ export async function getAddressSuggestions(
   }
 
   try {
-    const response = await fetch('/api/maps/geocode', {
+    const response = await fetch('/api/maps/autocomplete', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        address: input,
+        input: input,
         limit: 5 // Ограничиваем количество результатов
       }),
       signal
