@@ -46,7 +46,7 @@ export default function AddressAutocomplete({
     }
 
     // Если строка короткая, скрываем подсказки
-    if (newValue.length < 3) {
+    if (newValue.length < 2) {
       setSuggestions([]);
       setIsOpen(false);
       setIsLoading(false);
@@ -130,7 +130,7 @@ export default function AddressAutocomplete({
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+          className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
         >
           {isLoading && (
             <div className="px-4 py-2 text-gray-500 text-sm">
@@ -156,7 +156,7 @@ export default function AddressAutocomplete({
             </div>
           ))}
           
-          {!isLoading && suggestions.length === 0 && value.length >= 3 && (
+          {!isLoading && suggestions.length === 0 && value.length >= 2 && (
             <div className="px-4 py-2 text-gray-500 text-sm">
               No addresses found
             </div>

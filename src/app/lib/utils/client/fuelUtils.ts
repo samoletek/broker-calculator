@@ -34,4 +34,3 @@ export const getFuelPriceMultiplier = async (
     return 1.0; // Neutral multiplier on error
   }
 };
-

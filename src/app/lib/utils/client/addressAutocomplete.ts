@@ -24,7 +24,7 @@ export async function getAddressSuggestions(
   signal?: AbortSignal
 ): Promise<AddressSuggestion[]> {
   // Не запрашиваем подсказки для коротких строк
-  if (input.length < 3) {
+  if (input.length < 2) {
     return [];
   }
 
