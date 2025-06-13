@@ -52,9 +52,7 @@ const postHandler = async (request: NextRequest) => {
     const requestBody = {
       input: body.input,
       includedPrimaryTypes: ['street_address'], // Только адреса
-      locationRestriction: {
-        country: 'US' // Только США
-      },
+      includedRegionCodes: ['US'], // Только США
       languageCode: 'en' // Английский язык
     };
 
