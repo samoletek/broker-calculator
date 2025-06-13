@@ -7,20 +7,25 @@ interface AutocompleteRequest {
   limit?: number;
 }
 
-interface AutocompletePrediction {
-  description: string;
-  place_id: string;
-  types: string[];
-  structured_formatting: {
-    main_text: string;
-    secondary_text: string;
+interface PlacePrediction {
+  placeId: string;
+  text: {
+    text: string;
   };
+  types: string[];
+}
+
+interface AutocompleteSuggestion {
+  placePrediction: PlacePrediction;
 }
 
 interface AutocompleteResponse {
-  predictions: AutocompletePrediction[];
-  status: string;
-  error_message?: string;
+  suggestions: AutocompleteSuggestion[];
+  error?: {
+    code: number;
+    message: string;
+    status: string;
+  };
 }
 
 // Server-side proxy для Google Places API Autocomplete
@@ -43,23 +48,25 @@ const postHandler = async (request: NextRequest) => {
 
     console.log('Autocomplete request:', { input: body.input });
 
-    // Параметры для Places API Autocomplete (legacy)
-    const params = new URLSearchParams({
+    // Параметры для Places API (New) Autocomplete
+    const requestBody = {
       input: body.input,
-      key: process.env.GOOGLE_MAPS_API_KEY!,
-      types: 'address', // Только адреса
-      components: 'country:us', // Только США
-      language: 'en', // Английский язык
-    });
+      includedPrimaryTypes: ['street_address'], // Только адреса
+      includedRegionCodes: ['US'], // Только США
+      languageCode: 'en' // Английский язык
+    };
 
-    // Вызов к Google Places API Autocomplete
+    // Вызов к Google Places API (New) Autocomplete
     const googleResponse = await fetch(
-      `https://maps.googleapis.com/maps/api/place/autocomplete/json?${params.toString()}`,
+      `https://places.googleapis.com/v1/places:autocomplete`,
       {
-        method: 'GET',
+        method: 'POST',
         headers: {
-          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY!,
+          'X-Goog-FieldMask': 'suggestions.placePrediction.placeId,suggestions.placePrediction.text,suggestions.placePrediction.types'
         },
+        body: JSON.stringify(requestBody)
       }
     );
 
@@ -69,36 +76,37 @@ const postHandler = async (request: NextRequest) => {
 
     const data: AutocompleteResponse = await googleResponse.json();
 
-    // Проверяем статус ответа от Google
-    if (data.status !== 'OK') {
-      if (data.status === 'ZERO_RESULTS') {
-        console.log('No autocomplete results found for:', body.input);
-        return NextResponse.json({
-          success: true,
-          results: []
-        });
-      }
-      
-      if (data.status === 'OVER_QUERY_LIMIT') {
+    // Проверяем наличие ошибки в ответе
+    if (data.error) {
+      if (data.error.status === 'RESOURCE_EXHAUSTED') {
         return APIErrorHandler.createError('API_LIMIT_REACHED', 429);
       }
 
-      if (data.status === 'REQUEST_DENIED') {
-        console.error('Google Places API request denied:', data.error_message);
+      if (data.error.status === 'PERMISSION_DENIED') {
+        console.error('Google Places API request denied:', data.error.message);
         return APIErrorHandler.createError('CONFIGURATION_ERROR', 403);
       }
 
-      throw new Error(`Google Places API error: ${data.status} - ${data.error_message || 'Unknown error'}`);
+      throw new Error(`Google Places API error: ${data.error.status} - ${data.error.message}`);
+    }
+
+    // Если нет предложений, возвращаем пустой массив
+    if (!data.suggestions || data.suggestions.length === 0) {
+      console.log('No autocomplete results found for:', body.input);
+      return NextResponse.json({
+        success: true,
+        results: []
+      });
     }
 
     // Применяем лимит результатов если указан
-    const limitedResults = body.limit ? data.predictions.slice(0, body.limit) : data.predictions;
+    const limitedResults = body.limit ? data.suggestions.slice(0, body.limit) : data.suggestions;
 
     // Преобразуем результаты в формат, совместимый с существующим кодом
-    const formattedResults = limitedResults.map(prediction => ({
-      formatted_address: prediction.description,
-      place_id: prediction.place_id,
-      types: prediction.types
+    const formattedResults = limitedResults.map(suggestion => ({
+      formatted_address: suggestion.placePrediction.text.text,
+      place_id: suggestion.placePrediction.placeId,
+      types: suggestion.placePrediction.types
     }));
 
     console.log('Autocomplete success:', { 
