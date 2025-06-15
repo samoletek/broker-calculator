@@ -1,10 +1,5 @@
 import { NextResponse } from 'next/server';
 
-// Этот endpoint теперь deprecated - используйте специализированные endpoints:
-// POST /api/maps/geocode - для геокодирования
-// POST /api/maps/directions - для маршрутов
-// POST /api/maps/distance-matrix - для матрицы расстояний
-
 export async function GET() {
   return NextResponse.json({
     success: false,

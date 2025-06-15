@@ -31,8 +31,8 @@ async function getStatesFromAddresses(origin: string, destination: string): Prom
   const states = new Set<string>();
   
   try {
-    // Используем наш собственный geocoding API
-    // Используем прямой вызов geocoding API без внешнего fetch
+    // Используем самописный geocoding API
+    // Прямой вызов geocoding API без внешнего fetch
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
     
     const [originResponse, destResponse] = await Promise.all([
