@@ -5,6 +5,12 @@ import { DEFAULT_PRICING_CONFIG } from '../../../constants/default-pricing-confi
 // Хелпер для получения конфигурации на сервере (для SSR)
 export async function getPricingConfigServer(): Promise<PricingConfig> {
   try {
+    // Check if Edge Config is properly configured
+    if (!process.env.EDGE_CONFIG) {
+      console.warn('EDGE_CONFIG environment variable not set, using default pricing config');
+      return DEFAULT_PRICING_CONFIG;
+    }
+
     // Получаем конфигурацию напрямую из Edge Config (серверная сторона)
     const config = await get<PricingConfig>('pricing-config');
     
