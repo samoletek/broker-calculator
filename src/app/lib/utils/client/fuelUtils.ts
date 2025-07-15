@@ -1,6 +1,6 @@
 import { DirectionsResult } from '@/app/types/maps.types';
 
-// DEPRECATION NOTICE: Эта функция заменена на server-side API /api/fuel/prices
+// DEPRECATION NOTICE: Функция заменена на server-side API /api/fuel/prices
 // Сохранена для обратной совместимости, но использует новую архитектуру
 
 export const getFuelPriceMultiplier = async (

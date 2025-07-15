@@ -3,7 +3,7 @@ import { generateCalculationHash, cacheCalculationHash, isCalculationCached } fr
 import { mapCalculatorDataToAWSLead, type CalculatorData } from './awsLeadMapper';
 
 /**
- * Response from lead submission
+ * Ответ от отправки лида
  */
 export interface LeadSubmissionResponse {
   success: boolean;
@@ -14,13 +14,13 @@ export interface LeadSubmissionResponse {
 }
 
 /**
- * Submit calculation data as a lead to AWS
+ * Отправляет данные калькуляции как лид в AWS
  */
 export const submitCalculationLead = async (data: CalculatorData): Promise<LeadSubmissionResponse> => {
   try {
-    console.log('Submitting calculation lead');
+    console.log('Отправляем лид с расчётом');
     
-    // Generate hash for this calculation
+    // Генерируем хеш для этого расчёта
     const calculationHash = await generateCalculationHash({
       pickup: data.pickup,
       delivery: data.delivery,
@@ -132,6 +132,7 @@ export const prepareCalculatorDataForLead = (formData: {
   paymentMethod?: string;
   finalPrice: number;
   distance?: number;
+  action?: string;
 }): CalculatorData => {
   return {
     name: formData.name,
@@ -149,7 +150,8 @@ export const prepareCalculatorDataForLead = (formData: {
     supplementaryInsurance: formData.supplementaryInsurance,
     paymentMethod: formData.paymentMethod,
     finalPrice: formData.finalPrice,
-    distance: formData.distance
+    distance: formData.distance,
+    action: formData.action
   };
 };
 

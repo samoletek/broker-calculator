@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback, memo } from 'react';
-import { Map, Navigation, AlertCircle, Clock, Car, MapPin } from 'lucide-react';
+import { Navigation, Clock, Car, MapPin } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { calculateTollCost, getRouteSegments } from '@/app/lib/utils/client/tollUtils';
 import type { RouteInfoProps } from '@/app/types/components.types';

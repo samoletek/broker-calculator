@@ -26,9 +26,9 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     
-    // Логирование в Vercel Analytics или другую систему мониторинга
+    // Логирование в Vercel Analytics
     if (typeof window !== 'undefined') {
-      // Можно добавить отправку в Vercel Analytics
+      // Позже добавить отправку в Vercel Analytics
       console.error('Application Error Details:', {
         error: error.message,
         stack: error.stack,

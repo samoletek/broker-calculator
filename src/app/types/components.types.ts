@@ -93,12 +93,10 @@ export interface PriceBreakdownProps {
     vehicleMultiplier: number;
     weatherMultiplier: number;
     trafficMultiplier: number;
-    autoShowMultiplier: number;
     fuelMultiplier: number;
     vehicleImpact: number;
     weatherImpact: number;
     trafficImpact: number;
-    autoShowImpact: number;
     fuelImpact: number;
     cardFee: number;
     totalImpact: number;

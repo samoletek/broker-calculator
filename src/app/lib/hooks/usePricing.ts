@@ -31,8 +31,6 @@ export function usePricing() {
         basePrice * (newComponents.mainMultipliers.weatherMultiplier - 1);
       newComponents.mainMultipliers.trafficImpact = 
         basePrice * (newComponents.mainMultipliers.trafficMultiplier - 1);
-      newComponents.mainMultipliers.autoShowImpact = 
-        basePrice * (newComponents.mainMultipliers.autoShowMultiplier - 1);
       newComponents.mainMultipliers.fuelImpact = 
         basePrice * (newComponents.mainMultipliers.fuelMultiplier - 1);
 
@@ -40,7 +38,6 @@ export function usePricing() {
         newComponents.mainMultipliers.vehicleImpact +
         newComponents.mainMultipliers.weatherImpact +
         newComponents.mainMultipliers.trafficImpact +
-        newComponents.mainMultipliers.autoShowImpact +
         newComponents.mainMultipliers.fuelImpact;
     }
 

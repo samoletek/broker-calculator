@@ -5,29 +5,29 @@ import type { AWSLeadData } from '@/app/lib/utils/client/awsLeadMapper';
 import { APIErrorHandler } from '@/app/lib/utils/api/errorHandler';
 import { withRateLimit } from '@/app/lib/utils/api/rateLimit';
 
-// AWS Lambda endpoint URL from environment variable
+// URL для AWS Lambda из переменных окружения
 const AWS_LEAD_ENDPOINT = process.env.AWS_LEAD_ENDPOINT;
 
 const postHandler = async (request: NextRequest) => {
-  console.log('Lead API endpoint called');
+  console.log('Вызван API endpoint для лидов');
   
-  // Check if endpoint is configured
+  // Проверяем, настроен ли endpoint
   if (!AWS_LEAD_ENDPOINT) {
     return APIErrorHandler.handleMissingConfig('AWS Lead Endpoint');
   }
   
   try {
-    // Parse request body
+    // Парсим тело запроса
     const body = await request.json() as AWSLeadData;
     
-    // Basic validation
+    // Базовая валидация
     if (!body.Id || !body.client?.EMail || !body.Quote) {
       return APIErrorHandler.handleValidationError(
-        'Missing required lead data: ID, email, or quote information'
+        'Отсутствуют обязательные данные лида: ID, email или информация о котировке'
       );
     }
     
-    console.log('Sending lead to AWS:', {
+    console.log('Отправляем лид в AWS:', {
       id: body.Id,
       email: body.client.EMail,
       quote: body.Quote,
@@ -35,19 +35,19 @@ const postHandler = async (request: NextRequest) => {
     });
     
     try {
-      // Send to AWS Lambda
+      // Отправляем в AWS Lambda
       const response = await axios.post(AWS_LEAD_ENDPOINT, body, {
         headers: {
           'Content-Type': 'application/json',
         },
-        timeout: 10000 // 10 seconds timeout
+        timeout: 10000 // таймаут 10 секунд
       });
       
-      console.log('AWS Lambda response:', response.status, response.data);
+      console.log('Ответ от AWS Lambda:', response.status, response.data);
       
       return NextResponse.json({
         success: true,
-        message: 'Lead successfully sent to AWS',
+        message: 'Лид успешно отправлен в AWS',
         leadId: body.Id,
         awsResponse: response.data
       });

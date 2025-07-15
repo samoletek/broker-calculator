@@ -125,12 +125,6 @@ export interface PricingConfig {
     };
   };
 
-  // Автошоу
-  autoShows: {
-    searchRadius: number; // в метрах
-    dateRange: number; // ±дни
-    multiplier: number;
-  };
 }
 
 export interface PricingConfigHistory {

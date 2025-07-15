@@ -12,10 +12,10 @@ interface RequestCounter {
   resetTime: number;
 }
 
-// In-memory store (в production лучше использовать Redis)
+// In-memory store (позже лучше использовать Redis)
 const requestStore = new Map<string, RequestCounter>();
 
-// Конфигурации rate limiting для высоконагруженного приложения
+// Конфигурации rate limiting
 export const RATE_LIMIT_CONFIGS = {
   default: { windowMs: 60000, maxRequests: 200 }, // 200 запросов в минуту (общие)
   calculation: { windowMs: 60000, maxRequests: 100 }, // 100 калькуляций в минуту

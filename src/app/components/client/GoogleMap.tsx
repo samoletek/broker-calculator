@@ -29,7 +29,7 @@ const GoogleMap = forwardRef<HTMLDivElement, GoogleMapProps>(({ mapData }, ref) 
   const route = mapData.routes[0];
   const leg = route.legs[0];
   
-  // Создаем URL для Google Static Maps API (будет обрабатываться server-side)
+  // Создаем URL для Google Static Maps API (server-side)
   const staticMapUrl = `/api/maps/static?` + new URLSearchParams({
     origin: `${leg.start_location.lat},${leg.start_location.lng}`,
     destination: `${leg.end_location.lat},${leg.end_location.lng}`,

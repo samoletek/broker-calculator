@@ -8,7 +8,6 @@ Broker Calculator is a web application for estimating vehicle transportation cos
 - Real-time route calculation and visualization using Google Maps API
 - Dynamic weather conditions analysis along the route
 - Traffic analysis and impact on delivery time and cost
-- Auto show event detection near pickup/delivery locations
 - Fuel price variations consideration along the route
 - Detailed price breakdown with multiple factors
 - Email quote delivery functionality
@@ -41,7 +40,6 @@ Broker Calculator is a web application for estimating vehicle transportation cos
    - **Vehicle Multiplier:** Adjusts the price based on the vehicle's value category.
    - **Weather Multiplier:** Modifies the price if adverse weather conditions are detected along the route.
    - **Traffic Multiplier:** Accounts for potential delays due to heavy traffic.
-   - **Auto Show Multiplier:** Increases the cost if there are auto show events near the pickup or delivery locations.
    - **Fuel Multiplier:** Reflects changes in fuel prices along the route.
 
 4. **Additional Services and Toll Costs:**  
@@ -88,8 +86,6 @@ Broker Calculator is a web application for estimating vehicle transportation cos
   - Light: +0% (multiplier 1.0)
   - Moderate: +10% (multiplier 1.1) 
   - Heavy: +20% (multiplier 1.2)
-
-- **Auto Show Nearby**: +10% (multiplier 1.1)
 
 - **Fuel Price**: up to +5% (multiplier up to 1.05)
 

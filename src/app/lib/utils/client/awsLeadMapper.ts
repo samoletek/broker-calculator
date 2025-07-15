@@ -1,10 +1,21 @@
 // src/app/lib/utils/client/awsLeadMapper.ts
 
 /**
- * Interface for AWS Lead structure based on the provided JSON format
+ * Коды действий для отслеживания источников кнопок
+ */
+export const LEAD_ACTION_CODES = {
+  CALCULATE_BUTTON: 'CalculateButton',
+  REQUEST_CALL: 'RequestCall',
+  SEND_QUOTE: 'SendQuote',
+  CONTINUE_BOOKING: 'ContinueBooking'
+} as const;
+
+/**
+ * Интерфейс для структуры AWS Lead на основе предоставленного JSON формата
  */
 export interface AWSLeadData {
   Request: string;
+  Action: string;
   Id: string;
   Hash: string;
   shipping_date: string;
@@ -64,44 +75,47 @@ export interface AWSLeadData {
 }
 
 /**
- * Calculator data interface
+ * Интерфейс данных калькулятора
  */
 export interface CalculatorData {
-  // Contact info
+  // Контактная информация
   name: string;
   email: string;
   phone: string;
   
-  // Route info
+  // Информация о маршруте
   pickup: string;
   delivery: string;
   selectedDate: Date | string;
   
-  // Vehicle info
+  // Информация о транспортном средстве
   transportType: string;
   vehicleType: string;
   vehicleValue: string;
   
-  // Services
+  // Услуги
   premiumEnhancements: boolean;
   specialLoad: boolean;
   inoperable: boolean;
   supplementaryInsurance: boolean;
   
-  // Payment
+  // Оплата
   paymentMethod?: string;
   
-  // Price
+  // Цена
   finalPrice: number;
   
-  // Optional fields that might be added later
+  // Отслеживание действий
+  action?: string;
+  
+  // Дополнительные поля, которые могут быть добавлены позже
   distance?: number;
   estimatedDeliveryDate?: Date | string;
   calculationHash?: string;
 }
 
 /**
- * Parse address string to extract components
+ * Парсит строку адреса для извлечения компонентов
  */
 const parseAddress = (addressString: string): {
   street: string;
@@ -109,8 +123,8 @@ const parseAddress = (addressString: string): {
   state: string;
   zip: string;
 } => {
-  // Try to parse Google Maps formatted address
-  // Format: "Street, City, State ZIP, Country"
+  // Пытаемся разобрать адрес в формате Google Maps
+  // Формат: "Улица, Город, Штат Индекс, Страна"
   const parts = addressString.split(',').map(part => part.trim());
   
   let street = '';
@@ -122,7 +136,7 @@ const parseAddress = (addressString: string): {
     street = parts[0] || '';
     city = parts[1] || '';
     
-    // Extract state and ZIP from the third part
+    // Извлекаем штат и индекс из третьей части
     const stateZipPart = parts[2] || '';
     const stateZipMatch = stateZipPart.match(/^([A-Z]{2})\s+(\d{5}(-\d{4})?)$/);
     
@@ -130,7 +144,7 @@ const parseAddress = (addressString: string): {
       state = stateZipMatch[1];
       zip = stateZipMatch[2];
     } else {
-      // Try alternative format
+      // Пробуем альтернативный формат
       const words = stateZipPart.split(' ');
       if (words.length >= 2) {
         state = words[0];
@@ -214,6 +228,7 @@ export const mapCalculatorDataToAWSLead = (data: CalculatorData): AWSLeadData =>
   
   return {
     Request: "Add New Lead from Website",
+    Action: data.action || LEAD_ACTION_CODES.CALCULATE_BUTTON,
     Id: leadId,
     Hash: data.calculationHash || "",
     shipping_date: formatDate(data.selectedDate),

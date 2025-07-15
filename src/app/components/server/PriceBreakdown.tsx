@@ -111,10 +111,6 @@ export function PriceBreakdown({
                   <span className="text-primary">${mainMultipliers.trafficImpact.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-p2">
-                  <span className="text-gray-600">Auto Show Impact</span>
-                  <span className="text-primary">${mainMultipliers.autoShowImpact.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-p2">
                   <span className="text-gray-600">Fuel Impact</span>
                   <span className="text-primary">${mainMultipliers.fuelImpact.toFixed(2)}</span>
                 </div>

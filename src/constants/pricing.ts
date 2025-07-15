@@ -33,7 +33,7 @@ interface AdditionalService {
   tooltip?: string[];
 }
 
-// Конфигурация типов транспорта - теперь с динамическими ставками
+// Конфигурация типов транспорта с динамическими ставками
 export const getTransportTypes = (config: PricingConfig): Record<string, TransportTypeData> => ({
   openTransport: {
     name: 'Open Transport',
@@ -51,7 +51,7 @@ export const getTransportTypes = (config: PricingConfig): Record<string, Transpo
   }
 });
 
-// Типы стоимости автомобилей - теперь с динамическими множителями
+// Типы стоимости автомобилей с динамическими множителями
 export const getVehicleValueTypes = (config: PricingConfig): Record<string, VehicleValueType> => ({
   under100k: {
     name: 'Under $100k',
@@ -151,7 +151,7 @@ export const VEHICLE_TYPES: Record<string, VehicleTypeData> = {
   }
 };
 
-// Дополнительные услуги - теперь с динамическими множителями
+// Дополнительные услуги с динамическими множителями
 export const getAdditionalServices = (config: PricingConfig): Record<string, AdditionalService> => ({
   premiumEnhancements: {
     name: 'Premium Enhancements',
@@ -223,7 +223,7 @@ export const getPaymentMethods = (config: PricingConfig) => ({
   }
 });
 
-// Конфигурация погодных условий - теперь динамическая
+// Конфигурация погодных условий
 export const getWeatherMultipliers = (config: PricingConfig): Record<string, number> => ({
   clear: config.weatherMultipliers.clear,
   cloudy: config.weatherMultipliers.cloudy,
@@ -233,14 +233,14 @@ export const getWeatherMultipliers = (config: PricingConfig): Record<string, num
   extreme: config.weatherMultipliers.extreme
 });
 
-// Конфигурация маршрутов - теперь динамическая
+// Конфигурация маршрутов
 export const getRouteFactors = (config: PricingConfig): Record<string, number> => ({
   popular: config.routeFactors.popular,
   regular: config.routeFactors.regular,
   remote: config.routeFactors.remote
 });
 
-// Популярные маршруты - теперь с динамическими факторами
+// Популярные маршруты с динамическими факторами
 export const getPopularRoutes = (config: PricingConfig): PopularRoute[] => [
   { from: "New York", to: "Los Angeles", factor: config.routeFactors.popular },
   { from: "Miami", to: "Chicago", factor: config.routeFactors.popular },
@@ -255,7 +255,7 @@ export const getPopularRoutes = (config: PricingConfig): PopularRoute[] => [
   { from: "Los Angeles", to: "Chicago", factor: config.routeFactors.popular },
 ];
 
-// Вспомогательные функции - теперь с динамической конфигурацией
+// Вспомогательные функции с динамической конфигурацией
 export const getBaseRate = (distance: number, transportType: string, config: PricingConfig) => {
   const transportTypes = getTransportTypes(config);
   const type = transportTypes[transportType as keyof typeof transportTypes];

@@ -123,7 +123,7 @@ const WeatherConditions = memo<WeatherMapProps>(({
     midPoint.lng,
     updateWeatherMultiplier,
     isLoading
-  ]); // onWeatherUpdate убран из dependencies!
+  ]);
 
   return (
     <div className="w-full p-4 sm:p-40 space-y-10 sm:space-y-20 bg-white rounded-[24px] border border-primary/10">

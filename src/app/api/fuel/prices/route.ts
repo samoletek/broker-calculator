@@ -13,7 +13,7 @@ interface FuelPricesRequest {
   };
 }
 
-// Map US states to PADD codes
+// Соответствие штатов США кодам PADD
 const STATE_TO_PADD: Record<string, string> = {
   'CT': 'R1X', 'ME': 'R1X', 'MA': 'R1X', 'NH': 'R1X', 'RI': 'R1X', 'VT': 'R1X',
   'DE': 'R1Y', 'DC': 'R1Y', 'MD': 'R1Y', 'NJ': 'R1Y', 'NY': 'R1Y', 'PA': 'R1Y',
@@ -31,8 +31,7 @@ async function getStatesFromAddresses(origin: string, destination: string): Prom
   const states = new Set<string>();
   
   try {
-    // Используем наш собственный geocoding API
-    // Используем прямой вызов geocoding API без внешнего fetch
+    // Используем наш собственный geocoding API и используем прямой вызов geocoding API без внешнего fetch
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
     
     const [originResponse, destResponse] = await Promise.all([
@@ -70,8 +69,8 @@ async function getStatesFromAddresses(origin: string, destination: string): Prom
 
     return Array.from(states);
   } catch (error) {
-    console.error('Error getting states from addresses:', error);
-    return ['TX']; // Fallback to Texas
+    console.error('Ошибка получения штатов из адресов:', error);
+    return ['TX']; // Резервный вариант - Техас
   }
 }
 
@@ -81,14 +80,14 @@ const postHandler = async (request: NextRequest) => {
     const body: FuelPricesRequest = await request.json();
     
     if (!body.origin || !body.destination) {
-      return APIErrorHandler.handleValidationError('Origin and destination are required');
+      return APIErrorHandler.handleValidationError('Требуются адреса отправления и назначения');
     }
 
     if (!process.env.EIA_API_KEY) {
       return APIErrorHandler.handleMissingConfig('EIA API Key');
     }
 
-    console.log('Fuel prices request:', { origin: body.origin, destination: body.destination });
+    console.log('Запрос цен на топливо:', { origin: body.origin, destination: body.destination });
 
     // Получаем штаты маршрута
     const routeStates = await getStatesFromAddresses(body.origin, body.destination);
@@ -101,7 +100,7 @@ const postHandler = async (request: NextRequest) => {
         success: true,
         multiplier: 1.0,
         details: {
-          message: 'No PADD regions found for route',
+          message: 'Регионы PADD для маршрута не найдены',
           states: routeStates
         }
       });
@@ -135,11 +134,11 @@ const postHandler = async (request: NextRequest) => {
       else if (priceChange < -0.05) multiplier = 0.95; // -5% если цены упали на 5-10%
     }
 
-    console.log('Fuel prices calculated:', {
+    console.log('Цены на топливо рассчитаны:', {
       paddCodes,
       currentAvg,
       historicalAvg,
-      priceChange: historicalAvg > 0 ? ((currentAvg - historicalAvg) / historicalAvg * 100).toFixed(1) + '%' : 'N/A',
+      priceChange: historicalAvg > 0 ? ((currentAvg - historicalAvg) / historicalAvg * 100).toFixed(1) + '%' : 'Н/Д',
       multiplier
     });
 
@@ -156,7 +155,7 @@ const postHandler = async (request: NextRequest) => {
     });
 
   } catch (error) {
-    console.error('Fuel prices proxy error:', error);
+    console.error('Ошибка прокси цен на топливо:', error);
     return APIErrorHandler.handleError(error);
   }
 };
@@ -169,7 +168,7 @@ async function fetchEIAPrices(paddCodes: string[], startDate: string, endDate: s
   );
 
   if (!eiaResponse.ok) {
-    throw new Error(`EIA API responded with status: ${eiaResponse.status}`);
+    throw new Error(`EIA API ответил со статусом: ${eiaResponse.status}`);
   }
 
   const data = await eiaResponse.json();

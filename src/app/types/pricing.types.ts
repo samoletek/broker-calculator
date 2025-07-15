@@ -10,13 +10,11 @@ export interface PriceComponents {
     vehicleMultiplier: number;
     weatherMultiplier: number;
     trafficMultiplier: number;
-    autoShowMultiplier: number;
     fuelMultiplier: number;
     // Импакты в долларах
     vehicleImpact: number;
     weatherImpact: number;
     trafficImpact: number;
-    autoShowImpact: number;
     fuelImpact: number;
     cardFee: number;
     totalImpact: number;

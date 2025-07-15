@@ -25,6 +25,7 @@ import { calculateCompleteRoute } from '@/app/lib/utils/client/enhancedMapsAPI';
 import type { SelectOption } from '@/app/types/common.types';
 import type { DirectionsResult } from '@/app/types/maps.types';
 import { submitCalculationLead, prepareCalculatorDataForLead } from '@/app/lib/utils/client/leadSubmissionUtils';
+import { LEAD_ACTION_CODES } from '@/app/lib/utils/client/awsLeadMapper';
 import { PricingConfig } from '@/types/pricing-config.types';
 
 const GoogleMap = dynamic(() => import('@/app/components/client/GoogleMap'), {
@@ -303,7 +304,6 @@ const calculatePrice = async () => {
     
         // Получаем множители (все через enterprise API)
         const vehicleMultiplier = VEHICLE_VALUE_TYPES[vehicleValue].multiplier;
-        const autoShowMultiplier = 1.0; // Логика автошоу удалена
         const fuelPriceMultiplier = routeResult.fuelMultiplier || 1.0;
         const weatherMultiplier = 1.0; // Можно добавить weather API позже
         const trafficMultiplier = 1.0; // Можно добавить traffic API позже
@@ -312,7 +312,6 @@ const calculatePrice = async () => {
         const vehicleImpact = basePrice * (vehicleMultiplier - 1);
         const weatherImpact = basePrice * (weatherMultiplier - 1);
         const trafficImpact = basePrice * (trafficMultiplier - 1);
-        const autoShowImpact = basePrice * (autoShowMultiplier - 1);
         const fuelImpact = basePrice * (fuelPriceMultiplier - 1);
     
         // Суммируем все основные impact-ы (БЕЗ комиссии за карту)
@@ -320,7 +319,6 @@ const calculatePrice = async () => {
           vehicleImpact + 
           weatherImpact + 
           trafficImpact + 
-          autoShowImpact + 
           fuelImpact;
     
         const additionalServices = {
@@ -364,13 +362,11 @@ const calculatePrice = async () => {
             vehicleMultiplier,
             weatherMultiplier,
             trafficMultiplier,
-            autoShowMultiplier,
             fuelMultiplier: fuelPriceMultiplier,
             // Импакты в долларах
             vehicleImpact,
             weatherImpact,
             trafficImpact,
-            autoShowImpact,
             fuelImpact,
             cardFee,
             totalImpact
@@ -402,7 +398,8 @@ const calculatePrice = async () => {
               supplementaryInsurance,
               paymentMethod,
               finalPrice,
-              distance: distanceInMiles
+              distance: distanceInMiles,
+              action: LEAD_ACTION_CODES.CALCULATE_BUTTON
             });
             
             // Submit asynchronously without blocking UI
@@ -845,6 +842,7 @@ const calculatePrice = async () => {
                 onClick={() => {
                   // Отправляем сообщение виксу для открытия поп-апа
                   window.parent.postMessage({ action: 'openPopup' }, '*');
+                  // TODO: В будущем добавить отправку лида с action: LEAD_ACTION_CODES.REQUEST_CALL
                 }}
                 className="w-full sm:w-1/3 bg-white border border-primary
                   text-primary py-8 sm:py-12 px-8 sm:px-16 rounded-[24px]

@@ -111,11 +111,5 @@ export const DEFAULT_PRICING_CONFIG: PricingConfig = {
       pacificCoast: 0.8,
       louisiana: 0.3
     }
-  },
-
-  autoShows: {
-    searchRadius: 32186, // 20 миль в метрах
-    dateRange: 3, // ±3 дня
-    multiplier: 1.1
   }
 };
