@@ -6,9 +6,9 @@ import { Save, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import Button from '@/app/components/ui/Button';
 import type { SavedToast } from '@/app/types/common.types';
-import { navigateToBooking } from '@/app/lib/utils/client/navigation';
+// import { navigateToBooking } from '@/app/lib/utils/client/navigation'; // Временно отключено
 import { sendPriceEmail } from '@/app/lib/utils/client/emailUtils';
-import type { BookingFormData } from '@/app/types/booking.types';
+// import type { BookingFormData } from '@/app/types/booking.types'; // Временно отключено
 
 interface ContactInfo {
   name: string;
@@ -118,44 +118,8 @@ export function PriceSummary({
   };
 
   const handleContinueToBooking = () => {
-    // TODO: В будущем добавить отправку лида с action: LEAD_ACTION_CODES.CONTINUE_BOOKING
-    if (!contactInfo?.name || !contactInfo?.phone || !contactInfo?.email) {
-      setToast({ 
-        show: true, 
-        message: 'Please fill in all contact information',
-        type: 'error'
-      });
-      setTimeout(() => setToast({ show: false, message: '' }), 3000);
-      return;
-    }
-
-    if (!pickup || !delivery || !transportType || !vehicleType || !vehicleValue || !selectedDate) {
-      setToast({ 
-        show: true, 
-        message: 'Please complete all required fields',
-        type: 'error'
-      });
-      setTimeout(() => setToast({ show: false, message: '' }), 3000);
-      return;
-    }
-
-    const bookingData: BookingFormData = {
-      name: contactInfo.name,
-      phone: contactInfo.phone,
-      email: contactInfo.email,
-      pickup,
-      delivery,
-      transportType,
-      vehicleType,
-      vehicleValue,
-      premiumEnhancements: additionalServices?.premiumEnhancements || false,
-      specialLoad: additionalServices?.specialLoad || false,
-      inoperable: additionalServices?.inoperable || false,
-      supplementaryInsurance: additionalServices?.supplementaryInsurance || false,
-      selectedDate: selectedDate.toISOString()
-    };
-
-    navigateToBooking(bookingData);
+    // Временно отключено - будет переработано
+    console.log('Continue to booking clicked - functionality disabled');
   };
 
   return (

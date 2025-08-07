@@ -1,5 +1,3 @@
-import { iframeResizer } from 'iframe-resizer';
-
 export const initIframeResizer = () => {
   if (typeof window === 'undefined') return;
   
@@ -8,11 +6,13 @@ export const initIframeResizer = () => {
   
   if (isInIframe) {
     try {
-      // Инициализируем iframe-resizer на стороне контента
-      // @ts-ignore - iframe-resizer добавляет глобальные типы
-      if (window.iFrameResizer) {
-        console.log('iframe-resizer: Initialized in iframe content');
-      }
+      // Загружаем iframe-resizer contentWindow скрипт динамически
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/iframe-resizer@5.5.2/js/iframeResizer.contentWindow.min.js';
+      script.onload = () => {
+        console.log('iframe-resizer: Content window script loaded');
+      };
+      document.head.appendChild(script);
     } catch (e) {
       console.error('iframe-resizer: Failed to initialize', e);
     }

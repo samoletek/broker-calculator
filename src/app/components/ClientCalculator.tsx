@@ -867,9 +867,8 @@ const calculatePrice = async () => {
   
               <button
                 onClick={() => {
-                  // Отправляем сообщение виксу для открытия поп-апа
-                  window.parent.postMessage({ action: 'openPopup' }, '*');
-                  // TODO: В будущем добавить отправку лида с action: LEAD_ACTION_CODES.REQUEST_CALL
+                  // Временно отключено - будет переработано
+                  console.log('Book a call clicked - functionality disabled');
                 }}
                 className="w-full sm:w-1/3 bg-white border border-primary
                   text-primary py-8 sm:py-12 px-8 sm:px-16 rounded-[24px]
