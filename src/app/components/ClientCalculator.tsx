@@ -27,6 +27,7 @@ import type { DirectionsResult } from '@/app/types/maps.types';
 import { submitCalculationLead, prepareCalculatorDataForLead } from '@/app/lib/utils/client/leadSubmissionUtils';
 import { LEAD_ACTION_CODES } from '@/app/lib/utils/client/awsLeadMapper';
 import { PricingConfig } from '@/types/pricing-config.types';
+import { initIframeResizer, observeHeightChanges } from '@/app/lib/utils/client/iframeResize';
 
 const GoogleMap = dynamic(() => import('@/app/components/client/GoogleMap'), {
   ssr: false,
@@ -117,6 +118,32 @@ export default function ClientCalculator({ config }: ClientCalculatorProps) {
       setPremiumEnhancements(true);
     }
   }, [vehicleValue]);
+
+  // Инициализируем iframe-resizer при монтировании компонента
+  useEffect(() => {
+    // Инициализируем iframe-resizer
+    initIframeResizer();
+    
+    // Начинаем отслеживать изменения размера
+    const cleanup = observeHeightChanges(() => {
+      console.log('Height changed, resizing iframe');
+    });
+    
+    // Отправляем начальную высоту после загрузки
+    const timer = setTimeout(() => {
+      if (window.self !== window.top) {
+        window.parent.postMessage({
+          action: 'calculator-loaded',
+          height: document.documentElement.scrollHeight
+        }, '*');
+      }
+    }, 100);
+    
+    return () => {
+      if (cleanup) cleanup();
+      clearTimeout(timer);
+    };
+  }, []);
 
   // Utility functions
   const clearResults = useCallback(() => {
