@@ -13,7 +13,9 @@ export function middleware(request: NextRequest) {
     'http://localhost:*',
     'https://localhost:*',
     'http://18.227.107.26',
-    'https://18.227.107.26'
+    'https://18.227.107.26',
+    'http://3.137.174.241',
+    'https://3.137.174.241'
   ];
   
   // Проверяем, разрешен ли origin
@@ -31,7 +33,7 @@ export function middleware(request: NextRequest) {
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     font-src 'self' https://fonts.gstatic.com;
     frame-src 'self';
-    frame-ancestors 'self' https://*.wix.com https://*.editorx.com https://*.wordpress.com http://localhost:* https://localhost:* http://18.227.107.26 https://18.227.107.26
+    frame-ancestors 'self' https://*.wix.com https://*.editorx.com https://*.wordpress.com http://localhost:* https://localhost:* http://18.227.107.26 https://18.227.107.26 http://3.137.174.241 https://3.137.174.241
   `.replace(/\s{2,}/g, ' ').trim();
 
   // Создаем новый ответ клонированием оригинального

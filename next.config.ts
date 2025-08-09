@@ -29,7 +29,7 @@ const config: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "frame-ancestors 'self' http://18.227.107.26 https://18.227.107.26 https://*.wix.com https://*.editorx.com https://*.wordpress.com http://localhost:* https://localhost:*",
+            value: "frame-ancestors 'self' http://18.227.107.26 https://18.227.107.26 http://3.137.174.241 https://3.137.174.241 https://*.wix.com https://*.editorx.com https://*.wordpress.com http://localhost:* https://localhost:*",
           },
         ],
       },
