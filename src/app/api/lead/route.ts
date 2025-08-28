@@ -35,7 +35,7 @@ const postHandler = async (request: NextRequest) => {
     });
     
     try {
-      // Отправляем в AWS Lambda
+      // Отправка в AWS Lambda
       const response = await axios.post(AWS_LEAD_ENDPOINT, body, {
         headers: {
           'Content-Type': 'application/json',

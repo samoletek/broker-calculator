@@ -4,8 +4,8 @@ import React, { forwardRef } from 'react';
 import Image from 'next/image';
 import type { GoogleMapProps } from '@/app/types/components.types';
 
-// Enterprise-grade статический компонент карты 
-// Отображает маршрут через Google Static Maps API (server-side)
+// Статический компонент карты 
+// Маршрут через Google Static Maps API (server-side)
 const GoogleMap = forwardRef<HTMLDivElement, GoogleMapProps>(({ mapData }, ref) => {
   
   if (!mapData || !mapData.routes || mapData.routes.length === 0) {

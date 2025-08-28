@@ -1,4 +1,4 @@
-// Собственные типы для maps API (заменяют google.maps типы)
+// Кастом типы для maps API
 
 export interface LocationCoordinates {
   lat: number;

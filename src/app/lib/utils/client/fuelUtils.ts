@@ -31,6 +31,6 @@ export const getFuelPriceMultiplier = async (
     return data.multiplier || 1.0;
   } catch (error) {
     console.error('Error calculating fuel price multiplier:', error);
-    return 1.0; // Neutral multiplier on error
+    return 1.0; // Fallback
   }
 };

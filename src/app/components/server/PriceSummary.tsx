@@ -58,7 +58,7 @@ export function PriceSummary({
   const [isSending, setIsSending] = useState(false);
 
   const handleSavePrice = async () => {
-    // TODO: В будущем добавить отправку лида с action: LEAD_ACTION_CODES.SEND_QUOTE
+    // TODO: добавить отправку лида с action: LEAD_ACTION_CODES.SEND_QUOTE
     // Проверяем, есть ли email
     if (!contactInfo?.email) {
       setToast({

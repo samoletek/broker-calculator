@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-// Этот endpoint теперь deprecated - используйте специализированные endpoints:
+// Этот endpoint теперь deprecated - юзаем специализированные endpoints:
 // POST /api/maps/geocode - для геокодирования
 // POST /api/maps/directions - для маршрутов
 // POST /api/maps/distance-matrix - для матрицы расстояний

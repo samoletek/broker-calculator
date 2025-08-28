@@ -1,4 +1,4 @@
-// Новые клиентские утилиты для работы с server-side Google Maps API
+// Клиентские утилиты для работы с server-side Google Maps API
 
 interface GeocodeResult {
   formatted_address: string;

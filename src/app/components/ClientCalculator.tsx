@@ -332,8 +332,8 @@ const calculatePrice = async () => {
         // Получаем множители (все через enterprise API)
         const vehicleMultiplier = VEHICLE_VALUE_TYPES[vehicleValue].multiplier;
         const fuelPriceMultiplier = routeResult.fuelMultiplier || 1.0;
-        const weatherMultiplier = 1.0; // Можно добавить weather API позже
-        const trafficMultiplier = 1.0; // Можно добавить traffic API позже
+        const weatherMultiplier = 1.0;
+        const trafficMultiplier = 1.0;
     
         // Рассчитываем денежный impact для каждого фактора
         const vehicleImpact = basePrice * (vehicleMultiplier - 1);

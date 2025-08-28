@@ -102,7 +102,7 @@ const postHandler = async (request: NextRequest) => {
     // Применяем лимит результатов если указан
     const limitedResults = body.limit ? data.suggestions.slice(0, body.limit) : data.suggestions;
 
-    // Преобразуем результаты в формат, совместимый с существующим кодом
+    // Преобразование результатов в формат, совместимый с кодом
     const formattedResults = limitedResults.map(suggestion => ({
       formatted_address: suggestion.placePrediction.text.text,
       place_id: suggestion.placePrediction.placeId,

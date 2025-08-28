@@ -4,7 +4,7 @@ import { PricingConfig, EdgeConfigResponse, PricingConfigHistory } from '../../.
 import { withCors } from '@/app/lib/utils/api/cors';
 
 
-// Helper function to save config to history
+// Helper
 async function saveConfigToHistory(config: PricingConfig) {
   try {
     const historyEntry: PricingConfigHistory = {

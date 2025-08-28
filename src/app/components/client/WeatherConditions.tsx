@@ -52,7 +52,7 @@ const WeatherConditions = memo<WeatherMapProps>(({
     [routePoints.pickup, routePoints.delivery]
   );
 
-  // Стабильная функция для обновления погоды
+  // Функция для обновления погоды
   const updateWeatherMultiplier = useCallback((weatherData: WeatherData[]) => {
     const worstMultiplier = getWorstWeatherMultiplier(weatherData);
     if (onWeatherUpdate) {

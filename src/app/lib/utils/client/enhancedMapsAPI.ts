@@ -1,4 +1,3 @@
-// Enterprise-grade клиентские утилиты для всех map-related операций
 import { geocodeAddress, getDirections } from './mapsAPI';
 
 // Расчет множителя цен на топливо

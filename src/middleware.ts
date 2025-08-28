@@ -24,7 +24,7 @@ export function middleware(request: NextRequest) {
     return regex.test(origin);
   });
   
-  // Определяем CSP заголовки с разрешением для iframe
+  // CSP заголовки с разрешением для iframe
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://vercel.live https://cdn.jsdelivr.net;
@@ -36,16 +36,16 @@ export function middleware(request: NextRequest) {
     frame-ancestors 'self' https://*.wix.com https://*.editorx.com https://*.wordpress.com http://localhost:* https://localhost:* http://18.227.107.26 https://18.227.107.26 http://3.137.174.241 https://3.137.174.241
   `.replace(/\s{2,}/g, ' ').trim();
 
-  // Создаем новый ответ клонированием оригинального
+  // Новый ответ клонированием оригинального
   const response = NextResponse.next();
   
-  // Добавляем CSP и другие заголовки безопасности
+  // CSP и другие заголовки безопасности
   response.headers.set('Content-Security-Policy', cspHeader);
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   
-  // Добавляем CORS заголовки для разрешенных доменов
+  // CORS заголовки для разрешенных доменов
   if (isAllowedOrigin || !origin) {
     response.headers.set('Access-Control-Allow-Origin', origin || '*');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
