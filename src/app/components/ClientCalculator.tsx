@@ -177,7 +177,7 @@ export default function ClientCalculator({ config }: ClientCalculatorProps) {
 
   // Validations
   const validateFields = () => {
-    let newErrors: Record<string, string> = {};
+    const newErrors: Record<string, string> = {};
     let isValid = true;
   
     if (!name.trim() || name.length < 2) {
@@ -883,7 +883,7 @@ const calculatePrice = async () => {
   
             {errors.general && (
               <div className="mt-8 sm:mt-16 p-8 sm:p-16 bg-red-50 text-red-700 rounded-[24px] font-montserrat text-sm sm:text-p2 flex items-start gap-4">
-                <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
                 <span>{errors.general}</span>
               </div>
             )}

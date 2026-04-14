@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import forms from "@tailwindcss/forms";
 
 export default {
   content: [
@@ -15,6 +16,11 @@ export default {
       fontFamily: {
         jost: ['Jost', 'sans-serif'],
         montserrat: ['Montserrat', 'sans-serif'],
+      },
+      fontSize: {
+        p1: '24px',
+        p2: '16px',
+        p3: '14px',
       },
       spacing: {
         '8': '8px',
@@ -66,5 +72,5 @@ export default {
       },
     },
   },
-  plugins: [require("@tailwindcss/forms")],
+  plugins: [forms],
 } satisfies Config;

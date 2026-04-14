@@ -130,7 +130,7 @@ export default function AddressAutocomplete({
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+          className="absolute z-9999 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
         >
           {isLoading && (
             <div className="px-4 py-2 text-gray-500 text-sm">

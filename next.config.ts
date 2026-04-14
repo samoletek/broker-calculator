@@ -5,14 +5,20 @@ const config: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  eslint: {
-    ignoreDuringBuilds: false,
-  },
   env: {
     NEXT_PUBLIC_RUNTIME_CONFIG: 'true'
   },
   images: {
-    domains: ['api.placeholder.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'api.placeholder.com',
+      },
+      {
+        protocol: 'http',
+        hostname: 'api.placeholder.com',
+      },
+    ],
   },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',

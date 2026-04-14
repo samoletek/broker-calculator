@@ -1,8 +1,6 @@
-export default {
+const config = {
   plugins: {
-    'tailwindcss/nesting': {},
-    tailwindcss: {},
-    autoprefixer: {},
+    '@tailwindcss/postcss': {},
     ...(process.env.NODE_ENV === 'production'
       ? {
           cssnano: {
@@ -11,4 +9,6 @@ export default {
         }
       : {}),
   },
-}
+};
+
+export default config;

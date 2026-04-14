@@ -10,18 +10,22 @@ export function DatePicker({ date, onDateChange }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(date);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [showWarning, setShowWarning] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<{ top: number; left: number; width: number | string }>({
+    top: 0,
+    left: 0,
+    width: 'auto',
+  });
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const today = new Date();
   const maxDate = new Date();
   maxDate.setFullYear(maxDate.getFullYear() + 1);
+  const oneMonthFromNow = new Date();
+  oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+  const showWarning = !!selectedDate && selectedDate > oneMonthFromNow;
 
   useEffect(() => {
-    setMounted(true);
-    
     const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current && 
@@ -40,12 +44,28 @@ export function DatePicker({ date, onDateChange }: DatePickerProps) {
   }, []);
 
   useEffect(() => {
-    if (selectedDate) {
-      const oneMonthFromNow = new Date();
-      oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
-      setShowWarning(selectedDate > oneMonthFromNow);
-    }
-  }, [selectedDate]);
+    if (!isOpen) return;
+
+    const updateDropdownPosition = () => {
+      if (!inputRef.current) return;
+
+      const inputRect = inputRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        top: inputRect.bottom + 8,
+        left: inputRect.left,
+        width: inputRef.current.offsetWidth,
+      });
+    };
+
+    updateDropdownPosition();
+    window.addEventListener('resize', updateDropdownPosition);
+    window.addEventListener('scroll', updateDropdownPosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updateDropdownPosition);
+      window.removeEventListener('scroll', updateDropdownPosition, true);
+    };
+  }, [isOpen]);
 
   const generateCalendarDays = () => {
     const days = [];
@@ -116,17 +136,13 @@ export function DatePicker({ date, onDateChange }: DatePickerProps) {
         />
       </div>
       
-      {isOpen && mounted && createPortal(
+      {isOpen && typeof window !== 'undefined' && createPortal(
         <div 
           ref={dropdownRef}
-          className="fixed z-[9999] bg-white 
+          className="fixed z-9999 bg-white 
             rounded-[24px] shadow-lg border border-gray-200 
             font-montserrat text-p2 overflow-hidden"
-          style={{
-            top: inputRef.current ? inputRef.current.getBoundingClientRect().bottom + 8 : 0,
-            left: inputRef.current ? inputRef.current.getBoundingClientRect().left : 0,
-            width: inputRef.current ? inputRef.current.offsetWidth : 'auto'
-          }}
+          style={dropdownStyle}
         >
           <div className="flex items-center justify-between p-12 border-b">
             <button 

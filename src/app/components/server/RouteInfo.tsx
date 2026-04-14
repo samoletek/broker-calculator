@@ -21,7 +21,6 @@ const RouteInfo: React.FC<RouteInfoProps> = memo(({
   tollCosts,
   config
 }) => {
-  const mapRef = useRef<HTMLDivElement>(null);
   const hasCalculatedTolls = useRef(false);
   
   const calculateEstimatedDeliveryDate = (shippingDate: Date, estimatedTime: string): Date => {
@@ -46,7 +45,7 @@ const RouteInfo: React.FC<RouteInfoProps> = memo(({
       console.error('Error calculating tolls:', error);
       onTollUpdate(0, []);
     }
-  }, [distance, mapData, config]);
+  }, [distance, mapData, config, onTollUpdate, tollCosts]);
   
   useEffect(() => {
     if (mapData && distance) {
@@ -76,7 +75,7 @@ const RouteInfo: React.FC<RouteInfoProps> = memo(({
       </div>
   
       {/* Divider */}
-      <div className="w-full h-[1px] bg-primary opacity-10 my-8 sm:my-24" />
+      <div className="w-full h-px bg-primary opacity-10 my-8 sm:my-24" />
   
       {/* Route Info Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-x-24">
@@ -88,7 +87,7 @@ const RouteInfo: React.FC<RouteInfoProps> = memo(({
               Pickup Location
             </h3>
           </div>
-          <p className="font-montserrat text-sm sm:text-p2 text-gray-600 break-words">
+          <p className="font-montserrat text-sm sm:text-p2 text-gray-600 wrap-break-word">
             {pickup}
           </p>
         </div>
@@ -101,7 +100,7 @@ const RouteInfo: React.FC<RouteInfoProps> = memo(({
               Delivery Location
             </h3>
           </div>
-          <p className="font-montserrat text-sm sm:text-p2 text-gray-600 break-words">
+          <p className="font-montserrat text-sm sm:text-p2 text-gray-600 wrap-break-word">
             {delivery}
           </p>
         </div>
